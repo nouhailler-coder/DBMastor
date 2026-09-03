@@ -1,0 +1,6 @@
+{
+  "name": "DBMastery Studio",
+  "description": "Plateforme technique de révision et certification Database & SQL (Oracle 1Z0-071, Azure, PostgreSQL, MySQL) avec simulateur d'examen, lab SQL interactif et fiches mémos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
