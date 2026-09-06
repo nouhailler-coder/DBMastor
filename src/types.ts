@@ -3,7 +3,33 @@ export type NavigationTab =
   | 'exams'
   | 'sandbox'
   | 'syllabus'
+  | 'flashcards'
   | 'analytics';
+
+export type FlashcardMasteryStatus = 'unseen' | 'review' | 'learning' | 'mastered';
+
+export interface FlashcardItem {
+  id: string;
+  cardNumber: number;
+  domainId: string;
+  domainCode: string;
+  domainTitle: string;
+  subtopic: string;
+  front: {
+    question: string;
+    codeSnippet?: string;
+    hint?: string;
+  };
+  back: {
+    answer: string;
+    explanation: string;
+    codeSnippet?: string;
+    examTrap?: string;
+    ruleRef?: string;
+  };
+  difficulty: 'easy' | 'medium' | 'hard';
+  tags: string[];
+}
 
 export type CertificationTrackId = 
   | 'oracle-1z0-071'
@@ -89,6 +115,45 @@ export interface SqlExercise {
     rows: (string | number)[][];
     executionTimeMs: number;
   };
+}
+
+export interface DomainDetailSheet {
+  objectives: string[];
+  keyConcepts: {
+    title: string;
+    description: string;
+  }[];
+  codeExamples: {
+    title: string;
+    language: string;
+    code: string;
+    explanation: string;
+  }[];
+  examTraps: {
+    trapTitle: string;
+    description: string;
+    wrongSyntax?: string;
+    correctSyntax?: string;
+  }[];
+  checklist: string[];
+  mnemonic?: string;
+  officialRef?: string;
+}
+
+export interface DomainMasteryItem {
+  id: string;
+  code: string;
+  title: string;
+  desc: string;
+  sheetsRead: string;
+  percent: number;
+  weight: string;
+  status: 'mastered' | 'consolidating' | 'review_needed' | 'high_priority' | 'behind';
+  statusLabel: string;
+  badgeClass: string;
+  accentColor: string;
+  footnote: string;
+  sheetDetail?: DomainDetailSheet;
 }
 
 export interface CheatSheet {

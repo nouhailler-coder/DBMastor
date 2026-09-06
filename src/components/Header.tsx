@@ -8,7 +8,9 @@ import {
   Globe,
   SlidersHorizontal,
   ExternalLink,
-  BookOpen
+  BookOpen,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { CertificationTrackId } from '../types';
 import { certificationTracks } from '../data/mockData';
@@ -19,6 +21,8 @@ interface HeaderProps {
   lang: 'fr' | 'en';
   onLangToggle: () => void;
   onSearchQuery?: (q: string) => void;
+  theme?: 'light' | 'dark';
+  onThemeToggle?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -27,6 +31,8 @@ export const Header: React.FC<HeaderProps> = ({
   lang,
   onLangToggle,
   onSearchQuery,
+  theme = 'light',
+  onThemeToggle,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -131,6 +137,30 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Globe className="w-3.5 h-3.5 text-[#93ccff]" />
           <span>{lang.toUpperCase()}</span>
+        </button>
+
+        {/* Theme Toggle (Light / Dark) */}
+        <button
+          id="theme-toggle-btn"
+          onClick={onThemeToggle}
+          title={
+            theme === 'light'
+              ? (isFr ? 'Basculer vers le thème sombre' : 'Switch to dark theme')
+              : (isFr ? 'Basculer vers le thème clair' : 'Switch to light theme')
+          }
+          className="flex items-center gap-1.5 px-2.5 py-1 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-colors"
+        >
+          {theme === 'light' ? (
+            <>
+              <Sun className="w-3.5 h-3.5 text-[#f59e0b]" />
+              <span className="hidden sm:inline text-[11px] font-medium">{isFr ? 'Clair' : 'Light'}</span>
+            </>
+          ) : (
+            <>
+              <Moon className="w-3.5 h-3.5 text-[#89ceff]" />
+              <span className="hidden sm:inline text-[11px] font-medium">{isFr ? 'Sombre' : 'Dark'}</span>
+            </>
+          )}
         </button>
 
         {/* Notification Bell */}

@@ -4,6 +4,7 @@ import {
   FileCheck2, 
   Terminal, 
   BookOpen, 
+  CreditCard,
   BarChart3, 
   Database,
   Radio
@@ -22,6 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, lang 
   const navItems: { id: NavigationTab; labelFr: string; labelEn: string; icon: React.ElementType }[] = [
     { id: 'dashboard', labelFr: 'Tableau de bord', labelEn: 'Dashboard', icon: LayoutDashboard },
     { id: 'exams', labelFr: 'Examens blancs', labelEn: 'Practice Exams', icon: FileCheck2 },
+    { id: 'flashcards', labelFr: 'Flashcards (600)', labelEn: 'Flashcards (600)', icon: CreditCard },
     { id: 'sandbox', labelFr: 'Lab SQL & Pratique', labelEn: 'SQL Lab & Practice', icon: Terminal },
     { id: 'syllabus', labelFr: 'Fiches & Compétences', labelEn: 'Study Sheets & Skills', icon: BookOpen },
     { id: 'analytics', labelFr: 'Statistiques & Badges', labelEn: 'Stats & Badges', icon: BarChart3 },

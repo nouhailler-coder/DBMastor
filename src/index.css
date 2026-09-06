@@ -41,6 +41,282 @@
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+/* ==========================================================================
+   LIGHT THEME DESIGN SYSTEM (Crisp, high-contrast, WCAG-compliant)
+   ========================================================================== */
+
+.theme-light {
+  color-scheme: light;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Base Surfaces & Cards */
+.theme-light [class*="bg-[#031427]"] {
+  background-color: #f8fafc !important;
+}
+
+.theme-light [class*="bg-[#000f21]"] {
+  background-color: #f8fafc !important;
+}
+
+.theme-light [class*="bg-[#0b1c30]"] {
+  background-color: #ffffff !important;
+}
+
+.theme-light [class*="bg-[#102034]"] {
+  background-color: #ffffff !important;
+}
+
+.theme-light [class*="bg-[#1b2b3f]"] {
+  background-color: #f1f5f9 !important;
+}
+
+.theme-light [class*="bg-[#26364a]"] {
+  background-color: #e2e8f0 !important;
+}
+
+/* Hover Backgrounds */
+.theme-light [class*="hover:bg-[#102034]"]:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.theme-light [class*="hover:bg-[#1b2b3f]"]:hover {
+  background-color: #e2e8f0 !important;
+}
+
+.theme-light [class*="hover:bg-[#26364a]"]:hover {
+  background-color: #cbd5e1 !important;
+}
+
+.theme-light [class*="hover:bg-[#000f21]"]:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* Borders & Dividers */
+.theme-light [class*="border-[#1b2b3f]"] {
+  border-color: #e2e8f0 !important;
+}
+
+.theme-light [class*="border-[#102034]"] {
+  border-color: #e2e8f0 !important;
+}
+
+.theme-light [class*="border-[#26364a]"] {
+  border-color: #cbd5e1 !important;
+}
+
+.theme-light [class*="border-[#3f4850]"] {
+  border-color: #94a3b8 !important;
+}
+
+.theme-light [class*="hover:border-[#26364a]"]:hover {
+  border-color: #94a3b8 !important;
+}
+
+/* Typography & Text Contrast */
+.theme-light [class*="text-[#d3e4fe]"] {
+  color: #0f172a !important;
+}
+
+.theme-light [class*="text-[#bfc7d2]"] {
+  color: #334155 !important;
+}
+
+.theme-light [class*="text-[#89929b]"] {
+  color: #64748b !important;
+}
+
+.theme-light [class*="text-[#93ccff]"] {
+  color: #0284c7 !important;
+}
+
+.theme-light [class*="text-[#89ceff]"] {
+  color: #0369a1 !important;
+}
+
+.theme-light [class*="placeholder-[#89929b]"]::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Hover Texts */
+.theme-light [class*="hover:text-[#d3e4fe]"]:hover {
+  color: #0f172a !important;
+}
+
+.theme-light [class*="hover:text-[#93ccff]"]:hover {
+  color: #0284c7 !important;
+}
+
+/* Primary Accent & Action Buttons */
+.theme-light [class*="bg-[#3198dc]"] {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+.theme-light [class*="hover:bg-[#93ccff]"]:hover {
+  background-color: #0369a1 !important;
+  color: #ffffff !important;
+}
+
+.theme-light [class*="text-[#002c47]"] {
+  color: #ffffff !important;
+}
+
+.theme-light [class*="bg-[#3198dc]"] [class*="text-[#002c47]"] {
+  color: #ffffff !important;
+}
+
+/* Badges & Status Indicators */
+.theme-light [class*="text-[#4edea3]"] {
+  color: #059669 !important;
+}
+
+.theme-light [class*="bg-[#003824]"] {
+  background-color: #ecfdf5 !important;
+}
+
+.theme-light [class*="bg-[#00a572]"] {
+  background-color: #10b981 !important;
+}
+
+.theme-light [class*="border-[#4edea3]"] {
+  border-color: #a7f3d0 !important;
+}
+
+/* Flashcard Answer Callout & Text in Light Mode */
+.theme-light [class*="text-[#e6f4ea]"] {
+  color: #064e3b !important;
+  font-weight: 700 !important;
+}
+
+.theme-light [class*="text-[#ffb4ab]"] {
+  color: #dc2626 !important;
+}
+
+.theme-light [class*="text-[#ffdad6]"] {
+  color: #7f1d1d !important;
+  font-weight: 500 !important;
+}
+
+.theme-light [class*="bg-[#93000a]"] {
+  background-color: #fee2e2 !important;
+}
+
+.theme-light [class*="bg-[#690005]"] {
+  background-color: #fef2f2 !important;
+}
+
+.theme-light [class*="border-[#ffb4ab]"] {
+  border-color: #fecaca !important;
+}
+
+.theme-light [class*="bg-[#4a2800]"] {
+  background-color: #fffbeb !important;
+}
+
+.theme-light [class*="border-[#f59e0b]"] {
+  border-color: #fde68a !important;
+}
+
+.theme-light [class*="text-[#f59e0b]"] {
+  color: #b45309 !important;
+}
+
+/* Form Controls, Inputs & Selects */
+.theme-light input,
+.theme-light select,
+.theme-light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.theme-light textarea.bg-transparent {
+  background-color: transparent !important;
+  color: #0f172a !important;
+}
+
+.theme-light input:focus,
+.theme-light select:focus,
+.theme-light textarea:focus {
+  border-color: #0284c7 !important;
+  background-color: #ffffff !important;
+}
+
+.theme-light textarea.bg-transparent:focus {
+  background-color: transparent !important;
+}
+
+/* Code Snippets & SQL Previews */
+.theme-light pre,
+.theme-light code {
+  color: #0f172a !important;
+}
+
+.theme-light .font-mono {
+  font-feature-settings: "cv02", "cv05", "cv11";
+}
+
+/* Progress bar track backgrounds */
+.theme-light .h-2.bg-\[\#000f21\],
+.theme-light .h-1\.5.bg-\[\#000f21\],
+.theme-light .h-3.bg-\[\#000f21\] {
+  background-color: #e2e8f0 !important;
+}
+
+/* Header & Sidebar Structure */
+.theme-light #main-app-header {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+.theme-light #main-sidebar {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 8px 0 rgba(0, 0, 0, 0.04) !important;
+}
+
+.theme-light #main-sidebar > div:first-child > div:first-child {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Interactive Choices in Practice Exams */
+.theme-light .ring-\[\#3198dc\] {
+  --tw-ring-color: #0284c7 !important;
+  background-color: #f0f9ff !important;
+}
+
+/* Tables and Inset Panels */
+.theme-light table tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Refined Light Shadows */
+.theme-light .shadow-md,
+.theme-light .shadow-lg,
+.theme-light .shadow-sm,
+.theme-light .shadow-xl,
+.theme-light .shadow-2xl {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Custom Scrollbars */
+.theme-light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.theme-light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.theme-light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
 /* Custom scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
@@ -56,3 +332,19 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #3f4850;
 }
+
+/* 3D Flashcard Flip Utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+.transform-style-preserve-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+

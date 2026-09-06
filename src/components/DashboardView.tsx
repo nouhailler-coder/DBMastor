@@ -31,17 +31,21 @@ import { NavigationTab, CertificationTrackId } from '../types';
 interface DashboardViewProps {
   onNavigate: (tab: NavigationTab) => void;
   onSelectTrack: (id: CertificationTrackId) => void;
+  selectedCert?: CertificationTrackId;
   lang: 'fr' | 'en';
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigate,
   onSelectTrack,
+  selectedCert = 'oracle-1z0-071',
   lang,
 }) => {
   const isFr = lang === 'fr';
   const [isLaunchingQuiz, setIsLaunchingQuiz] = useState(false);
   const [quizNotice, setQuizNotice] = useState<string | null>(null);
+
+  const activeTrackObj = certificationTracks.find(t => t.id === selectedCert) || certificationTracks[0];
 
   const handleLaunchQuiz = () => {
     setIsLaunchingQuiz(true);
@@ -49,8 +53,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       setIsLaunchingQuiz(false);
       setQuizNotice(
         isFr 
-          ? 'Quiz adaptatif 1Z0-071 généré (15 questions). Redirection vers l\'examen...' 
-          : 'Smart Quiz 1Z0-071 generated (15 items). Redirecting to exam session...'
+          ? `Quiz adaptatif ${activeTrackObj?.code || '1Z0-071'} généré (15 questions). Redirection vers l'examen...` 
+          : `Smart Quiz ${activeTrackObj?.code || '1Z0-071'} generated (15 items). Redirecting to exam session...`
       );
       setTimeout(() => {
         setQuizNotice(null);
@@ -262,10 +266,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               badgeStyle = 'bg-[#26364a] text-[#89ceff] border border-[#3f4850]';
             }
 
+            const isSelected = track.id === selectedCert;
+
             return (
               <div 
                 key={track.id}
-                className="relative bg-[#102034] p-4 rounded-xl border border-[#1b2b3f] shadow-md flex flex-col justify-between hover:border-[#26364a] hover:bg-[#1b2b3f]/50 transition-all group"
+                onClick={() => onSelectTrack(track.id)}
+                className={`relative p-4 rounded-xl border shadow-md flex flex-col justify-between transition-all group cursor-pointer ${
+                  isSelected 
+                    ? 'bg-[#12253c] border-[#3198dc] ring-2 ring-[#3198dc]/50 shadow-lg' 
+                    : 'bg-[#102034] border-[#1b2b3f] hover:border-[#26364a] hover:bg-[#1b2b3f]/50'
+                }`}
               >
                 <div className="flex flex-col gap-3">
                   <div className="flex items-start justify-between">
@@ -280,9 +291,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <Activity className="w-5 h-5 text-[#f59e0b]" />
                       )}
                     </div>
-                    <span className={`px-2 py-0.5 rounded-full font-mono text-[9px] font-semibold tracking-wider uppercase ${badgeStyle}`}>
-                      {badgeText}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {isSelected && (
+                        <span className="px-2 py-0.5 rounded-full font-mono text-[9px] font-bold tracking-wider uppercase bg-[#3198dc] text-[#002c47]">
+                          {isFr ? 'ACTIF' : 'ACTIVE'}
+                        </span>
+                      )}
+                      <span className={`px-2 py-0.5 rounded-full font-mono text-[9px] font-semibold tracking-wider uppercase ${badgeStyle}`}>
+                        {badgeText}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="flex flex-col">
@@ -695,7 +713,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </button>
 
               <button 
-                onClick={() => onNavigate('syllabus')}
+                onClick={() => onNavigate('flashcards')}
                 className="flex items-center justify-between p-2.5 rounded-lg bg-[#0b1c30] hover:bg-[#1b2b3f] border border-[#1b2b3f] transition-colors text-left group"
               >
                 <div className="flex items-center gap-3">
@@ -704,10 +722,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </div>
                   <div className="flex flex-col">
                     <span className="text-xs font-semibold text-[#d3e4fe] group-hover:text-[#93ccff] transition-colors">
-                      {isFr ? 'Flashcards Syntaxe SQL' : 'SQL Syntax Flashcards'}
+                      {isFr ? 'Flashcards Mémorisation' : 'Mastery Flashcards'}
                     </span>
                     <span className="font-mono text-[10px] text-[#89929b]">
-                      {isFr ? '142 cartes mémos Oracle & ANSI' : '142 cheat-sheet cards Oracle & ANSI'}
+                      {isFr ? '600 cartes interactives (DOM-01 à DOM-06 - Complet)' : '600 active interactive cards (DOM-01 to DOM-06 - Complete)'}
                     </span>
                   </div>
                 </div>
