@@ -240,15 +240,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </h2>
           </div>
           <span className="font-mono text-xs text-[#89929b]">
-            {isFr ? '4 cursus actifs' : '4 active tracks'}
+            {isFr ? '5 cursus certifiants actifs' : '5 active certification tracks'}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {certificationTracks.map((track) => {
             const isOracle = track.id === 'oracle-1z0-071';
-            const isAzure = track.id === 'azure-dp-900';
+            const isAzureDp900 = track.id === 'azure-dp-900';
+            const isAzureDp800 = track.id === 'azure-dp-800';
             const isPostgres = track.id === 'postgres-edb';
+            const isMysql = track.id === 'mysql-80-dba';
 
             let badgeText = '';
             let badgeStyle = '';
@@ -283,7 +285,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <div className="w-10 h-10 rounded-lg bg-[#000f21] border border-[#1b2b3f] flex items-center justify-center p-2 shadow-inner">
                       {isOracle ? (
                         <Database className="w-5 h-5 text-[#ffb4ab]" />
-                      ) : isAzure ? (
+                      ) : isAzureDp800 ? (
+                        <Database className="w-5 h-5 text-[#3198dc]" />
+                      ) : isAzureDp900 ? (
                         <Cloud className="w-5 h-5 text-[#89ceff]" />
                       ) : isPostgres ? (
                         <Terminal className="w-5 h-5 text-[#4edea3]" />
@@ -336,7 +340,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       className="h-full rounded-full transition-all duration-500" 
                       style={{ 
                         width: `${track.progress}%`,
-                        backgroundColor: isOracle ? '#4edea3' : isAzure ? '#89ceff' : '#93ccff' 
+                        backgroundColor: isOracle ? '#ffb4ab' : isAzureDp800 ? '#3198dc' : isAzureDp900 ? '#89ceff' : isPostgres ? '#4edea3' : '#f59e0b' 
                       }}
                     ></div>
                   </div>
@@ -360,15 +364,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       else onNavigate('syllabus');
                     }}
                     className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 ${
-                      isOracle 
+                      isSelected 
                         ? 'bg-[#3198dc] text-[#002c47] hover:bg-[#93ccff] shadow-sm'
                         : 'bg-[#26364a] text-[#d3e4fe] hover:bg-[#1b2b3f] hover:text-[#93ccff]'
                     }`}
                   >
                     <span>
-                      {isOracle ? (isFr ? 'Reprendre la révision' : 'Resume Training') : (isFr ? 'Continuer le module' : 'Continue')}
+                      {isSelected ? (isFr ? 'Cursus sélectionné' : 'Active Track') : (isFr ? 'Ouvrir cursus' : 'Select Track')}
                     </span>
-                    {isOracle ? <Play className="w-3.5 h-3.5 fill-current" /> : <ArrowRight className="w-3.5 h-3.5" />}
+                    {isSelected ? <Play className="w-3.5 h-3.5 fill-current" /> : <ArrowRight className="w-3.5 h-3.5" />}
                   </button>
 
                   <a
@@ -725,7 +729,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       {isFr ? 'Flashcards Mémorisation' : 'Mastery Flashcards'}
                     </span>
                     <span className="font-mono text-[10px] text-[#89929b]">
-                      {isFr ? '600 cartes interactives (DOM-01 à DOM-06 - Complet)' : '600 active interactive cards (DOM-01 to DOM-06 - Complete)'}
+                      {isFr ? '1200+ cartes interactives (Oracle, Azure DP-900 & DP-300 / DP-800)' : '1200+ interactive cards (Oracle, Azure DP-900 & DP-300 / DP-800)'}
                     </span>
                   </div>
                 </div>

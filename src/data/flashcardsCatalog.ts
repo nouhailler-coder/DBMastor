@@ -9,6 +9,10 @@ import { azure900Dom01Flashcards } from './flashcardsAzure900Dom01';
 import { azure900Dom02Flashcards } from './flashcardsAzure900Dom02';
 import { azure900Dom03Flashcards } from './flashcardsAzure900Dom03';
 import { azure900Dom04Flashcards } from './flashcardsAzure900Dom04';
+import { azureDp800Dom01Flashcards } from './flashcardsAzureDp800Dom01';
+import { azureDp800Dom02Flashcards } from './flashcardsAzureDp800Dom02';
+import { azureDp800Dom03Flashcards } from './flashcardsAzureDp800Dom03';
+import { azureDp800Dom04Flashcards } from './flashcardsAzureDp800Dom04';
 
 export interface DomainFlashcardMeta {
   domainId: string;
@@ -167,8 +171,8 @@ export const certificationFlashcardDomains: Record<CertificationTrackId, DomainF
       titleEn: 'Planning, Deploying & Migrating Azure Data Resources',
       accentColor: '#3198dc',
       weight: '25-30%',
-      cardCount: 0,
-      available: false,
+      cardCount: 100,
+      available: true,
       descFr: 'Dimensionnement des vCores, DTUs, tiers Hyperscale, Business Critical, pools élastiques et migration DMS.',
       descEn: 'vCore sizing, DTUs, Hyperscale tiers, Business Critical, elastic pools and Azure Database Migration Service.',
     },
@@ -179,8 +183,8 @@ export const certificationFlashcardDomains: Record<CertificationTrackId, DomainF
       titleEn: 'Security, Encryption & Compliance (TDE, Always Encrypted, RBAC)',
       accentColor: '#4edea3',
       weight: '15-20%',
-      cardCount: 0,
-      available: false,
+      cardCount: 100,
+      available: true,
       descFr: 'Authentification Entra ID (Azure AD), pare-feu, points de terminaison privés, Dynamic Data Masking, TDE et Always Encrypted.',
       descEn: 'Entra ID (Azure AD) auth, firewalls, Private Endpoints, Dynamic Data Masking, TDE with BYOK and Always Encrypted.',
     },
@@ -191,10 +195,10 @@ export const certificationFlashcardDomains: Record<CertificationTrackId, DomainF
       titleEn: 'Monitoring, Optimization & Performance Tuning (Query Store)',
       accentColor: '#f59e0b',
       weight: '20-25%',
-      cardCount: 0,
-      available: false,
-      descFr: 'Vues de gestion dynamique (DMV), Query Store, forçage de plans d\'exécution, statistiques et index fragmentés.',
-      descEn: 'Dynamic Management Views (DMVs), Query Store, execution plan forcing, statistics and index maintenance.',
+      cardCount: 100,
+      available: true,
+      descFr: 'Vues de gestion dynamique (DMV), Query Store, forçage de plans d\'exécution, statistiques, IQP et indexation.',
+      descEn: 'Dynamic Management Views (DMVs), Query Store, execution plan forcing, statistics, IQP and index tuning.',
     },
     {
       domainId: 'azure-800-dom-04',
@@ -203,8 +207,8 @@ export const certificationFlashcardDomains: Record<CertificationTrackId, DomainF
       titleEn: 'High Availability & Disaster Recovery (Always On, Geo-Replication)',
       accentColor: '#a78bfa',
       weight: '20-25%',
-      cardCount: 0,
-      available: false,
+      cardCount: 100,
+      available: true,
       descFr: 'Groupes de basculement automatique (Auto-failover groups), réplication géo-distribuée, sauvegardes LTR et PITR.',
       descEn: 'Auto-failover groups, active geo-replication, Point-in-time Restore (PITR) and Long-Term Retention (LTR).',
     },
@@ -365,5 +369,9 @@ export const allFlashcardsCatalog: Record<string, FlashcardItem[]> = {
   'azure-900-dom-02': azure900Dom02Flashcards,
   'azure-900-dom-03': azure900Dom03Flashcards,
   'azure-900-dom-04': azure900Dom04Flashcards,
+  'azure-800-dom-01': azureDp800Dom01Flashcards,
+  'azure-800-dom-02': azureDp800Dom02Flashcards,
+  'azure-800-dom-03': azureDp800Dom03Flashcards,
+  'azure-800-dom-04': azureDp800Dom04Flashcards,
 };
 

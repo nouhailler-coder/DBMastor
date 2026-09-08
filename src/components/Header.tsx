@@ -5,14 +5,17 @@ import {
   Bell, 
   ShieldCheck, 
   Check, 
-  Globe,
-  SlidersHorizontal,
-  ExternalLink,
-  BookOpen,
-  Sun,
-  Moon
+  Globe, 
+  SlidersHorizontal, 
+  ExternalLink, 
+  BookOpen, 
+  Sun, 
+  Moon,
+  Menu,
+  Settings,
+  RefreshCw
 } from 'lucide-react';
-import { CertificationTrackId } from '../types';
+import { CertificationTrackId, SystemVersionInfo } from '../types';
 import { certificationTracks } from '../data/mockData';
 
 interface HeaderProps {
@@ -23,6 +26,9 @@ interface HeaderProps {
   onSearchQuery?: (q: string) => void;
   theme?: 'light' | 'dark';
   onThemeToggle?: () => void;
+  onOpenHamburger: () => void;
+  onOpenSystemSettings: () => void;
+  systemInfo: SystemVersionInfo;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -33,6 +39,9 @@ export const Header: React.FC<HeaderProps> = ({
   onSearchQuery,
   theme = 'light',
   onThemeToggle,
+  onOpenHamburger,
+  onOpenSystemSettings,
+  systemInfo,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -60,8 +69,22 @@ export const Header: React.FC<HeaderProps> = ({
       id="main-app-header" 
       className="fixed top-0 left-64 right-0 h-16 bg-[#031427]/90 backdrop-blur-xl z-40 px-6 flex items-center justify-between border-b border-[#1b2b3f] shadow-[0_1px_8px_rgba(0,0,0,0.2)]"
     >
-      {/* Left: Cert dropdown & Search */}
+      {/* Left: Hamburger Button, Cert dropdown & Search */}
       <div className="flex items-center gap-3 flex-1 max-w-2xl">
+        {/* Hamburger Menu Button */}
+        <button
+          id="header-hamburger-btn"
+          onClick={onOpenHamburger}
+          title={isFr ? 'Ouvrir le menu des fonctionnalités' : 'Open features menu'}
+          aria-label={isFr ? 'Menu des fonctionnalités' : 'Features Menu'}
+          className="flex items-center gap-2 p-2 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] hover:border-[#3198dc]/50 text-[#89ceff] hover:text-[#d3e4fe] transition-all shadow-sm active:scale-95 shrink-0 group"
+        >
+          <Menu className="w-5 h-5 text-[#89ceff] group-hover:text-white transition-colors" />
+          <span className="hidden xl:inline text-xs font-mono font-semibold text-[#d3e4fe]">
+            {isFr ? 'Menu' : 'Menu'}
+          </span>
+        </button>
+
         {/* Certification Selector */}
         <div className="relative flex items-center bg-[#1b2b3f] border border-[#26364a] rounded-lg px-3 py-1.5 shadow-sm">
           <ShieldCheck className="w-4 h-4 text-[#89ceff] mr-2 shrink-0" />
@@ -118,10 +141,24 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Right: Countdown, Lang Switch, Notifications, User */}
-      <div className="flex items-center gap-3">
+      {/* Right: System Settings, Countdown, Lang Switch, Notifications, User */}
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        {/* System Settings & Update Trigger */}
+        <button
+          id="header-system-settings-btn"
+          onClick={onOpenSystemSettings}
+          title={isFr ? `Paramètres système & Mises à jour (${systemInfo.currentVersion})` : `System Settings & Updates (${systemInfo.currentVersion})`}
+          className="flex items-center gap-1.5 px-2.5 py-1 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] hover:border-[#3198dc]/40 rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-all shadow-sm active:scale-95 group"
+        >
+          <Settings className={`w-3.5 h-3.5 text-[#89ceff] group-hover:rotate-45 transition-transform duration-300 ${systemInfo.isUpdating ? 'animate-spin' : ''}`} />
+          <span className="text-[11px] font-semibold text-[#89ceff]">{systemInfo.currentVersion}</span>
+          {systemInfo.autoUpdateEnabled && (
+            <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse" title={isFr ? 'Mises à jour auto actives' : 'Auto updates enabled'}></span>
+          )}
+        </button>
+
         {/* Countdown Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1 bg-[#102034] border border-[#1b2b3f] rounded-full">
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-[#102034] border border-[#1b2b3f] rounded-full">
           <Flame className="w-3.5 h-3.5 text-[#4edea3]" />
           <span className="font-mono text-xs text-[#d3e4fe] font-semibold">
             {isFr ? '14 jours restants' : '14 days remaining'}
@@ -210,7 +247,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-[#4edea3] ring-1 ring-[#031427]"></span>
           </div>
-          <div className="flex flex-col text-left">
+          <div className="hidden md:flex flex-col text-left">
             <span className="text-xs font-semibold text-[#d3e4fe] leading-tight">Sarah L.</span>
             <span className="font-mono text-[10px] text-[#89929b] leading-tight">
               {isFr ? 'DBA Cloud Trainee' : 'Cloud DBA Trainee'}
@@ -221,3 +258,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+

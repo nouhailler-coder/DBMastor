@@ -175,3 +175,32 @@ export interface CheatSheet {
     keyClause: string;
   };
 }
+
+export interface UpdateHistoryItem {
+  id: string;
+  timestamp: string;
+  version: string;
+  type: 'auto' | 'manual' | 'forced';
+  notes: string;
+}
+
+export interface SystemVersionInfo {
+  currentVersion: string;
+  releaseDate: string;
+  buildNumber: string;
+  channel: 'stable' | 'beta';
+  lastCheckedDate: string;
+  autoUpdateEnabled: boolean;
+  autoUpdateIntervalMinutes: number;
+  isChecking: boolean;
+  isUpdating: boolean;
+  updateProgress: number;
+  statusMessage: string;
+  availableUpdate?: {
+    version: string;
+    releaseDate: string;
+    changelog: string[];
+    size: string;
+  } | null;
+  updateHistory: UpdateHistoryItem[];
+}
