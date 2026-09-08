@@ -729,7 +729,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       {isFr ? 'Flashcards Mémorisation' : 'Mastery Flashcards'}
                     </span>
                     <span className="font-mono text-[10px] text-[#89929b]">
-                      {isFr ? '1200+ cartes interactives (Oracle, Azure DP-900 & DP-300 / DP-800)' : '1200+ interactive cards (Oracle, Azure DP-900 & DP-300 / DP-800)'}
+                      {isFr ? '1600+ cartes interactives (Oracle, Azure DP-900, DP-300 & PostgreSQL EDB)' : '1600+ interactive cards (Oracle, Azure DP-900, DP-300 & PostgreSQL EDB)'}
                     </span>
                   </div>
                 </div>

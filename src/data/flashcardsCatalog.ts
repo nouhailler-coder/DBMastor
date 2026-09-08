@@ -13,6 +13,8 @@ import { azureDp800Dom01Flashcards } from './flashcardsAzureDp800Dom01';
 import { azureDp800Dom02Flashcards } from './flashcardsAzureDp800Dom02';
 import { azureDp800Dom03Flashcards } from './flashcardsAzureDp800Dom03';
 import { azureDp800Dom04Flashcards } from './flashcardsAzureDp800Dom04';
+import { postgresEdbDom01Flashcards } from './flashcardsPostgresEdbDom01';
+import { postgresEdbDom02Flashcards } from './flashcardsPostgresEdbDom02';
 
 export interface DomainFlashcardMeta {
   domainId: string;
@@ -225,8 +227,8 @@ export const certificationFlashcardDomains: Record<CertificationTrackId, DomainF
       titleEn: 'Internal Server Architecture & Background Processes',
       accentColor: '#4edea3',
       weight: '20%',
-      cardCount: 0,
-      available: false,
+      cardCount: 100,
+      available: true,
       descFr: 'Mémoire partagée (Shared Buffers, WAL Buffers), mémoire locale (work_mem), processus Postmaster, BgWriter, Checkpointer, WalWriter et Autovacuum.',
       descEn: 'Shared memory (Shared Buffers, WAL Buffers), per-operation work_mem, Postmaster, BgWriter, Checkpointer, WalWriter and Autovacuum.',
     },
@@ -237,8 +239,8 @@ export const certificationFlashcardDomains: Record<CertificationTrackId, DomainF
       titleEn: 'Installation, Initialization (initdb) & postgresql.conf',
       accentColor: '#3198dc',
       weight: '20%',
-      cardCount: 0,
-      available: false,
+      cardCount: 100,
+      available: true,
       descFr: 'Création de cluster avec initdb, arborescence $PGDATA, rechargement des paramètres (pg_reload_conf vs redémarrage), et réglage des paramètres clés.',
       descEn: 'initdb cluster creation, $PGDATA hierarchy, parameter reload (pg_reload_conf vs restart) and tuning.',
     },
@@ -373,5 +375,7 @@ export const allFlashcardsCatalog: Record<string, FlashcardItem[]> = {
   'azure-800-dom-02': azureDp800Dom02Flashcards,
   'azure-800-dom-03': azureDp800Dom03Flashcards,
   'azure-800-dom-04': azureDp800Dom04Flashcards,
+  'pg-edb-dom-01': postgresEdbDom01Flashcards,
+  'pg-edb-dom-02': postgresEdbDom02Flashcards,
 };
 
