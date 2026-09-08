@@ -7,6 +7,8 @@ import { oracleDom05Flashcards } from './flashcardsOracleDom05';
 import { oracleDom06Flashcards } from './flashcardsOracleDom06';
 import { azure900Dom01Flashcards } from './flashcardsAzure900Dom01';
 import { azure900Dom02Flashcards } from './flashcardsAzure900Dom02';
+import { azure900Dom03Flashcards } from './flashcardsAzure900Dom03';
+import { azure900Dom04Flashcards } from './flashcardsAzure900Dom04';
 
 export interface DomainFlashcardMeta {
   domainId: string;
@@ -135,10 +137,10 @@ export const certificationFlashcardDomains: Record<CertificationTrackId, DomainF
       titleEn: 'Non-Relational Data Services (Azure Cosmos DB & Storage)',
       accentColor: '#89ceff',
       weight: '15-20%',
-      cardCount: 0,
-      available: false,
-      descFr: 'Azure Cosmos DB et ses APIs (NoSQL, MongoDB, Cassandra, Gremlin, Table), Blob Storage et ses niveaux (Hot, Cool, Archive).',
-      descEn: 'Azure Cosmos DB and its APIs (NoSQL, MongoDB, Cassandra, Gremlin, Table), Azure Blob Storage tiers (Hot, Cool, Archive).',
+      cardCount: 100,
+      available: true,
+      descFr: 'Azure Cosmos DB et ses APIs (NoSQL, MongoDB, Cassandra, Gremlin, Table), Blob Storage et ses niveaux (Hot, Cool, Cold, Archive).',
+      descEn: 'Azure Cosmos DB and its APIs (NoSQL, MongoDB, Cassandra, Gremlin, Table), Azure Blob Storage tiers (Hot, Cool, Cold, Archive).',
     },
     {
       domainId: 'azure-900-dom-04',
@@ -147,10 +149,10 @@ export const certificationFlashcardDomains: Record<CertificationTrackId, DomainF
       titleEn: 'Analytics Workloads, Azure Synapse & Power BI',
       accentColor: '#f59e0b',
       weight: '25-30%',
-      cardCount: 0,
-      available: false,
-      descFr: 'Entrepôts de données modernes (Data Warehouses vs Data Lakes), Azure Synapse Analytics, Azure Data Factory (ETL/ELT) et Power BI.',
-      descEn: 'Modern Data Warehouses vs Data Lakes, Azure Synapse Analytics, Azure Data Factory (ETL/ELT) and Power BI.',
+      cardCount: 100,
+      available: true,
+      descFr: 'Entrepôts de données modernes (Data Warehouses vs Data Lakes), Azure Synapse Analytics, Azure Data Factory (ETL/ELT), Databricks et Power BI.',
+      descEn: 'Modern Data Warehouses vs Data Lakes, Azure Synapse Analytics, Azure Data Factory (ETL/ELT), Databricks and Power BI.',
     },
   ],
 
@@ -361,5 +363,7 @@ export const allFlashcardsCatalog: Record<string, FlashcardItem[]> = {
   'oracle-dom-06': oracleDom06Flashcards,
   'azure-900-dom-01': azure900Dom01Flashcards,
   'azure-900-dom-02': azure900Dom02Flashcards,
+  'azure-900-dom-03': azure900Dom03Flashcards,
+  'azure-900-dom-04': azure900Dom04Flashcards,
 };
 
