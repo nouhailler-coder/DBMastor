@@ -122,12 +122,12 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
         {
           id: 'item-flashcards',
           tab: 'flashcards' as NavigationTab,
-          labelFr: 'Flashcards interactives (1600+)',
-          labelEn: 'Interactive Flashcards (1600+)',
+          labelFr: 'Flashcards interactives (1800+)',
+          labelEn: 'Interactive Flashcards (1800+)',
           descFr: 'Cartes mémoires avec syntaxe T-SQL/PL-SQL/Postgres, architecture HA/DR, pièges et justifications.',
           descEn: 'Memory cards with T-SQL/PL-SQL/Postgres syntax, HA/DR architecture, traps, and justifications.',
           icon: CreditCard,
-          badge: '1600+ Cartes',
+          badge: '1800+ Cartes',
         },
         {
           id: 'item-syllabus',

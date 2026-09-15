@@ -15,6 +15,8 @@ import { azureDp800Dom03Flashcards } from './flashcardsAzureDp800Dom03';
 import { azureDp800Dom04Flashcards } from './flashcardsAzureDp800Dom04';
 import { postgresEdbDom01Flashcards } from './flashcardsPostgresEdbDom01';
 import { postgresEdbDom02Flashcards } from './flashcardsPostgresEdbDom02';
+import { postgresEdbDom03Flashcards } from './flashcardsPostgresEdbDom03';
+import { postgresEdbDom04Flashcards } from './flashcardsPostgresEdbDom04';
 
 export interface DomainFlashcardMeta {
   domainId: string;
@@ -251,8 +253,8 @@ export const certificationFlashcardDomains: Record<CertificationTrackId, DomainF
       titleEn: 'Security, Roles, pg_hba.conf Authentication & Privileges',
       accentColor: '#89ceff',
       weight: '20%',
-      cardCount: 0,
-      available: false,
+      cardCount: 100,
+      available: true,
       descFr: 'Fichier de contrôle d\'accès hôte pg_hba.conf (méthodes scram-sha-256, md5, reject), gestion des rôles (LOGIN, SUPERUSER) et hiérarchie GRANT/REVOKE.',
       descEn: 'pg_hba.conf host access file (scram-sha-256, md5, reject), roles (LOGIN, SUPERUSER) and GRANT/REVOKE hierarchy.',
     },
@@ -263,8 +265,8 @@ export const certificationFlashcardDomains: Record<CertificationTrackId, DomainF
       titleEn: 'Maintenance, MVCC, VACUUM, ANALYZE & Reindexing',
       accentColor: '#f59e0b',
       weight: '20%',
-      cardCount: 0,
-      available: false,
+      cardCount: 100,
+      available: true,
       descFr: 'Modèle de concurrence multi-version (xmin, xmax, dead tuples, bloat), VACUUM standard vs VACUUM FULL, ANALYZE, autovacuum et REINDEX CONCURRENTLY.',
       descEn: 'Multi-version concurrency (xmin, xmax, dead tuples, bloat), VACUUM vs VACUUM FULL, ANALYZE and REINDEX CONCURRENTLY.',
     },
@@ -377,5 +379,7 @@ export const allFlashcardsCatalog: Record<string, FlashcardItem[]> = {
   'azure-800-dom-04': azureDp800Dom04Flashcards,
   'pg-edb-dom-01': postgresEdbDom01Flashcards,
   'pg-edb-dom-02': postgresEdbDom02Flashcards,
+  'pg-edb-dom-03': postgresEdbDom03Flashcards,
+  'pg-edb-dom-04': postgresEdbDom04Flashcards,
 };
 
