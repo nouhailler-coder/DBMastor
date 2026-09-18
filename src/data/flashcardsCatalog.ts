@@ -17,6 +17,12 @@ import { postgresEdbDom01Flashcards } from './flashcardsPostgresEdbDom01';
 import { postgresEdbDom02Flashcards } from './flashcardsPostgresEdbDom02';
 import { postgresEdbDom03Flashcards } from './flashcardsPostgresEdbDom03';
 import { postgresEdbDom04Flashcards } from './flashcardsPostgresEdbDom04';
+import { postgresEdbDom05Flashcards } from './flashcardsPostgresEdbDom05';
+import { mysql908Dom01Flashcards } from './flashcardsMysql908Dom01';
+import { mysql908Dom02Flashcards } from './flashcardsMysql908Dom02';
+import { mysql908Dom03Flashcards } from './flashcardsMysql908Dom03';
+import { mysql908Dom04Flashcards } from './flashcardsMysql908Dom04';
+import { mysql908Dom05Flashcards } from './flashcardsMysql908Dom05';
 
 export interface DomainFlashcardMeta {
   domainId: string;
@@ -277,8 +283,8 @@ export const certificationFlashcardDomains: Record<CertificationTrackId, DomainF
       titleEn: 'Physical & Logical Backups (pg_dump) & Streaming Replication',
       accentColor: '#a78bfa',
       weight: '20%',
-      cardCount: 0,
-      available: false,
+      cardCount: 100,
+      available: true,
       descFr: 'Sauvegarde logique avec pg_dump / pg_dumpall, sauvegarde physique à chaud avec pg_basebackup, archivage WAL et réplication physique en continu.',
       descEn: 'Logical backups with pg_dump / pg_dumpall, online physical backup with pg_basebackup, WAL archiving and streaming replication.',
     },
@@ -295,8 +301,8 @@ export const certificationFlashcardDomains: Record<CertificationTrackId, DomainF
       titleEn: 'MySQL 8.0 Architecture, InnoDB Engine & Memory Management',
       accentColor: '#f59e0b',
       weight: '20%',
-      cardCount: 0,
-      available: false,
+      cardCount: 100,
+      available: true,
       descFr: 'Sous-système serveur vs moteurs de stockage plaggables. InnoDB Buffer Pool, Log Buffer, Redo Log, Undo Tablespaces et Doublewrite Buffer.',
       descEn: 'Server subsystem vs storage engines. InnoDB Buffer Pool, Log Buffer, Redo Log, Undo Tablespaces and Doublewrite Buffer.',
     },
@@ -307,10 +313,10 @@ export const certificationFlashcardDomains: Record<CertificationTrackId, DomainF
       titleEn: 'Server Configuration (my.cnf), System Variables & Logs',
       accentColor: '#3198dc',
       weight: '20%',
-      cardCount: 0,
-      available: false,
-      descFr: 'Fichier my.cnf, variables système dynamiques (SET PERSIST vs SET GLOBAL), journal des erreurs, slow query log et journal binaire (binlog).',
-      descEn: 'my.cnf file, dynamic system variables (SET PERSIST vs SET GLOBAL), error log, slow query log and binary log (binlog).',
+      cardCount: 100,
+      available: true,
+      descFr: 'Fichier my.cnf, variables système dynamiques (SET PERSIST vs SET GLOBAL), journal des erreurs, slow query log, journal binaire (binlog), Performance Schema, sys schema et EXPLAIN.',
+      descEn: 'my.cnf file, dynamic system variables (SET PERSIST vs SET GLOBAL), error log, slow query log, binary log (binlog), Performance Schema, sys schema and EXPLAIN.',
     },
     {
       domainId: 'mysql-908-dom-03',
@@ -319,8 +325,8 @@ export const certificationFlashcardDomains: Record<CertificationTrackId, DomainF
       titleEn: 'Security, User Management, Roles & Authentication',
       accentColor: '#4edea3',
       weight: '20%',
-      cardCount: 0,
-      available: false,
+      cardCount: 100,
+      available: true,
       descFr: 'Plugin caching_sha2_password, syntaxe de compte \'user\'@\'host\', rôles SQL, privilèges statiques et dynamiques, composant Password Validation.',
       descEn: 'caching_sha2_password plugin, account syntax \'user\'@\'host\', SQL roles, static and dynamic privileges, password validation component.',
     },
@@ -331,10 +337,10 @@ export const certificationFlashcardDomains: Record<CertificationTrackId, DomainF
       titleEn: 'Physical (MEB) & Logical Backup (mysqldump) & Restore',
       accentColor: '#89ceff',
       weight: '20%',
-      cardCount: 0,
-      available: false,
-      descFr: 'Sauvegardes logiques avec mysqldump et mysqlpump (options --single-transaction, --master-data), sauvegarde physique en ligne avec MySQL Enterprise Backup.',
-      descEn: 'Logical backups with mysqldump / mysqlpump (--single-transaction), online physical backup with MySQL Enterprise Backup (MEB).',
+      cardCount: 100,
+      available: true,
+      descFr: 'Sauvegardes logiques avec mysqldump, mysqlpump et MySQL Shell (options --single-transaction, --source-data, bytesPerChunk), sauvegarde physique à chaud avec MySQL Enterprise Backup (MEB), et Point-in-Time Recovery (PITR).',
+      descEn: 'Logical backups with mysqldump, mysqlpump and MySQL Shell (--single-transaction, --source-data, bytesPerChunk), online physical backup with MySQL Enterprise Backup (MEB), and Point-in-Time Recovery (PITR).',
     },
     {
       domainId: 'mysql-908-dom-05',
@@ -343,8 +349,8 @@ export const certificationFlashcardDomains: Record<CertificationTrackId, DomainF
       titleEn: 'Binary Replication (GTID), InnoDB Cluster Group Replication & HA',
       accentColor: '#a78bfa',
       weight: '20%',
-      cardCount: 0,
-      available: false,
+      cardCount: 100,
+      available: true,
       descFr: 'Réplication asynchrone et semi-synchrone, identifiants de transactions globales (GTID), topologie Primaire/Secondaire, et réplication de groupe (Group Replication).',
       descEn: 'Asynchronous and semi-synchronous replication, Global Transaction Identifiers (GTID), Primary/Secondary topology and Group Replication.',
     },
@@ -381,5 +387,11 @@ export const allFlashcardsCatalog: Record<string, FlashcardItem[]> = {
   'pg-edb-dom-02': postgresEdbDom02Flashcards,
   'pg-edb-dom-03': postgresEdbDom03Flashcards,
   'pg-edb-dom-04': postgresEdbDom04Flashcards,
+  'pg-edb-dom-05': postgresEdbDom05Flashcards,
+  'mysql-908-dom-01': mysql908Dom01Flashcards,
+  'mysql-908-dom-02': mysql908Dom02Flashcards,
+  'mysql-908-dom-03': mysql908Dom03Flashcards,
+  'mysql-908-dom-04': mysql908Dom04Flashcards,
+  'mysql-908-dom-05': mysql908Dom05Flashcards,
 };
 
