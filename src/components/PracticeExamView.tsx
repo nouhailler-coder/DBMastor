@@ -19,18 +19,32 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
-  Database
+  Database,
+  Brain,
+  FileCheck2
 } from 'lucide-react';
 import { sampleExamQuestions } from '../data/mockData';
 import { ExamQuestion } from '../types';
+import { AdaptiveLearningView } from './AdaptiveLearningView';
 
 interface PracticeExamViewProps {
   lang: 'fr' | 'en';
+  theme?: 'light' | 'dark';
   onFinishExam: (score: number) => void;
+  onNavigateToTab?: (tab: string) => void;
 }
 
-export const PracticeExamView: React.FC<PracticeExamViewProps> = ({ lang, onFinishExam }) => {
+export const PracticeExamView: React.FC<PracticeExamViewProps> = ({ 
+  lang, 
+  theme = 'dark',
+  onFinishExam,
+  onNavigateToTab
+}) => {
   const isFr = lang === 'fr';
+  const isLight = theme === 'light';
+
+  // Mode principal : Cycle d'apprentissage adaptatif vs Simulation chronométrée
+  const [examMode, setExamMode] = useState<'adaptive_learning' | 'timed_exam'>('adaptive_learning');
 
   // Timer state (starts at 1h 24m 09s = 5049 seconds)
   const [secondsRemaining, setSecondsRemaining] = useState(5049);
@@ -148,8 +162,72 @@ EMPLOYEE_ID FIRST_NAME  LAST_NAME   EMAIL      SALARY
 
   return (
     <div id="practice-exam-view" className="p-6 max-w-[1720px] mx-auto w-full flex flex-col gap-6">
-      {/* 1. EXAM META HEADER */}
-      <div className="bg-[#102034] p-4 rounded-xl border border-[#1b2b3f] shadow-md flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      {/* 0. SELECTEUR DE FORMAT : APPRENTISSAGE ADAPTATIF vs EXAMEN CHRONOMETRE */}
+      <div className={`p-3 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm ${
+        isLight ? 'bg-white border-[#e2e8f0]' : 'bg-[#0b1c30] border-[#1b2b3f]'
+      }`}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-[#0284c7]/15 text-[#0284c7] flex items-center justify-center">
+            <Brain className="w-4 h-4" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#0284c7]">
+              {isFr ? 'Moteur d\'Évaluation & Apprentissage' : 'Assessment & Learning Engine'}
+            </span>
+            <span className="text-[11px] text-[#64748b]">
+              {isFr 
+                ? 'Choisissez entre la boucle d\'apprentissage adaptative ciblée ou la simulation chronométrée'
+                : 'Choose between the adaptive remediation loop or the timed full simulation'}
+            </span>
+          </div>
+        </div>
+
+        <div className={`flex items-center p-1 rounded-xl border w-full sm:w-auto ${
+          isLight ? 'bg-[#f1f5f9] border-[#cbd5e1]' : 'bg-[#000f21] border-[#1b2b3f]'
+        }`}>
+          <button
+            onClick={() => setExamMode('adaptive_learning')}
+            className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+              examMode === 'adaptive_learning'
+                ? isLight
+                  ? 'bg-white text-[#0284c7] shadow-sm font-extrabold'
+                  : 'bg-[#102034] text-[#38bdf8] shadow-sm font-extrabold'
+                : 'text-[#64748b] hover:text-[#0f172a] dark:hover:text-[#d3e4fe]'
+            }`}
+          >
+            <Brain className="w-3.5 h-3.5 text-[#0284c7]" />
+            <span>{isFr ? 'Cycle d\'Apprentissage Adaptatif' : 'Adaptive Learning Loop'}</span>
+            <span className="px-1.5 py-0.5 rounded text-[10px] bg-[#10b981]/15 text-[#10b981] font-mono font-bold">
+              {isFr ? 'Recommandé' : 'Recommended'}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setExamMode('timed_exam')}
+            className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+              examMode === 'timed_exam'
+                ? isLight
+                  ? 'bg-white text-[#0284c7] shadow-sm font-extrabold'
+                  : 'bg-[#102034] text-[#38bdf8] shadow-sm font-extrabold'
+                : 'text-[#64748b] hover:text-[#0f172a] dark:hover:text-[#d3e4fe]'
+            }`}
+          >
+            <FileCheck2 className="w-3.5 h-3.5 text-[#93ccff]" />
+            <span>{isFr ? 'Simulation Examen Blanc (78Q)' : 'Timed Exam Simulator (78Q)'}</span>
+          </button>
+        </div>
+      </div>
+
+      {examMode === 'adaptive_learning' ? (
+        <AdaptiveLearningView
+          lang={lang}
+          theme={theme}
+          onNavigateToTab={onNavigateToTab}
+        />
+      ) : (
+        <>
+          {/* 1. EXAM META HEADER */}
+          <div className="bg-[#102034] p-4 rounded-xl border border-[#1b2b3f] shadow-md flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* Left: Exam title & meta */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-[#000f21] border border-[#1b2b3f] flex items-center justify-center text-[#93ccff]">
@@ -677,6 +755,8 @@ EMPLOYEE_ID FIRST_NAME  LAST_NAME   EMAIL      SALARY
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };

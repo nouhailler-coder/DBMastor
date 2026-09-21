@@ -10,7 +10,8 @@ import {
   Radio,
   Menu,
   Settings,
-  BookMarked
+  BookMarked,
+  Brain
 } from 'lucide-react';
 import { NavigationTab } from '../types';
 
@@ -35,7 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navItems: { id: NavigationTab; labelFr: string; labelEn: string; icon: React.ElementType }[] = [
     { id: 'dashboard', labelFr: 'Tableau de bord', labelEn: 'Dashboard', icon: LayoutDashboard },
-    { id: 'exams', labelFr: 'Examens blancs', labelEn: 'Practice Exams', icon: FileCheck2 },
+    { id: 'exams', labelFr: 'Apprentissage & Quiz', labelEn: 'Adaptive Learning & Quiz', icon: Brain },
     { id: 'flashcards', labelFr: 'Flashcards (2400+)', labelEn: 'Flashcards (2400+)', icon: CreditCard },
     { id: 'glossary', labelFr: 'Glossaire SQL', labelEn: 'SQL Glossary', icon: BookMarked },
     { id: 'sandbox', labelFr: 'Lab SQL & Pratique', labelEn: 'SQL Lab & Practice', icon: Terminal },

@@ -271,7 +271,9 @@ export default function App() {
           {currentTab === 'exams' && (
             <PracticeExamView
               lang={lang}
+              theme={theme}
               onFinishExam={handleFinishExam}
+              onNavigateToTab={(tab) => setCurrentTab(tab as NavigationTab)}
             />
           )}
 

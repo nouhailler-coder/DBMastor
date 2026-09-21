@@ -20,7 +20,8 @@ import {
   Cpu,
   Sparkles,
   Layers,
-  BookMarked
+  BookMarked,
+  Brain
 } from 'lucide-react';
 import { NavigationTab, CertificationTrackId, SystemVersionInfo } from '../types';
 
@@ -95,12 +96,12 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
         {
           id: 'item-exams',
           tab: 'exams' as NavigationTab,
-          labelFr: 'Simulateur d\'examens chronométrés',
-          labelEn: 'Timed Exam Simulator',
-          descFr: 'Conditions réelles d\'examen, explications détaillées et questions pièges.',
-          descEn: 'Real exam conditions, instant explanations, and trap questions.',
-          icon: FileCheck2,
-          badge: isFr ? 'Mode Réel' : 'Real Mode',
+          labelFr: 'Apprentissage Adaptatif & Quiz',
+          labelEn: 'Adaptive Learning & Quiz',
+          descFr: 'Cycle complet : Apprendre → S\'entraîner → Se tromper → Comprendre → Rejouer → Valider.',
+          descEn: 'Full cognitive loop: Learn → Train → Make Mistakes → Understand → Replay → Validate.',
+          icon: Brain,
+          badge: isFr ? 'Cycle Pédagogique' : 'Learning Cycle',
         },
         {
           id: 'item-dashboard',

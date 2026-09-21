@@ -265,3 +265,110 @@ export interface GlossaryTerm {
   proTipEn?: string;
 }
 
+// ==========================================
+// ADAPTIVE LEARNING SYSTEM TYPES
+// Cycle : Apprendre -> S'entraîner -> Se tromper -> Comprendre -> Rejouer -> Valider
+// ==========================================
+
+export type LearningCycleStep = 
+  | 'overview'     // Choix du module / Objectifs
+  | 'learn'        // 1. Apprendre : Fiche de cadrage & concepts initiaux
+  | 'train'        // 2. S'entraîner : Série de questions adaptatives avec chronomètre
+  | 'diagnose'     // 3. Se tromper / Diagnostic : Détection fine des lacunes (notion, temps, difficulté)
+  | 'understand'   // 4. Comprendre : Mini-cours ciblé, schéma visuel & pièges d'examen
+  | 'remedy'       // 5. Rejouer : 5 questions ciblées de remédiation
+  | 'validate';    // 6. Valider : Matrice de compétences & badge de maîtrise
+
+export interface LearningSubconcept {
+  id: string;
+  name: string;
+  shortDescFr: string;
+  shortDescEn: string;
+  iconName?: string;
+}
+
+export interface AdaptiveQuestion {
+  id: string;
+  number: number;
+  subconceptId: string;
+  subconceptLabel: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  domain: string;
+  promptFr: string;
+  promptEn: string;
+  sqlCode?: string;
+  options: {
+    id: string;
+    label: string;
+    textFr: string;
+    textEn: string;
+    isCorrect: boolean;
+    explanationFr: string;
+    explanationEn: string;
+  }[];
+  correctCount: number;
+  targetTimeSeconds: number; // expected duration in seconds
+  docRef?: string;
+}
+
+export interface MiniCourseModule {
+  subconceptId: string;
+  subconceptLabel: string;
+  titleFr: string;
+  titleEn: string;
+  subtitleFr: string;
+  subtitleEn: string;
+  diagnosisSummaryFr: string;
+  diagnosisSummaryEn: string;
+  keyRuleFr: string;
+  keyRuleEn: string;
+  visualDiagram?: {
+    titleFr: string;
+    titleEn: string;
+    asciiIllustration: string;
+    legendFr: string;
+    legendEn: string;
+  };
+  trapSnippet: {
+    titleFr: string;
+    titleEn: string;
+    wrongCode: string;
+    wrongWhyFr: string;
+    wrongWhyEn: string;
+    correctCode: string;
+    correctWhyFr: string;
+    correctWhyEn: string;
+  };
+  goldenRules: {
+    ruleFr: string;
+    ruleEn: string;
+  }[];
+}
+
+export interface AdaptiveLearningModule {
+  id: string;
+  titleFr: string;
+  titleEn: string;
+  category: string;
+  shortDescriptionFr: string;
+  shortDescriptionEn: string;
+  badgeName: string;
+  accentColor: string;
+  subconcepts: LearningSubconcept[];
+  prerequisitesFr: string[];
+  prerequisitesEn: string[];
+  initialQuestions: AdaptiveQuestion[]; // 10 training questions
+  miniCourses: Record<string, MiniCourseModule>; // key = subconceptId
+  remediationQuestions: Record<string, AdaptiveQuestion[]>; // key = subconceptId -> 5 remediation questions
+}
+
+export interface QuestionAttemptLog {
+  questionId: string;
+  subconceptId: string;
+  selectedOptionIds: string[];
+  isCorrect: boolean;
+  timeSpentSeconds: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+}
+
+
