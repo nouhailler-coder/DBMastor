@@ -7,6 +7,7 @@ import { SqlLabView } from './components/SqlLabView';
 import { StudySheetsView } from './components/StudySheetsView';
 import { FlashcardsView } from './components/FlashcardsView';
 import { StatsView } from './components/StatsView';
+import { GlossaryView } from './components/GlossaryView';
 import { ExamSummaryModal } from './components/ExamSummaryModal';
 import { HamburgerMenu } from './components/HamburgerMenu';
 import { SystemSettingsModal } from './components/SystemSettingsModal';
@@ -296,6 +297,15 @@ export default function App() {
               onCertChange={setSelectedCert}
               lang={lang}
               theme={theme}
+            />
+          )}
+
+          {currentTab === 'glossary' && (
+            <GlossaryView
+              lang={lang}
+              theme={theme}
+              initialSearchQuery={searchQuery}
+              onNavigateToTab={(tab) => setCurrentTab(tab as NavigationTab)}
             />
           )}
 

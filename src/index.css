@@ -76,6 +76,26 @@
   background-color: #e2e8f0 !important;
 }
 
+.theme-light [class*="bg-[#071322]"] {
+  background-color: #f8fafc !important;
+}
+
+.theme-light [class*="bg-[#081729]"] {
+  background-color: #f1f5f9 !important;
+}
+
+.theme-light [class*="bg-[#0c1e33]"] {
+  background-color: #ffffff !important;
+}
+
+.theme-light [class*="bg-[#17263b]"] {
+  background-color: #f0f9ff !important;
+}
+
+.theme-light [class*="bg-[#020b14]"] {
+  background-color: #f8fafc !important;
+}
+
 /* Hover Backgrounds */
 .theme-light [class*="hover:bg-[#102034]"]:hover {
   background-color: #f1f5f9 !important;
@@ -106,6 +126,22 @@
   border-color: #cbd5e1 !important;
 }
 
+.theme-light [class*="border-[#18293e]"] {
+  border-color: #e2e8f0 !important;
+}
+
+.theme-light [class*="border-[#192d44]"] {
+  border-color: #e2e8f0 !important;
+}
+
+.theme-light [class*="border-[#1e344e]"] {
+  border-color: #cbd5e1 !important;
+}
+
+.theme-light [class*="border-[#294263]"] {
+  border-color: #cbd5e1 !important;
+}
+
 .theme-light [class*="border-[#3f4850]"] {
   border-color: #94a3b8 !important;
 }
@@ -124,6 +160,30 @@
 }
 
 .theme-light [class*="text-[#89929b]"] {
+  color: #64748b !important;
+}
+
+.theme-light [class*="text-[#cbd7e6]"] {
+  color: #334155 !important;
+}
+
+.theme-light [class*="text-[#b8c9dd]"] {
+  color: #1e293b !important;
+}
+
+.theme-light [class*="text-[#a3b5ca]"] {
+  color: #334155 !important;
+}
+
+.theme-light [class*="text-[#93a7c1]"] {
+  color: #475569 !important;
+}
+
+.theme-light [class*="text-[#78889b]"] {
+  color: #64748b !important;
+}
+
+.theme-light [class*="text-[#899fb8]"] {
   color: #64748b !important;
 }
 
@@ -251,7 +311,17 @@
 /* Code Snippets & SQL Previews */
 .theme-light pre,
 .theme-light code {
-  color: #0f172a !important;
+  color: #0f172a;
+}
+
+.theme-light .dark-terminal-code pre,
+.theme-light .dark-terminal-code code {
+  color: #e2e8f0 !important;
+}
+
+.theme-light .dark-terminal-code pre code span,
+.theme-light .dark-terminal-code code span {
+  color: inherit;
 }
 
 .theme-light .font-mono {

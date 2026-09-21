@@ -4,7 +4,8 @@ export type NavigationTab =
   | 'sandbox'
   | 'syllabus'
   | 'flashcards'
-  | 'analytics';
+  | 'analytics'
+  | 'glossary';
 
 export type FlashcardMasteryStatus = 'unseen' | 'review' | 'learning' | 'mastered';
 
@@ -204,3 +205,63 @@ export interface SystemVersionInfo {
   } | null;
   updateHistory: UpdateHistoryItem[];
 }
+
+// ==========================================
+// SQL GLOSSARY DATA INTERFACES
+// ==========================================
+
+export interface GlossaryCrossReference {
+  id: string;
+  labelFr: string;
+  labelEn: string;
+}
+
+export interface DialectNotes {
+  universal?: boolean;
+  ansiStandard?: string;
+  postgres?: string;
+  mysql?: string;
+  sqlServer?: string;
+  oracle?: string;
+  specialNoteFr?: string;
+  specialNoteEn?: string;
+}
+
+export type GlossaryAudience = 'beginner' | 'developer' | 'data_analyst';
+export type GlossaryDifficulty = 'beginner' | 'intermediate' | 'advanced';
+
+export interface GlossaryCategoryMeta {
+  id: number;
+  code: string;
+  titleFr: string;
+  titleEn: string;
+  shortDescFr: string;
+  shortDescEn: string;
+  accentColor: string;
+  color?: string;
+  iconName: string;
+}
+
+export interface GlossaryTerm {
+  id: string;
+  termFr: string;
+  termEn: string;
+  category: number; // 1 to 8
+  categoryNameFr: string;
+  categoryNameEn: string;
+  shortDefFr: string;
+  shortDefEn: string;
+  fullExplanationFr: string;
+  fullExplanationEn: string;
+  codeSnippet?: string;
+  codeSnippetCommentFr?: string;
+  codeSnippetCommentEn?: string;
+  dialects?: DialectNotes;
+  crossReferences: GlossaryCrossReference[];
+  tags: string[];
+  difficulty: GlossaryDifficulty;
+  audience: GlossaryAudience[];
+  proTipFr?: string;
+  proTipEn?: string;
+}
+

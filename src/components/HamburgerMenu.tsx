@@ -19,7 +19,8 @@ import {
   Radio,
   Cpu,
   Sparkles,
-  Layers
+  Layers,
+  BookMarked
 } from 'lucide-react';
 import { NavigationTab, CertificationTrackId, SystemVersionInfo } from '../types';
 
@@ -128,6 +129,16 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
           descEn: 'Memory cards with T-SQL/PL-SQL/Postgres/MySQL syntax, HA/DR architecture, traps, and justifications.',
           icon: CreditCard,
           badge: '2400+ Cartes',
+        },
+        {
+          id: 'item-glossary',
+          tab: 'glossary' as NavigationTab,
+          labelFr: 'Glossaire SQL complet (8 Catégories)',
+          labelEn: 'Complete SQL Glossary (8 Categories)',
+          descFr: 'Référentiel structuré des concepts clés, contraintes, dialectes et snippets pour débutants, devs et analystes.',
+          descEn: 'Structured reference of key concepts, constraints, dialect notes, and code snippets.',
+          icon: BookMarked,
+          badge: '8 Catégories',
         },
         {
           id: 'item-syllabus',

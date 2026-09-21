@@ -9,7 +9,8 @@ import {
   Database,
   Radio,
   Menu,
-  Settings
+  Settings,
+  BookMarked
 } from 'lucide-react';
 import { NavigationTab } from '../types';
 
@@ -36,6 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', labelFr: 'Tableau de bord', labelEn: 'Dashboard', icon: LayoutDashboard },
     { id: 'exams', labelFr: 'Examens blancs', labelEn: 'Practice Exams', icon: FileCheck2 },
     { id: 'flashcards', labelFr: 'Flashcards (2400+)', labelEn: 'Flashcards (2400+)', icon: CreditCard },
+    { id: 'glossary', labelFr: 'Glossaire SQL', labelEn: 'SQL Glossary', icon: BookMarked },
     { id: 'sandbox', labelFr: 'Lab SQL & Pratique', labelEn: 'SQL Lab & Practice', icon: Terminal },
     { id: 'syllabus', labelFr: 'Fiches & Compétences', labelEn: 'Study Sheets & Skills', icon: BookOpen },
     { id: 'analytics', labelFr: 'Statistiques & Badges', labelEn: 'Stats & Badges', icon: BarChart3 },

@@ -23,7 +23,8 @@ import {
   Terminal,
   Activity,
   ExternalLink,
-  BookOpen
+  BookOpen,
+  BookMarked
 } from 'lucide-react';
 import { certificationTracks, examHistory, certificationProgramsCatalog } from '../data/mockData';
 import { NavigationTab, CertificationTrackId } from '../types';
@@ -730,6 +731,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </span>
                     <span className="font-mono text-[10px] text-[#89929b]">
                       {isFr ? '2400+ cartes interactives (Oracle SQL, Azure DP-900/DP-300, Postgres EDB & MySQL 8.0 DBA)' : '2400+ interactive cards (Oracle SQL, Azure DP-900/DP-300, Postgres EDB & MySQL 8.0 DBA)'}
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#89929b] group-hover:text-[#d3e4fe]" />
+              </button>
+
+              <button 
+                onClick={() => onNavigate('glossary')}
+                className="flex items-center justify-between p-2.5 rounded-lg bg-[#0b1c30] hover:bg-[#1b2b3f] border border-[#1b2b3f] transition-colors text-left group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded bg-[#4edea3]/10 text-[#4edea3]">
+                    <BookMarked className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold text-[#d3e4fe] group-hover:text-[#4edea3] transition-colors">
+                      {isFr ? 'Glossaire SQL (8 Catégories)' : 'SQL Glossary (8 Categories)'}
+                    </span>
+                    <span className="font-mono text-[10px] text-[#89929b]">
+                      {isFr ? 'Concepts, contraintes, commandes DDL/DML, dialectes & astuces' : 'Core concepts, constraints, DDL/DML commands, dialects & tips'}
                     </span>
                   </div>
                 </div>
