@@ -13,10 +13,14 @@ import {
   Moon,
   Menu,
   Settings,
-  RefreshCw
+  RefreshCw,
+  LogIn,
+  LogOut,
+  Cloud
 } from 'lucide-react';
 import { CertificationTrackId, SystemVersionInfo } from '../types';
 import { certificationTracks } from '../data/mockData';
+import type { User } from '../services/firebaseSyncService';
 
 interface HeaderProps {
   selectedCert: CertificationTrackId;
@@ -29,6 +33,11 @@ interface HeaderProps {
   onOpenHamburger: () => void;
   onOpenSystemSettings: () => void;
   systemInfo: SystemVersionInfo;
+  currentUser?: User | null;
+  isAuthReady?: boolean;
+  cloudSyncedCount?: number;
+  onGoogleSignIn?: () => void;
+  onSignOut?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -42,6 +51,11 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenHamburger,
   onOpenSystemSettings,
   systemInfo,
+  currentUser,
+  isAuthReady = true,
+  cloudSyncedCount = 0,
+  onGoogleSignIn,
+  onSignOut,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -67,32 +81,32 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header 
       id="main-app-header" 
-      className="fixed top-0 left-64 right-0 h-16 bg-[#031427]/90 backdrop-blur-xl z-40 px-6 flex items-center justify-between border-b border-[#1b2b3f] shadow-[0_1px_8px_rgba(0,0,0,0.2)]"
+      className="fixed top-0 left-64 right-0 h-16 bg-[#031427]/95 backdrop-blur-xl z-40 px-4 flex items-center justify-between gap-3 border-b border-[#1b2b3f] shadow-[0_1px_8px_rgba(0,0,0,0.2)]"
     >
       {/* Left: Hamburger Button, Cert dropdown & Search */}
-      <div className="flex items-center gap-3 flex-1 max-w-2xl">
+      <div className="flex items-center gap-2.5 flex-1 min-w-0">
         {/* Hamburger Menu Button */}
         <button
           id="header-hamburger-btn"
           onClick={onOpenHamburger}
           title={isFr ? 'Ouvrir le menu des fonctionnalités' : 'Open features menu'}
           aria-label={isFr ? 'Menu des fonctionnalités' : 'Features Menu'}
-          className="flex items-center gap-2 p-2 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] hover:border-[#3198dc]/50 text-[#89ceff] hover:text-[#d3e4fe] transition-all shadow-sm active:scale-95 shrink-0 group"
+          className="flex items-center gap-1.5 p-2 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] hover:border-[#3198dc]/50 text-[#89ceff] hover:text-[#d3e4fe] transition-all shadow-sm active:scale-95 shrink-0 group"
         >
           <Menu className="w-5 h-5 text-[#89ceff] group-hover:text-white transition-colors" />
-          <span className="hidden xl:inline text-xs font-mono font-semibold text-[#d3e4fe]">
+          <span className="hidden 2xl:inline text-xs font-mono font-semibold text-[#d3e4fe]">
             {isFr ? 'Menu' : 'Menu'}
           </span>
         </button>
 
         {/* Certification Selector */}
-        <div className="relative flex items-center bg-[#1b2b3f] border border-[#26364a] rounded-lg px-3 py-1.5 shadow-sm">
-          <ShieldCheck className="w-4 h-4 text-[#89ceff] mr-2 shrink-0" />
+        <div className="relative flex items-center bg-[#1b2b3f] border border-[#26364a] rounded-lg px-2 py-1.5 shadow-sm shrink-0">
+          <ShieldCheck className="w-4 h-4 text-[#89ceff] mr-1.5 shrink-0" />
           <select
             id="cert-dropdown-select"
             value={selectedCert}
             onChange={(e) => onCertChange(e.target.value as CertificationTrackId)}
-            className="bg-transparent text-[#d3e4fe] font-mono text-xs outline-none cursor-pointer pr-3 font-semibold appearance-none"
+            className="bg-transparent text-[#d3e4fe] font-mono text-xs outline-none cursor-pointer pr-2 font-semibold appearance-none max-w-[135px] lg:max-w-[190px] 2xl:max-w-none truncate"
           >
             {certOptions.map((opt) => (
               <option key={opt.id} value={opt.id} className="bg-[#102034] text-[#d3e4fe]">
@@ -100,7 +114,7 @@ export const Header: React.FC<HeaderProps> = ({
               </option>
             ))}
           </select>
-          <SlidersHorizontal className="w-3 h-3 text-[#89929b] pointer-events-none -ml-1" />
+          <SlidersHorizontal className="w-3 h-3 text-[#89929b] pointer-events-none" />
         </div>
 
         {/* Official Syllabus External Link */}
@@ -108,7 +122,7 @@ export const Header: React.FC<HeaderProps> = ({
           href={currentSyllabusUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] text-[#89ceff] hover:text-[#d3e4fe] border border-[#1b2b3f] hover:border-[#26364a] text-xs font-semibold transition-all shadow-sm group shrink-0"
+          className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] text-[#89ceff] hover:text-[#d3e4fe] border border-[#1b2b3f] hover:border-[#26364a] text-xs font-semibold transition-all shadow-sm group shrink-0"
           title={isFr ? `Consulter le programme officiel ${currentTrack?.name || ''} (${currentTrack?.provider || ''})` : `Open official curriculum for ${currentTrack?.name || ''}`}
         >
           <BookOpen className="w-3.5 h-3.5 text-[#93ccff]" />
@@ -117,7 +131,7 @@ export const Header: React.FC<HeaderProps> = ({
         </a>
 
         {/* Global Search Input */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-[110px] max-w-xs 2xl:max-w-md hidden xl:block">
           <Search className="w-4 h-4 text-[#89929b] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             id="global-search-input"
@@ -127,8 +141,8 @@ export const Header: React.FC<HeaderProps> = ({
               setSearchValue(e.target.value);
               onSearchQuery?.(e.target.value);
             }}
-            placeholder={isFr ? "Rechercher questions, clauses SQL, codes d'erreur..." : "Search questions, SQL clauses, error codes..."}
-            className="w-full h-9 pl-9 pr-8 bg-[#0b1c30] border border-[#1b2b3f] text-[#d3e4fe] placeholder-[#89929b] text-xs rounded-lg outline-none focus:border-[#3198dc] focus:bg-[#102034] transition-all"
+            placeholder={isFr ? "Rechercher clauses SQL, pièges..." : "Search SQL clauses, traps..."}
+            className="w-full h-9 pl-9 pr-7 bg-[#0b1c30] border border-[#1b2b3f] text-[#d3e4fe] placeholder-[#89929b] text-xs rounded-lg outline-none focus:border-[#3198dc] focus:bg-[#102034] transition-all"
           />
           {searchValue && (
             <button 
@@ -141,36 +155,89 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Right: System Settings, Countdown, Lang Switch, Notifications, User */}
-      <div className="flex items-center gap-2.5 sm:gap-3">
+      {/* Right: Firebase Google Sign-In (First & Always Visible!), System Settings, Lang Switch, Theme, Notifications */}
+      <div className="flex items-center gap-2 shrink-0">
+        {/* BOUTON PRINCIPAL : CONNEXION GOOGLE / STATUT FIRESTORE */}
+        <div className="flex items-center pr-2 border-r border-[#1b2b3f] shrink-0">
+          {currentUser ? (
+            <div className="flex items-center gap-2 bg-[#102034] px-2.5 py-1 rounded-xl border border-[#4edea3]/50 shadow-sm">
+              <div className="relative shrink-0">
+                {currentUser.photoURL ? (
+                  <img
+                    src={currentUser.photoURL}
+                    alt={currentUser.displayName || 'User'}
+                    referrerPolicy="no-referrer"
+                    className="w-7 h-7 rounded-full ring-1 ring-[#4edea3] object-cover"
+                  />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-[#0284c7] flex items-center justify-center font-bold text-xs text-white">
+                    {(currentUser.displayName || currentUser.email || 'DB').slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#4edea3] ring-1 ring-[#031427]"></span>
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="text-xs font-bold text-[#d3e4fe] leading-tight truncate max-w-[120px]">
+                  {currentUser.displayName || currentUser.email?.split('@')[0] || 'DBA'}
+                </span>
+                <span className="font-mono text-[9px] text-[#4edea3] leading-tight flex items-center gap-1">
+                  <Cloud className="w-2.5 h-2.5" />
+                  Firestore ({cloudSyncedCount})
+                </span>
+              </div>
+              {onSignOut && (
+                <button
+                  type="button"
+                  onClick={onSignOut}
+                  title={isFr ? 'Se déconnecter de Firebase' : 'Sign out from Firebase'}
+                  className="p-1.5 rounded-lg bg-[#0b1c30] hover:bg-[#1b2b3f] text-[#ffb4ab] border border-[#1b2b3f] transition-colors ml-1 cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              id="header-google-signin-btn"
+              type="button"
+              onClick={onGoogleSignIn}
+              className="px-3.5 py-2 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs flex items-center gap-2 border border-[#38bdf8]/50 shadow-md transition-all active:scale-95 shrink-0 cursor-pointer"
+            >
+              <span className="w-4 h-4 rounded-full bg-white flex items-center justify-center shrink-0">
+                <svg className="w-3 h-3" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
+                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z" />
+                  <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z" />
+                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z" />
+                </svg>
+              </span>
+              <span className="text-white font-bold tracking-tight whitespace-nowrap">
+                {isFr ? 'Connexion Google' : 'Google Sign-In'}
+              </span>
+            </button>
+          )}
+        </div>
+
         {/* System Settings & Update Trigger */}
         <button
           id="header-system-settings-btn"
           onClick={onOpenSystemSettings}
           title={isFr ? `Paramètres système & Mises à jour (${systemInfo.currentVersion})` : `System Settings & Updates (${systemInfo.currentVersion})`}
-          className="flex items-center gap-1.5 px-2.5 py-1 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] hover:border-[#3198dc]/40 rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-all shadow-sm active:scale-95 group"
+          className="flex items-center gap-1.5 px-2.5 py-1 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] hover:border-[#3198dc]/40 rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-all shadow-sm active:scale-95 group shrink-0"
         >
           <Settings className={`w-3.5 h-3.5 text-[#89ceff] group-hover:rotate-45 transition-transform duration-300 ${systemInfo.isUpdating ? 'animate-spin' : ''}`} />
-          <span className="text-[11px] font-semibold text-[#89ceff]">{systemInfo.currentVersion}</span>
+          <span className="text-[11px] font-semibold text-[#89ceff] hidden sm:inline">{systemInfo.currentVersion}</span>
           {systemInfo.autoUpdateEnabled && (
             <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse" title={isFr ? 'Mises à jour auto actives' : 'Auto updates enabled'}></span>
           )}
         </button>
-
-        {/* Countdown Badge */}
-        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-[#102034] border border-[#1b2b3f] rounded-full">
-          <Flame className="w-3.5 h-3.5 text-[#4edea3]" />
-          <span className="font-mono text-xs text-[#d3e4fe] font-semibold">
-            {isFr ? '14 jours restants' : '14 days remaining'}
-          </span>
-        </div>
 
         {/* Language Toggle FR / EN */}
         <button
           id="lang-toggle-btn"
           onClick={onLangToggle}
           title={isFr ? 'Basculer en anglais' : 'Switch to French'}
-          className="flex items-center gap-1 px-2.5 py-1 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-colors"
+          className="flex items-center gap-1 px-2 py-1 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-colors shrink-0"
         >
           <Globe className="w-3.5 h-3.5 text-[#93ccff]" />
           <span>{lang.toUpperCase()}</span>
@@ -185,23 +252,23 @@ export const Header: React.FC<HeaderProps> = ({
               ? (isFr ? 'Basculer vers le thème sombre' : 'Switch to dark theme')
               : (isFr ? 'Basculer vers le thème clair' : 'Switch to light theme')
           }
-          className="flex items-center gap-1.5 px-2.5 py-1 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-colors"
+          className="flex items-center gap-1.5 px-2 py-1 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-colors shrink-0"
         >
           {theme === 'light' ? (
             <>
               <Sun className="w-3.5 h-3.5 text-[#f59e0b]" />
-              <span className="hidden sm:inline text-[11px] font-medium">{isFr ? 'Clair' : 'Light'}</span>
+              <span className="hidden xl:inline text-[11px] font-medium">{isFr ? 'Clair' : 'Light'}</span>
             </>
           ) : (
             <>
               <Moon className="w-3.5 h-3.5 text-[#89ceff]" />
-              <span className="hidden sm:inline text-[11px] font-medium">{isFr ? 'Sombre' : 'Dark'}</span>
+              <span className="hidden xl:inline text-[11px] font-medium">{isFr ? 'Sombre' : 'Dark'}</span>
             </>
           )}
         </button>
 
         {/* Notification Bell */}
-        <div className="relative">
+        <div className="relative shrink-0">
           <button
             id="notifications-btn"
             onClick={() => setShowNotifications(!showNotifications)}
@@ -237,22 +304,6 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             </div>
           )}
-        </div>
-
-        {/* User Profile */}
-        <div className="flex items-center gap-2 pl-2 border-l border-[#1b2b3f]">
-          <div className="relative">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#3198dc] to-[#4edea3] flex items-center justify-center font-bold text-xs text-[#002c47] ring-1 ring-[#93ccff]/40 shadow-sm">
-              SL
-            </div>
-            <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-[#4edea3] ring-1 ring-[#031427]"></span>
-          </div>
-          <div className="hidden md:flex flex-col text-left">
-            <span className="text-xs font-semibold text-[#d3e4fe] leading-tight">Sarah L.</span>
-            <span className="font-mono text-[10px] text-[#89929b] leading-tight">
-              {isFr ? 'DBA Cloud Trainee' : 'Cloud DBA Trainee'}
-            </span>
-          </div>
         </div>
       </div>
     </header>

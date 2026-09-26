@@ -1,5 +1,8 @@
 export type NavigationTab = 
   | 'dashboard'
+  | 'activity'
+  | 'cert_exam'
+  | 'skills'
   | 'exams'
   | 'sandbox'
   | 'syllabus'
@@ -7,7 +10,109 @@ export type NavigationTab =
   | 'analytics'
   | 'glossary';
 
+export type ExamPillar = 'sql' | 'modelisation' | 'transactions' | 'administration';
+
+export interface CognitiveConcept {
+  id: string;
+  nameFr: string;
+  nameEn: string;
+  pillar: ExamPillar;
+  diagnosticFr: string;
+  diagnosticEn: string;
+  ruleRefFr: string;
+  ruleRefEn: string;
+  recommendedActionFr: string;
+  recommendedActionEn: string;
+}
+
+export interface CertExamQuestionItem {
+  id: string;
+  number: number;
+  pillar: ExamPillar;
+  domainNameFr: string;
+  domainNameEn: string;
+  promptFr: string;
+  promptEn: string;
+  codeSnippet?: string;
+  schemaContext?: string;
+  options: {
+    id: string;
+    letter: 'A' | 'B' | 'C' | 'D';
+    textFr: string;
+    textEn: string;
+  }[];
+  correctOptionId: string;
+  conceptId: string;
+  explanationFr: string;
+  explanationEn: string;
+  trapMetadata?: QuestionTrapMetadata;
+}
+
+export interface PillarScoreBreakdown {
+  pillar: ExamPillar;
+  labelFr: string;
+  labelEn: string;
+  correctCount: number;
+  totalCount: number;
+  percentage: number;
+}
+
+export interface CertExamResultReport {
+  scorePercent: number;
+  passed: boolean;
+  totalQuestions: number;
+  answeredCount: number;
+  correctCount: number;
+  reviewCount: number;
+  elapsedSeconds: number;
+  pillarBreakdown: Record<ExamPillar, PillarScoreBreakdown>;
+  cognitiveErrors: {
+    concept: CognitiveConcept;
+    errorCount: number;
+    questionNumbers: number[];
+  }[];
+}
+
 export type FlashcardMasteryStatus = 'unseen' | 'review' | 'learning' | 'mastered';
+
+export interface SkillMetricDimensions {
+  knowledge: number;        // 0-100% (Couverture théorique du syllabus / concepts)
+  accuracy: number;         // 0-100% (Taux de justesse technique sans pièges)
+  speed: number;            // 0-100% (Indice de vélocité cognitive vs seuil cible)
+  consistency: number;      // 0-100% (Régularité temporelle / rétention espacée)
+  averageTimeSeconds: number; // Temps moyen réel mesuré (ex: 22s vs 240s)
+  targetTimeSeconds: number;  // Temps de référence attendu pour un profil certifié
+  totalAttempts: number;      // Volume de questions / requêtes résolues
+  streak: number;             // Série de réussites consécutives
+}
+
+export interface SkillNode {
+  id: string;
+  name: string;
+  category: 'core_dql' | 'advanced_query' | 'aggregation' | 'ddl_schema' | 'performance_tuning';
+  descriptionFr: string;
+  descriptionEn: string;
+  level: 'fundamental' | 'intermediate' | 'advanced' | 'expert';
+  dimensions: SkillMetricDimensions;
+  compositeScore: number;     // Score global pondéré
+  children?: SkillNode[];
+  commonTrapsFr?: string[];
+  commonTrapsEn?: string[];
+  benchmarkLabelFr?: string;
+  benchmarkLabelEn?: string;
+}
+
+export interface SkillProfileComparison {
+  titleFr: string;
+  titleEn: string;
+  scoreRatio: string;
+  avgTime: string;
+  dimensions: SkillMetricDimensions;
+  compositeScore: number;
+  profileType: 'hesitant' | 'reflex_pro' | 'unsteady' | 'novice';
+  verdictFr: string;
+  verdictEn: string;
+}
 
 export interface FlashcardItem {
   id: string;
@@ -370,5 +475,130 @@ export interface QuestionAttemptLog {
   timeSpentSeconds: number;
   difficulty: 'easy' | 'medium' | 'hard';
 }
+
+export interface TargetedSessionQuestion {
+  id: string;
+  index: number;
+  topicId: 'join' | 'subqueries' | 'indexes' | string;
+  topicName: string;
+  difficulty: 'easy' | 'intermediate' | 'hard';
+  difficultyLabel: string;
+  prompt: string;
+  codeSnippet?: string;
+  options: {
+    id: string;
+    letter: string;
+    text: string;
+  }[];
+  correctOptionId: string;
+  explanation: string;
+  keyTakeaway: string;
+  trapMetadata?: QuestionTrapMetadata;
+}
+
+/**
+ * Métadonnées de question pour le système de « pièges » de certification
+ * Structure demandée :
+ * {
+ *   topic: "SQL",
+ *   subtopic: "JOIN",
+ *   difficulty: 3,
+ *   trap: "LEFT vs INNER JOIN",
+ *   concepts: ["NULL", "JOIN"],
+ *   estimatedTime: 45
+ * }
+ */
+export interface QuestionTrapMetadata {
+  topic: string;
+  subtopic: string;
+  difficulty: number;
+  trap: string;
+  concepts: string[];
+  estimatedTime: number; // en secondes (ex: 45)
+  warningMsgFr?: string; // ex: "Tu fais régulièrement l'erreur INNER JOIN vs LEFT JOIN."
+  warningMsgEn?: string;
+  antidoteRuleFr?: string;
+  antidoteRuleEn?: string;
+}
+
+export interface TrapDiagnosticRecord {
+  trapId: string;
+  trap: string;
+  topic: string;
+  subtopic: string;
+  difficulty: number;
+  concepts: string[];
+  estimatedTime: number;
+  totalAttempts: number;
+  errorCount: number;
+  successCount: number;
+  lastEncountered: string;
+  warningFr: string;
+  warningEn: string;
+  antidoteRuleFr: string;
+  antidoteRuleEn: string;
+  masteryStatus: 'critical_alert' | 'learning' | 'mastered';
+}
+
+export interface TargetedSessionPayload {
+  sessionId: string;
+  source: 'gemini' | 'curated_engine';
+  title: string;
+  estimatedDurationMinutes: number;
+  totalQuestions: number;
+  breakdown: {
+    topicId: string;
+    topicName: string;
+    count: number;
+  }[];
+  questions: TargetedSessionQuestion[];
+}
+
+/**
+ * Télémétrie brute d'une tentative de question (Temps de réponse & Exactitude)
+ * Champs stockés au minimum :
+ * - questionId
+ * - attemptId
+ * - answer
+ * - isCorrect
+ * - timeSpent
+ * - difficulty
+ * - topic
+ * - timestamp
+ */
+export interface QuestionAttemptTelemetry {
+  questionId: string;
+  attemptId: string;
+  answer: string;
+  isCorrect: boolean;
+  timeSpent: number; // en secondes (ex: 12, 31, 24, 47)
+  difficulty: number; // 1 à 5
+  topic: string; // ex: "SELECT", "JOIN", "GROUP BY", "CTE"
+  timestamp: string; // ISO 8601
+  hintRequested?: boolean; // Indique si l'apprenant a demandé de l'aide / tuteur IA
+}
+
+export type PedagogicalSpeedProfile =
+  | 'reflex_mastery'     // Haute exactitude + Temps court (ex: SELECT 94% / 12s)
+  | 'operational_steady' // Bonne exactitude + Temps modéré (ex: GROUP BY 81% / 24s)
+  | 'hesitant_analytic'  // Exactitude moyenne + Temps élevé (ex: JOIN 72% / 31s)
+  | 'cognitive_overload' // Basse exactitude + Temps long (ex: CTE 58% / 47s)
+  | 'impulsive_trap';    // Basse exactitude + Temps très court
+
+export interface TopicResponseTimeStat {
+  topic: string;
+  accuracy: number;          // Exactitude en % (ex: 94, 72, 81, 58)
+  avgTimeSeconds: number;    // Temps moyen en secondes (ex: 12, 31, 24, 47)
+  targetTimeSeconds: number; // Temps cible de référence pour la certification
+  totalAttempts: number;
+  correctAttempts: number;
+  helpRequestsRate: number;  // % de questions avec demande d'aide
+  profile: PedagogicalSpeedProfile;
+  diagnosticFr: string;
+  diagnosticEn: string;
+  adaptiveActionFr: string;
+  adaptiveActionEn: string;
+}
+
 
 

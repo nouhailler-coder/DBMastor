@@ -24,16 +24,30 @@ import {
   Activity,
   ExternalLink,
   BookOpen,
-  BookMarked
+  BookMarked,
+  Network,
+  Sparkles
 } from 'lucide-react';
 import { certificationTracks, examHistory, certificationProgramsCatalog } from '../data/mockData';
 import { NavigationTab, CertificationTrackId } from '../types';
+import { getStoredCompetencies, UserCompetency } from '../services/competencyService';
+import { TrapDiagnosticsCard } from './TrapDiagnosticsCard';
+import { TrapExplorerModal } from './TrapExplorerModal';
+import { ResponseTimeAnalyticsCard } from './ResponseTimeAnalyticsCard';
+import { ProgressiveExplainPanel } from './ProgressiveExplainPanel';
+import type { User } from '../services/firebaseSyncService';
+import { LogOut } from 'lucide-react';
 
 interface DashboardViewProps {
   onNavigate: (tab: NavigationTab) => void;
   onSelectTrack: (id: CertificationTrackId) => void;
   selectedCert?: CertificationTrackId;
   lang: 'fr' | 'en';
+  onOpenTargetedSession?: () => void;
+  currentUser?: User | null;
+  cloudSyncedCount?: number;
+  onGoogleSignIn?: () => void;
+  onSignOut?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -41,10 +55,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onSelectTrack,
   selectedCert = 'oracle-1z0-071',
   lang,
+  onOpenTargetedSession,
+  currentUser,
+  cloudSyncedCount = 0,
+  onGoogleSignIn,
+  onSignOut,
 }) => {
   const isFr = lang === 'fr';
   const [isLaunchingQuiz, setIsLaunchingQuiz] = useState(false);
   const [quizNotice, setQuizNotice] = useState<string | null>(null);
+  const [competencies, setCompetencies] = useState<UserCompetency[]>(() => getStoredCompetencies());
+  const [isTrapExplorerOpen, setIsTrapExplorerOpen] = useState(false);
+  const [demoJoinAnswer, setDemoJoinAnswer] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const handleUpdate = () => {
+      setCompetencies(getStoredCompetencies());
+    };
+    window.addEventListener('dbmastery:competencies_updated', handleUpdate);
+    return () => window.removeEventListener('dbmastery:competencies_updated', handleUpdate);
+  }, []);
 
   const activeTrackObj = certificationTracks.find(t => t.id === selectedCert) || certificationTracks[0];
 
@@ -107,8 +137,48 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </p>
         </div>
 
-        {/* Quick Status Strip */}
-        <div className="flex items-center gap-2 bg-[#0b1c30] p-1.5 rounded-xl border border-[#1b2b3f] shadow-md shrink-0">
+        {/* Quick Status Strip + Connexion Google */}
+        <div className="flex flex-wrap items-center gap-2 bg-[#0b1c30] p-1.5 rounded-xl border border-[#1b2b3f] shadow-md shrink-0">
+          {currentUser ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#102034] rounded-lg border border-[#4edea3]/40">
+              <Cloud className="w-4 h-4 text-[#4edea3]" />
+              <div className="flex flex-col">
+                <span className="font-mono text-[9px] text-[#4edea3] uppercase font-bold">
+                  Firestore Cloud ({cloudSyncedCount})
+                </span>
+                <span className="text-xs font-semibold text-[#d3e4fe] truncate max-w-[130px]">
+                  {currentUser.displayName || currentUser.email?.split('@')[0] || 'Connecté'}
+                </span>
+              </div>
+              {onSignOut && (
+                <button
+                  type="button"
+                  onClick={onSignOut}
+                  title={isFr ? 'Se déconnecter' : 'Sign out'}
+                  className="p-1 rounded bg-[#0b1c30] hover:bg-[#1b2b3f] text-[#ffb4ab] ml-1 cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              id="dashboard-top-google-signin-btn"
+              type="button"
+              onClick={onGoogleSignIn}
+              className="px-3.5 py-2 rounded-lg bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs flex items-center gap-2 border border-[#38bdf8]/50 shadow-sm transition-all active:scale-95 cursor-pointer"
+            >
+              <span className="w-4 h-4 rounded-full bg-white flex items-center justify-center shrink-0">
+                <svg className="w-3 h-3" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
+                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z" />
+                  <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z" />
+                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z" />
+                </svg>
+              </span>
+              <span className="text-white font-bold">{isFr ? 'Connexion Google' : 'Google Sign-In'}</span>
+            </button>
+          )}
           <div className="flex items-center gap-2 px-3 py-1.5 bg-[#102034] rounded-lg border border-[#1b2b3f]">
             <Calendar className="w-4 h-4 text-[#89ceff]" />
             <div className="flex flex-col">
@@ -127,6 +197,141 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 {isFr ? 'Compte à Rebours' : 'Countdown'}
               </span>
               <span className="font-mono text-xs font-bold text-[#4edea3]">D-22</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* BANNIÈRE CENTRALE EXAMEN BLANC DE CERTIFICATION */}
+      <div className="relative overflow-hidden p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-[#003859] via-[#0b2742] to-[#102034] border border-[#3198dc]/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-5 group">
+        <div className="flex items-start sm:items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#3198dc] to-[#89ceff] text-[#002c47] flex items-center justify-center shrink-0 shadow-lg shadow-[#3198dc]/30">
+            <ShieldCheck className="w-6 h-6" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#3198dc]/20 text-[#89ceff] border border-[#3198dc]/30">
+                {isFr ? 'ÉLÉMENT CENTRAL' : 'CENTRAL SIMULATION'}
+              </span>
+              <span className="text-xs font-mono text-[#4edea3]">
+                {isFr ? 'Conditions réelles d\'examen' : 'Real exam conditions'}
+              </span>
+            </div>
+            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+              {isFr ? 'Examen Blanc : 60 questions — 90 minutes' : 'Practice Exam: 60 questions — 90 minutes'}
+            </h2>
+            <p className="text-xs text-[#bfc7d2] max-w-xl leading-relaxed">
+              {isFr 
+                ? 'Simulation chronométrée officielle avec répartition par piliers (SQL, Modélisation, Transactions, Administration) et diagnostic personnalisé des notions expliquant chaque erreur.'
+                : 'Official timed proctored exam with pillar breakdown (SQL, Modeling, Transactions, Administration) and cognitive error diagnosis.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 w-full md:w-auto shrink-0">
+          <button
+            id="launch-cert-exam-banner-btn"
+            onClick={() => onNavigate('cert_exam')}
+            className="w-full md:w-auto px-6 py-3 rounded-xl font-bold text-xs bg-[#3198dc] hover:bg-[#2084c6] text-[#002c47] hover:text-white shadow-lg shadow-[#3198dc]/30 transition-all flex items-center justify-center gap-2"
+          >
+            <Play className="w-4 h-4 fill-current" />
+            <span>{isFr ? 'Démarrer l\'Examen Blanc (90 min)' : 'Start Practice Exam (90 min)'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* WIDGET HISTORIQUE PERSONNEL : MON ACTIVITÉ — CETTE SEMAINE */}
+      <div
+        id="dashboard-personal-activity-card"
+        className="bg-[#0b1c30] rounded-2xl border border-[#26364a] shadow-lg p-5 flex flex-col lg:flex-row items-stretch justify-between gap-6"
+      >
+        {/* Left: Mon activité / Cette semaine */}
+        <div className="flex-1 flex flex-col justify-between gap-4">
+          <div className="flex items-center justify-between border-b border-[#1b2b3f] pb-3">
+            <div>
+              <span className="font-mono text-[10px] text-[#4edea3] uppercase font-bold tracking-wider">
+                {isFr ? 'Historique personnel' : 'Personal History'}
+              </span>
+              <h3 className="text-lg font-extrabold text-white leading-tight">
+                {isFr ? 'Mon activité — Cette semaine' : 'My Activity — This week'}
+              </h3>
+            </div>
+            <button
+              id="dashboard-open-activity-page-btn"
+              type="button"
+              onClick={() => onNavigate('activity')}
+              className="px-3.5 py-1.5 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs flex items-center gap-1.5 border border-[#38bdf8]/40 shadow-sm transition-all cursor-pointer"
+            >
+              <span>{isFr ? 'Ouvrir la page Mon activité' : 'Open My Activity page'}</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
+            <div className="p-3 rounded-xl bg-[#061322] border border-[#1b2b3f]">
+              <span className="text-[11px] text-[#89929b] block">{isFr ? 'Questions' : 'Questions'}</span>
+              <span className="text-xl font-extrabold text-white">127</span>
+            </div>
+            <div className="p-3 rounded-xl bg-[#061322] border border-[#1b2b3f]">
+              <span className="text-[11px] text-[#89929b] block">{isFr ? 'Réussite' : 'Accuracy'}</span>
+              <span className="text-xl font-extrabold text-[#4edea3]">81 %</span>
+            </div>
+            <div className="p-3 rounded-xl bg-[#061322] border border-[#1b2b3f]">
+              <span className="text-[11px] text-[#89929b] block">{isFr ? 'Temps moyen' : 'Average time'}</span>
+              <span className="text-xl font-extrabold text-[#38bdf8]">32 s</span>
+            </div>
+            <div className="p-3 rounded-xl bg-[#061322] border border-[#1b2b3f]">
+              <span className="text-[11px] text-[#89929b] block">{isFr ? 'Série actuelle' : 'Current streak'}</span>
+              <span className="text-xl font-extrabold text-[#f59e0b]">
+                6 {isFr ? 'jours' : 'days'}
+              </span>
+            </div>
+          </div>
+
+          <div className="px-4 py-2.5 rounded-xl bg-[#003824]/50 border border-[#4edea3]/40 flex items-center justify-between">
+            <span className="font-mono text-xs sm:text-sm font-extrabold text-white">
+              « {isFr ? 'Depuis la semaine dernière : +12 % sur SQL' : 'Since last week: +12% on SQL'} »
+            </span>
+            <span className="font-mono text-xs font-bold text-[#4edea3] shrink-0 ml-2">+12 % SQL</span>
+          </div>
+        </div>
+
+        {/* Right: Progression Lun..Ven */}
+        <div
+          onClick={() => onNavigate('activity')}
+          className="lg:w-80 bg-[#061322] hover:bg-[#102034]/80 rounded-xl border border-[#1b2b3f] p-4 font-mono flex flex-col justify-between cursor-pointer transition-colors"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-white uppercase tracking-wider">
+              {isFr ? 'Progression' : 'Progression'}
+            </span>
+            <span className="text-[10px] text-[#38bdf8]">{isFr ? 'Détails →' : 'Details →'}</span>
+          </div>
+          <div className="space-y-1.5 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="w-10 text-[#bfc7d2] font-bold">Lun</span>
+              <span className="text-[#4edea3] flex-1">███████</span>
+              <span className="text-[#89929b]">21 Q</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="w-10 text-[#bfc7d2] font-bold">Mar</span>
+              <span className="text-[#4edea3] flex-1">█████████</span>
+              <span className="text-[#89929b]">27 Q</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="w-10 text-[#bfc7d2] font-bold">Mer</span>
+              <span className="text-[#4edea3] flex-1">█████</span>
+              <span className="text-[#89929b]">15 Q</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="w-10 text-[#bfc7d2] font-bold">Jeu</span>
+              <span className="text-[#4edea3] flex-1">██████████</span>
+              <span className="text-[#89929b]">31 Q</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="w-10 text-[#bfc7d2] font-bold">Ven</span>
+              <span className="text-[#4edea3] flex-1">███████████</span>
+              <span className="text-[#89929b]">33 Q</span>
             </div>
           </div>
         </div>
@@ -474,6 +679,82 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
+          {/* STATISTIQUES DE TEMPS DE RÉPONSE & EXACTITUDE PAR SUJET */}
+          <ResponseTimeAnalyticsCard
+            lang={lang}
+            compact={false}
+            onOpenTargetedSession={onOpenTargetedSession}
+            onNavigateToStats={() => onNavigate('analytics')}
+          />
+
+          {/* DÉMONSTRATION INTERACTIVE DE LA FONCTIONNALITÉ « EXPLIQUE-MOI » (3 NIVEAUX PROGRESSIFS) */}
+          <div className="bg-[#102034] p-5 rounded-xl border border-[#3198dc]/40 shadow-lg flex flex-col gap-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-[#1b2b3f]">
+              <div className="flex items-center gap-2.5">
+                <span className="px-2.5 py-0.5 rounded-lg bg-[#0284c7]/20 text-[#38bdf8] font-mono text-[11px] font-bold border border-[#0284c7]/30">
+                  SQL › JOIN
+                </span>
+                <span className="font-bold text-sm text-[#d3e4fe]">
+                  {isFr
+                    ? 'Question Flash — Assistance graduée « Explique-moi » (💡 Indice ➔ 🧠 Explication ➔ 📖 Cours)'
+                    : 'Flash Question — “Explain to me” 3-Tier Progressive Help'}
+                </span>
+              </div>
+              <span className="font-mono text-[10px] text-[#4edea3]">
+                {isFr ? 'Sans dévoiler immédiatement la réponse' : 'Without immediately spoiling the answer'}
+              </span>
+            </div>
+
+            <p className="text-xs sm:text-sm font-semibold text-[#d3e4fe] leading-relaxed">
+              {isFr
+                ? 'On souhaite lister TOUS les départements, y compris ceux sans employé actif, en affichant uniquement les employés dont le statut est ACTIVE. Quelle requête est correcte ?'
+                : 'We want to list ALL departments, including those with no active employees, showing only employees whose status is ACTIVE. Which query is correct?'}
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-xs">
+              <button
+                type="button"
+                onClick={() => setDemoJoinAnswer('A')}
+                className={`p-3 rounded-xl border text-left transition-all ${
+                  demoJoinAnswer === 'A'
+                    ? 'bg-[#ef4444]/15 border-[#ef4444] text-[#ffb4ab]'
+                    : 'bg-[#000f21] border-[#1b2b3f] text-[#bfc7d2] hover:border-[#38bdf8]'
+                }`}
+              >
+                <span className="font-bold text-[#38bdf8] block mb-1">Option A :</span>
+                <code>LEFT JOIN employees e ON d.id = e.dept_id WHERE e.status = 'ACTIVE'</code>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDemoJoinAnswer('B')}
+                className={`p-3 rounded-xl border text-left transition-all ${
+                  demoJoinAnswer === 'B'
+                    ? 'bg-[#10b981]/15 border-[#4edea3] text-[#4edea3]'
+                    : 'bg-[#000f21] border-[#1b2b3f] text-[#bfc7d2] hover:border-[#38bdf8]'
+                }`}
+              >
+                <span className="font-bold text-[#38bdf8] block mb-1">Option B :</span>
+                <code>LEFT JOIN employees e ON d.id = e.dept_id AND e.status = 'ACTIVE'</code>
+              </button>
+            </div>
+
+            <ProgressiveExplainPanel
+              questionId="dashboard-demo-join-q1"
+              topic="SQL"
+              subtopic="JOIN"
+              trapName="LEFT vs INNER JOIN"
+              promptText="On souhaite lister TOUS les départements, y compris ceux sans employé actif."
+              explanationText="L'Option B place la condition e.status = 'ACTIVE' dans la clause ON du LEFT JOIN, ce qui préserve les départements sans employé actif (complétés par NULL)."
+              correctOptionLetter="B"
+              correctOptionText="LEFT JOIN employees e ON d.id = e.dept_id AND e.status = 'ACTIVE'"
+              hasSelectedAnswer={demoJoinAnswer !== null}
+              onRevealSolution={() => setDemoJoinAnswer('B')}
+              lang={lang}
+              theme="dark"
+              defaultOpenLevel="hint"
+            />
+          </div>
+
           {/* RECENT PRACTICE EXAM SESSIONS & SCORE CHART */}
           <div className="bg-[#102034] p-5 rounded-xl border border-[#1b2b3f] shadow-md flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -622,70 +903,100 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          {/* TOP WEAK POINTS TO REINFORCE */}
-          <div className="bg-[#102034] p-4 rounded-xl border border-[#1b2b3f] shadow-md flex flex-col gap-3">
+          {/* MES FAIBLESSES (CIBLÉES PAR IA) */}
+          <div className="bg-[#102034] p-4.5 rounded-xl border border-[#3198dc]/35 shadow-lg flex flex-col gap-3 relative overflow-hidden group">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-[#ffb4ab]" />
                 <h3 className="text-sm font-bold text-[#d3e4fe]">
-                  {isFr ? 'Points Faibles Ciblés' : 'Targeted Weak Points'}
+                  {isFr ? 'Mes faiblesses' : 'My Weaknesses'}
                 </h3>
               </div>
-              <span className="font-mono text-[10px] text-[#89929b]">Précision &lt; 60%</span>
+              <span className="font-mono text-[10px] text-[#38bdf8] font-bold uppercase tracking-wider flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-[#38bdf8]" />
+                Gemini 3.8
+              </span>
             </div>
 
-            <div className="flex flex-col gap-2">
-              {/* Weak point 1 */}
-              <div className="p-2.5 rounded-lg bg-[#0b1c30] border border-[#1b2b3f] flex flex-col gap-1.5 hover:bg-[#1b2b3f] transition-colors">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-[#d3e4fe]">
-                    {isFr ? 'Vues Matérialisées & Fast Refresh' : 'Materialized Views & Fast Refresh'}
-                  </span>
-                  <span className="font-mono text-xs text-[#ffb4ab] font-bold">45%</span>
-                </div>
-                <div className="w-full bg-[#000f21] h-1.5 rounded-full overflow-hidden">
-                  <div className="bg-[#ffb4ab] h-full rounded-full" style={{ width: '45%' }}></div>
-                </div>
-                <span className="font-mono text-[10px] text-[#89929b]">Oracle 1Z0-071 • 14 {isFr ? 'erreurs' : 'errors'}</span>
-              </div>
+            <div className="flex flex-col gap-2.5 font-mono text-xs">
+              {/* JOIN */}
+              {(() => {
+                const joinComp = competencies.find((c) => c.id === 'join') || { currentScore: 54 };
+                const score = joinComp.currentScore;
+                const barColor = score >= 70 ? '#10b981' : score >= 60 ? '#f59e0b' : '#38bdf8';
+                return (
+                  <div className="p-2.5 rounded-lg bg-[#0b1c30] border border-[#1b2b3f] flex flex-col gap-1.5 hover:border-[#38bdf8]/40 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-[#d3e4fe] tracking-wide">JOIN</span>
+                      <span className="font-extrabold text-sm" style={{ color: barColor }}>{score} %</span>
+                    </div>
+                    <div className="w-full bg-[#000f21] h-1.5 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, backgroundColor: barColor }}></div>
+                    </div>
+                  </div>
+                );
+              })()}
 
-              {/* Weak point 2 */}
-              <div className="p-2.5 rounded-lg bg-[#0b1c30] border border-[#1b2b3f] flex flex-col gap-1.5 hover:bg-[#1b2b3f] transition-colors">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-[#d3e4fe]">
-                    {isFr ? 'Azure Role-Based Access Control' : 'Azure Role-Based Access Control'}
-                  </span>
-                  <span className="font-mono text-xs text-[#89ceff] font-bold">52%</span>
-                </div>
-                <div className="w-full bg-[#000f21] h-1.5 rounded-full overflow-hidden">
-                  <div className="bg-[#89ceff] h-full rounded-full" style={{ width: '52%' }}></div>
-                </div>
-                <span className="font-mono text-[10px] text-[#89929b]">Azure DP-900 • 9 {isFr ? 'erreurs' : 'errors'}</span>
-              </div>
+              {/* Subqueries */}
+              {(() => {
+                const subComp = competencies.find((c) => c.id === 'subqueries') || { currentScore: 47 };
+                const score = subComp.currentScore;
+                const barColor = score >= 70 ? '#10b981' : score >= 60 ? '#f59e0b' : '#f43f5e';
+                return (
+                  <div className="p-2.5 rounded-lg bg-[#0b1c30] border border-[#1b2b3f] flex flex-col gap-1.5 hover:border-[#f43f5e]/40 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-[#d3e4fe] tracking-wide">Subqueries</span>
+                      <span className="font-extrabold text-sm" style={{ color: barColor }}>{score} %</span>
+                    </div>
+                    <div className="w-full bg-[#000f21] h-1.5 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, backgroundColor: barColor }}></div>
+                    </div>
+                  </div>
+                );
+              })()}
 
-              {/* Weak point 3 */}
-              <div className="p-2.5 rounded-lg bg-[#0b1c30] border border-[#1b2b3f] flex flex-col gap-1.5 hover:bg-[#1b2b3f] transition-colors">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-[#d3e4fe]">
-                    {isFr ? 'Indexation B-Tree vs Hash' : 'B-Tree vs Hash Indexing'}
-                  </span>
-                  <span className="font-mono text-xs text-[#89ceff] font-bold">58%</span>
-                </div>
-                <div className="w-full bg-[#000f21] h-1.5 rounded-full overflow-hidden">
-                  <div className="bg-[#89ceff] h-full rounded-full" style={{ width: '58%' }}></div>
-                </div>
-                <span className="font-mono text-[10px] text-[#89929b]">PostgreSQL & MySQL • 8 {isFr ? 'erreurs' : 'errors'}</span>
-              </div>
+              {/* Indexes */}
+              {(() => {
+                const idxComp = competencies.find((c) => c.id === 'indexes') || { currentScore: 61 };
+                const score = idxComp.currentScore;
+                const barColor = score >= 70 ? '#10b981' : score >= 60 ? '#fbbf24' : '#f43f5e';
+                return (
+                  <div className="p-2.5 rounded-lg bg-[#0b1c30] border border-[#1b2b3f] flex flex-col gap-1.5 hover:border-[#fbbf24]/40 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-[#d3e4fe] tracking-wide">Indexes</span>
+                      <span className="font-extrabold text-sm" style={{ color: barColor }}>{score} %</span>
+                    </div>
+                    <div className="w-full bg-[#000f21] h-1.5 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, backgroundColor: barColor }}></div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
+            {/* [Créer une séance personnalisée] */}
             <button 
-              onClick={() => onNavigate('syllabus')}
-              className="mt-1 w-full py-2 px-3 bg-[#1b2b3f] hover:bg-[#26364a] text-[#93ccff] font-mono text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 border border-[#26364a]"
+              id="dashboard-create-targeted-session-btn"
+              onClick={() => {
+                if (onOpenTargetedSession) {
+                  onOpenTargetedSession();
+                }
+              }}
+              className="mt-1 w-full py-2.5 px-3.5 bg-gradient-to-r from-[#0284c7] via-[#0369a1] to-[#0284c7] hover:from-[#0369a1] hover:to-[#0284c7] text-white font-extrabold text-xs rounded-lg transition-all flex items-center justify-center gap-2 shadow-md shadow-[#0284c7]/20 active:scale-[0.98]"
             >
-              <span>{isFr ? 'Drills de Révision Ciblée' : 'Targeted Remediation Drills'}</span>
+              <Sparkles className="w-3.5 h-3.5 text-[#38bdf8]" />
+              <span>{isFr ? 'Créer une séance personnalisée' : 'Create Personalized Session'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
+
+          {/* SYSTÈME DE PIÈGES DE CERTIFICATION */}
+          <TrapDiagnosticsCard
+            lang={lang}
+            theme="dark"
+            onOpenTargetedSession={onOpenTargetedSession}
+            onOpenTrapExplorer={() => setIsTrapExplorerOpen(true)}
+          />
 
           {/* QUICK SHORTCUTS & UTILITIES */}
           <div className="bg-[#102034] p-4 rounded-xl border border-[#1b2b3f] shadow-md flex flex-col gap-3">
@@ -697,6 +1008,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             <div className="flex flex-col gap-2">
+              <button 
+                onClick={() => onNavigate('skills')}
+                className="flex items-center justify-between p-2.5 rounded-lg bg-[#0b1c30] hover:bg-[#1b2b3f] border border-[#1b2b3f] transition-colors text-left group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded bg-[#0284c7]/20 text-[#38bdf8]">
+                    <Network className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold text-[#d3e4fe] group-hover:text-[#38bdf8] transition-colors">
+                      {isFr ? 'Skill Map SQL (Arborescence & 4D)' : 'SQL Skill Map (Tree & 4D Metrics)'}
+                    </span>
+                    <span className="font-mono text-[10px] text-[#89929b]">
+                      {isFr ? 'Connaissance, Exactitude, Rapidité et Régularité' : 'Knowledge, Accuracy, Speed and Consistency'}
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#89929b] group-hover:text-[#d3e4fe]" />
+              </button>
+
               <button 
                 onClick={() => onNavigate('exams')}
                 className="flex items-center justify-between p-2.5 rounded-lg bg-[#0b1c30] hover:bg-[#1b2b3f] border border-[#1b2b3f] transition-colors text-left group"
@@ -909,6 +1240,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           ))}
         </div>
       </div>
+
+      {/* MODAL OBSERVATOIRE DES PIÈGES */}
+      <TrapExplorerModal
+        isOpen={isTrapExplorerOpen}
+        onClose={() => setIsTrapExplorerOpen(false)}
+        lang={lang}
+        theme="dark"
+        onLaunchTargetedSession={() => {
+          setIsTrapExplorerOpen(false);
+          if (onOpenTargetedSession) {
+            onOpenTargetedSession();
+          }
+        }}
+      />
     </div>
   );
 };

@@ -1,0 +1,228 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile, certification readiness metrics, and active track preferences.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Immutable Firebase Auth UID of the owner.",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Display name of the learner.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "selectedCert": {
+          "type": "string",
+          "description": "Currently active certification track ID.",
+          "maxLength": 64,
+          "enum": [
+            "oracle-1z0-071",
+            "azure-dp-900",
+            "azure-dp-800",
+            "postgres-edb",
+            "mysql-80-dba"
+          ]
+        },
+        "overallAccuracy": {
+          "type": "number",
+          "description": "Overall accuracy percentage across sessions (0 to 100)."
+        },
+        "questionsAnswered": {
+          "type": "number",
+          "description": "Total number of questions answered by the user."
+        },
+        "streakDays": {
+          "type": "number",
+          "description": "Consecutive study days streak."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the profile was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the profile was last updated."
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "selectedCert",
+        "overallAccuracy",
+        "questionsAnswered",
+        "streakDays",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "QuestionAttempt": {
+      "title": "QuestionAttempt",
+      "description": "Individual timed question attempt telemetry record.",
+      "type": "object",
+      "properties": {
+        "attemptId": {
+          "type": "string",
+          "description": "Unique identifier of the attempt.",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner UID matching parent user document.",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "questionId": {
+          "type": "string",
+          "description": "Identifier of the answered question.",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "answer": {
+          "type": "string",
+          "description": "Selected option label or answer text.",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "isCorrect": {
+          "type": "boolean",
+          "description": "Whether the selected answer was correct."
+        },
+        "timeSpent": {
+          "type": "number",
+          "description": "Time spent on the question in seconds."
+        },
+        "difficulty": {
+          "type": "number",
+          "description": "Difficulty rating from 1 to 5."
+        },
+        "topic": {
+          "type": "string",
+          "description": "SQL topic or clause (e.g., SELECT, JOIN, GROUP BY, CTE).",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "hintRequested": {
+          "type": "boolean",
+          "description": "Whether progressive help or hint was used."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the attempt was recorded."
+        }
+      },
+      "required": [
+        "attemptId",
+        "userId",
+        "questionId",
+        "answer",
+        "isCorrect",
+        "timeSpent",
+        "difficulty",
+        "topic",
+        "hintRequested",
+        "createdAt"
+      ]
+    },
+    "TrapProgress": {
+      "title": "TrapProgress",
+      "description": "Per-user tracking of certification traps and mastery status.",
+      "type": "object",
+      "properties": {
+        "trapId": {
+          "type": "string",
+          "description": "Unique trap identifier.",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner UID matching parent user document.",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "trap": {
+          "type": "string",
+          "description": "Name of the certification trap (e.g., LEFT vs INNER JOIN).",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "topic": {
+          "type": "string",
+          "description": "Main domain topic (e.g., SQL).",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "subtopic": {
+          "type": "string",
+          "description": "Subtopic (e.g., JOIN).",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "difficulty": {
+          "type": "number",
+          "description": "Trap difficulty from 1 to 5."
+        },
+        "totalAttempts": {
+          "type": "number",
+          "description": "Total number of times this trap was encountered."
+        },
+        "errorCount": {
+          "type": "number",
+          "description": "Number of errors on this trap."
+        },
+        "successCount": {
+          "type": "number",
+          "description": "Number of successes on this trap."
+        },
+        "masteryStatus": {
+          "type": "string",
+          "description": "Current mastery status for this trap.",
+          "maxLength": 32,
+          "enum": ["critical_alert", "learning", "mastered"]
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the last update."
+        }
+      },
+      "required": [
+        "trapId",
+        "userId",
+        "trap",
+        "topic",
+        "subtopic",
+        "difficulty",
+        "totalAttempts",
+        "errorCount",
+        "successCount",
+        "masteryStatus",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores each authenticated user's profile and global certification stats."
+    },
+    "/users/{userId}/attempts/{attemptId}": {
+      "schema": { "$ref": "#/entities/QuestionAttempt" },
+      "description": "Subcollection storing individual timed question attempts for the user."
+    },
+    "/users/{userId}/traps/{trapId}": {
+      "schema": { "$ref": "#/entities/TrapProgress" },
+      "description": "Subcollection storing certification trap mastery and error counts for the user."
+    }
+  }
+}

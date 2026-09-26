@@ -96,6 +96,26 @@
   background-color: #f8fafc !important;
 }
 
+.theme-light [class*="bg-[#0e1d2f]"] {
+  background-color: #f8fafc !important;
+}
+
+.theme-light [class*="bg-[#0b1c2a]"] {
+  background-color: #ffffff !important;
+}
+
+.theme-light [class*="bg-[#150f1d]"] {
+  background-color: #fff1f2 !important;
+}
+
+.theme-light [class*="bg-[#181814]"] {
+  background-color: #fffbeb !important;
+}
+
+.theme-light [class*="bg-[#002c47]"] {
+  background-color: #e0f2fe !important;
+}
+
 /* Hover Backgrounds */
 .theme-light [class*="hover:bg-[#102034]"]:hover {
   background-color: #f1f5f9 !important;
@@ -314,14 +334,106 @@
   color: #0f172a;
 }
 
-.theme-light .dark-terminal-code pre,
-.theme-light .dark-terminal-code code {
+/* Ensure code blocks and text on dark surfaces always have crisp, high-contrast light text */
+.dark-terminal-code pre,
+.dark-terminal-code code,
+.dark-surface pre,
+.dark-surface code,
+.dark-card pre,
+.dark-card code,
+[class*="bg-black"] pre,
+[class*="bg-black"] code,
+[class*="bg-slate-900"] pre,
+[class*="bg-slate-900"] code,
+[class*="bg-slate-950"] pre,
+[class*="bg-slate-950"] code,
+[class*="bg-[#000f21]"] pre,
+[class*="bg-[#000f21]"] code,
+[class*="bg-[#031427]"] pre,
+[class*="bg-[#031427]"] code,
+[class*="bg-[#0b1c30]"] pre,
+[class*="bg-[#0b1c30]"] code {
+  color: #f8fafc !important;
+}
+
+.dark-terminal-code pre code span,
+.dark-terminal-code code span,
+.dark-surface pre code span,
+.dark-card pre code span {
+  color: inherit;
+}
+
+/* ==========================================================================
+   DARK THEME TEXT CONTRAST (Strictly scoped to .theme-dark)
+   ========================================================================== */
+.theme-dark {
+  color-scheme: dark;
+  background-color: #031427 !important;
+  color: #f1f5f9 !important;
+}
+
+.theme-dark [class*="text-[#d3e4fe]"] {
+  color: #ffffff !important; /* Pure crisp light on dark */
+}
+
+.theme-dark [class*="text-[#bfc7d2]"] {
+  color: #e2e8f0 !important; /* High contrast light slate */
+}
+
+.theme-dark [class*="text-[#89929b]"] {
+  color: #cbd5e1 !important; /* Legible secondary text on dark */
+}
+
+.theme-dark .text-slate-400 {
+  color: #cbd5e1 !important;
+}
+
+.theme-dark .text-slate-500 {
   color: #e2e8f0 !important;
 }
 
-.theme-light .dark-terminal-code pre code span,
-.theme-light .dark-terminal-code code span {
-  color: inherit;
+.theme-dark .text-slate-600 {
+  color: #f1f5f9 !important;
+}
+
+.theme-dark textarea[class*="bg-transparent"],
+.theme-dark textarea[class*="bg-[#000f21]"],
+.theme-dark textarea[class*="bg-black"] {
+  color: #93ccff !important;
+}
+
+.theme-dark p,
+.theme-dark span,
+.theme-dark th,
+.theme-dark td {
+  text-rendering: optimizeLegibility;
+}
+
+/* ==========================================================================
+   LIGHT THEME TEXT CONTRAST GUARANTEE (Dark, readable text on light cards)
+   ========================================================================== */
+.theme-light [class*="text-[#d3e4fe]"] {
+  color: #0f172a !important; /* Dark slate-900 */
+}
+
+.theme-light [class*="text-[#bfc7d2]"] {
+  color: #1e293b !important; /* Dark slate-800 */
+}
+
+.theme-light [class*="text-[#89929b]"] {
+  color: #475569 !important; /* Slate-600 */
+}
+
+.theme-light .text-slate-400 {
+  color: #475569 !important;
+}
+
+.theme-light .text-slate-500 {
+  color: #334155 !important;
+}
+
+.theme-light .text-slate-600 {
+  color: #1e293b !important;
 }
 
 .theme-light .font-mono {

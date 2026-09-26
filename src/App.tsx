@@ -8,16 +8,37 @@ import { StudySheetsView } from './components/StudySheetsView';
 import { FlashcardsView } from './components/FlashcardsView';
 import { StatsView } from './components/StatsView';
 import { GlossaryView } from './components/GlossaryView';
+import { SkillMapView } from './components/SkillMapView';
+import { CertificationExamView } from './components/CertificationExamView';
+import { PersonalActivityView } from './components/PersonalActivityView';
 import { ExamSummaryModal } from './components/ExamSummaryModal';
 import { HamburgerMenu } from './components/HamburgerMenu';
 import { SystemSettingsModal } from './components/SystemSettingsModal';
-import { NavigationTab, CertificationTrackId, SystemVersionInfo } from './types';
+import { TargetedSessionModal } from './components/TargetedSessionModal';
+import {
+   NavigationTab,
+  CertificationTrackId,
+  SystemVersionInfo,
+  QuestionAttemptTelemetry,
+  TrapDiagnosticRecord
+} from './types';
 import { 
   getInitialSystemVersionInfo, 
   saveSystemVersionInfo, 
   formatFullDateTime, 
   getNextSimulatedVersion 
 } from './services/updateService';
+import { auth } from './firebase';
+import {
+  signInWithGoogle,
+  signOutFromFirebase,
+  ensureUserProfileInFirestore,
+  subscribeToUserFirestoreData,
+  syncAttemptToFirestore,
+  syncTrapToFirestore,
+  onAuthStateChanged,
+  User
+} from './services/firebaseSyncService';
 import { Zap, CheckCircle2, X, RefreshCw, Settings } from 'lucide-react';
 
 export default function App() {
@@ -34,12 +55,99 @@ export default function App() {
   // États pour le Menu Hamburger et les Paramètres Système
   const [isHamburgerOpen, setIsHamburgerOpen] = useState(false);
   const [isSystemSettingsOpen, setIsSystemSettingsOpen] = useState(false);
+  const [isTargetedSessionOpen, setIsTargetedSessionOpen] = useState(false);
   const [systemInfo, setSystemInfo] = useState<SystemVersionInfo>(() => getInitialSystemVersionInfo());
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [cloudSyncedCount, setCloudSyncedCount] = useState(0);
   const [bgUpdateToast, setBgUpdateToast] = useState<{
     version: string;
     type: 'auto' | 'forced';
     notes: string;
   } | null>(null);
+
+  // Firebase Auth & Firestore Real-time Sync
+  useEffect(() => {
+    let unsubFirestore: (() => void) | null = null;
+
+    const unsubAuth = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      setIsAuthReady(true);
+
+      if (unsubFirestore) {
+        unsubFirestore();
+        unsubFirestore = null;
+      }
+
+      if (user && user.emailVerified) {
+        try {
+          await ensureUserProfileInFirestore(user, selectedCert);
+          unsubFirestore = subscribeToUserFirestoreData(user, (count) => {
+            setCloudSyncedCount(count);
+          });
+        } catch (err) {
+          console.error('Firebase sync initialization error:', err);
+        }
+      } else {
+        setCloudSyncedCount(0);
+      }
+    });
+
+    return () => {
+      unsubAuth();
+      if (unsubFirestore) unsubFirestore();
+    };
+  }, [selectedCert]);
+
+  // Synchroniser automatiquement les nouvelles tentatives et pièges vers Firestore
+  useEffect(() => {
+    const handleAttemptRecorded = (e: Event) => {
+      const customEvent = e as CustomEvent<QuestionAttemptTelemetry>;
+      if (customEvent.detail && auth.currentUser) {
+        syncAttemptToFirestore(customEvent.detail).catch((err) =>
+          console.error('Failed to sync attempt to Firestore:', err)
+        );
+      }
+    };
+
+    const handleTrapRecorded = (e: Event) => {
+      const customEvent = e as CustomEvent<TrapDiagnosticRecord>;
+      if (customEvent.detail && auth.currentUser) {
+        syncTrapToFirestore(customEvent.detail).catch((err) =>
+          console.error('Failed to sync trap to Firestore:', err)
+        );
+      }
+    };
+
+    window.addEventListener('dbmastery:attempt_recorded', handleAttemptRecorded);
+    window.addEventListener('dbmastery:trap_recorded', handleTrapRecorded);
+    return () => {
+      window.removeEventListener('dbmastery:attempt_recorded', handleAttemptRecorded);
+      window.removeEventListener('dbmastery:trap_recorded', handleTrapRecorded);
+    };
+  }, []);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      console.error('Google Sign-In error:', err);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOutFromFirebase();
+    } catch (err) {
+      console.error('Sign-Out error:', err);
+    }
+  };
+
+  useEffect(() => {
+    const handleOpenTargeted = () => setIsTargetedSessionOpen(true);
+    window.addEventListener('dbmastery:open_targeted_session', handleOpenTargeted);
+    return () => window.removeEventListener('dbmastery:open_targeted_session', handleOpenTargeted);
+  }, []);
 
   const systemInfoRef = useRef(systemInfo);
   systemInfoRef.current = systemInfo;
@@ -213,6 +321,9 @@ export default function App() {
     return () => clearInterval(intervalId);
   }, [systemInfo.autoUpdateIntervalMinutes, systemInfo.autoUpdateEnabled, lang]);
 
+  // Mode Focus pour le Lab SQL (masque sidebar et headers pour maximiser l'espace d'écriture et d'exécution)
+  const [isLabFocusMode, setIsLabFocusMode] = useState(false);
+
   // Fermeture automatique du toast après 6 secondes
   useEffect(() => {
     if (bgUpdateToast) {
@@ -229,34 +340,54 @@ export default function App() {
         ? 'theme-light bg-[#f8fafc] text-[#0f172a] selection:bg-[#0284c7]/20 selection:text-[#0284c7]' 
         : 'theme-dark bg-[#031427] text-[#d3e4fe] selection:bg-[#3198dc]/30 selection:text-[#93ccff]'
     }`}>
-      {/* Fixed Sidebar with Hamburger and System Settings entrypoints */}
-      <Sidebar 
-        currentTab={currentTab} 
-        onTabChange={(tab) => setCurrentTab(tab)} 
-        lang={lang}
-        onOpenHamburger={() => setIsHamburgerOpen(true)}
-        onOpenSystemSettings={() => setIsSystemSettingsOpen(true)}
-        systemVersion={systemInfo.currentVersion}
-      />
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col pl-64 min-w-0">
-        {/* Fixed Header with Hamburger Button and System Settings */}
-        <Header
-          selectedCert={selectedCert}
-          onCertChange={setSelectedCert}
+      {/* Fixed Sidebar with Hamburger and System Settings entrypoints (masquée en mode Focus) */}
+      {!isLabFocusMode && (
+        <Sidebar 
+          currentTab={currentTab} 
+          onTabChange={(tab) => {
+            setIsLabFocusMode(false);
+            setCurrentTab(tab);
+          }} 
           lang={lang}
-          onLangToggle={handleLangToggle}
-          onSearchQuery={setSearchQuery}
-          theme={theme}
-          onThemeToggle={handleThemeToggle}
           onOpenHamburger={() => setIsHamburgerOpen(true)}
           onOpenSystemSettings={() => setIsSystemSettingsOpen(true)}
-          systemInfo={systemInfo}
+          systemVersion={systemInfo.currentVersion}
+          currentUser={currentUser}
+          cloudSyncedCount={cloudSyncedCount}
+          onGoogleSignIn={handleGoogleSignIn}
+          onSignOut={handleSignOut}
         />
+      )}
 
-        {/* View Switcher Container with Top Margin for Fixed Header */}
-        <main className="mt-16 flex-1 pb-16 overflow-y-auto">
+      {/* Main Content Area (pleine largeur quand isLabFocusMode est actif) */}
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-200 ${
+        isLabFocusMode ? 'pl-0' : 'pl-64'
+      }`}>
+        {/* Fixed Header with Hamburger Button and System Settings (masqué en mode Focus) */}
+        {!isLabFocusMode && (
+          <Header
+            selectedCert={selectedCert}
+            onCertChange={setSelectedCert}
+            lang={lang}
+            onLangToggle={handleLangToggle}
+            onSearchQuery={setSearchQuery}
+            theme={theme}
+            onThemeToggle={handleThemeToggle}
+            onOpenHamburger={() => setIsHamburgerOpen(true)}
+            onOpenSystemSettings={() => setIsSystemSettingsOpen(true)}
+            systemInfo={systemInfo}
+            currentUser={currentUser}
+            isAuthReady={isAuthReady}
+            cloudSyncedCount={cloudSyncedCount}
+            onGoogleSignIn={handleGoogleSignIn}
+            onSignOut={handleSignOut}
+          />
+        )}
+
+        {/* View Switcher Container with Top Margin for Fixed Header (sans marge en mode Focus) */}
+        <main className={`flex-1 overflow-y-auto transition-all duration-200 ${
+          isLabFocusMode ? 'mt-0 pb-6' : 'mt-16 pb-16'
+        }`}>
           {currentTab === 'dashboard' && (
             <DashboardView
               onNavigate={(tab) => setCurrentTab(tab)}
@@ -265,6 +396,39 @@ export default function App() {
               }}
               selectedCert={selectedCert}
               lang={lang}
+              onOpenTargetedSession={() => setIsTargetedSessionOpen(true)}
+              currentUser={currentUser}
+              cloudSyncedCount={cloudSyncedCount}
+              onGoogleSignIn={handleGoogleSignIn}
+              onSignOut={handleSignOut}
+            />
+          )}
+
+          {currentTab === 'activity' && (
+            <PersonalActivityView
+              lang={lang}
+              onNavigate={(tab) => setCurrentTab(tab)}
+              onOpenTargetedSession={() => setIsTargetedSessionOpen(true)}
+              currentUser={currentUser}
+              cloudSyncedCount={cloudSyncedCount}
+            />
+          )}
+
+          {currentTab === 'cert_exam' && (
+            <CertificationExamView
+              lang={lang}
+              theme={theme}
+              onNavigateToTab={(tab) => setCurrentTab(tab as NavigationTab)}
+              onFinishExamCallback={(score) => setExamModalScore(score)}
+            />
+          )}
+
+          {currentTab === 'skills' && (
+            <SkillMapView
+              lang={lang}
+              theme={theme}
+              onNavigateToTab={(tab) => setCurrentTab(tab)}
+              onOpenTargetedSession={() => setIsTargetedSessionOpen(true)}
             />
           )}
 
@@ -280,6 +444,9 @@ export default function App() {
           {currentTab === 'sandbox' && (
             <SqlLabView
               lang={lang}
+              theme={theme}
+              isFocusMode={isLabFocusMode}
+              onToggleFocusMode={() => setIsLabFocusMode((prev) => !prev)}
             />
           )}
 
@@ -314,6 +481,7 @@ export default function App() {
           {currentTab === 'analytics' && (
             <StatsView
               lang={lang}
+              onOpenSettings={() => setIsSystemSettingsOpen(true)}
             />
           )}
         </main>
@@ -345,6 +513,7 @@ export default function App() {
         onToggleAutoUpdate={handleToggleAutoUpdate}
         onChangeInterval={handleChangeInterval}
         lang={lang}
+        theme={theme}
       />
 
       {/* Floating Background Auto-Update Toast Notification */}
@@ -413,6 +582,15 @@ export default function App() {
           lang={lang}
         />
       )}
+
+      {/* Séance Personnalisée IA (Génération Automatique d'Exercices Ciblés) */}
+      <TargetedSessionModal
+        isOpen={isTargetedSessionOpen}
+        onClose={() => setIsTargetedSessionOpen(false)}
+        lang={lang}
+        theme={theme}
+        onNavigateToTab={(tab) => setCurrentTab(tab as NavigationTab)}
+      />
     </div>
   );
 }

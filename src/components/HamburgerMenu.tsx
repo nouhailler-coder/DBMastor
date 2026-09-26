@@ -21,7 +21,9 @@ import {
   Sparkles,
   Layers,
   BookMarked,
-  Brain
+  Brain,
+  Network,
+  Activity
 } from 'lucide-react';
 import { NavigationTab, CertificationTrackId, SystemVersionInfo } from '../types';
 
@@ -93,6 +95,26 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
       titleEn: 'Exams & Certifications',
       color: '#3198dc',
       items: [
+        {
+          id: 'item-cert-exam',
+          tab: 'cert_exam' as NavigationTab,
+          labelFr: 'Examen Blanc Officiel (60Q — 90 min)',
+          labelEn: 'Official Practice Exam (60Q — 90 min)',
+          descFr: 'Simulation en conditions réelles : 60 questions, chronomètre 90 min, diagnostic cognitif des erreurs et répartition par piliers.',
+          descEn: 'Real exam conditions: 60 questions, 90-minute countdown, cognitive error diagnostics and pillar performance breakdown.',
+          icon: ShieldCheck,
+          badge: isFr ? 'Mode Examen Blanc' : 'Proctored Exam',
+        },
+        {
+          id: 'item-skills',
+          tab: 'skills' as NavigationTab,
+          labelFr: 'Skill Map (Compétences & Arborescence)',
+          labelEn: 'Skill Map (Competencies & Tree)',
+          descFr: 'Arborescence des notions SQL évaluées sur 4 dimensions : Connaissance, Exactitude, Rapidité, Régularité.',
+          descEn: 'Hierarchical SQL concepts tree evaluated on 4 dimensions: Knowledge, Accuracy, Speed, Consistency.',
+          icon: Network,
+          badge: isFr ? 'Arborescence 4D' : '4D Tree',
+        },
         {
           id: 'item-exams',
           tab: 'exams' as NavigationTab,
@@ -177,6 +199,16 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
       titleEn: 'Analytics & Mastery',
       color: '#a855f7',
       items: [
+        {
+          id: 'item-activity',
+          tab: 'activity' as NavigationTab,
+          labelFr: 'Mon activité — Cette semaine (Historique personnel)',
+          labelEn: 'My Activity — This Week (Personal History)',
+          descFr: 'Questions (127), Réussite (81 %), Temps moyen (32 s), Série (6 jours) et progression Lun–Ven (+12 % sur SQL).',
+          descEn: 'Questions (127), Accuracy (81%), Avg Time (32s), Streak (6 days), and Mon–Fri progression (+12% on SQL).',
+          icon: Activity,
+          badge: '+12 % SQL',
+        },
         {
           id: 'item-analytics',
           tab: 'analytics' as NavigationTab,
@@ -357,8 +389,8 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
             <p className="text-[11px] text-[#bfc7d2] leading-relaxed">
               {isFr 
-                ? 'Consultez la date de sortie, la dernière vérification et forcez l\'installation immédiate des derniers correctifs.' 
-                : 'View release date, last checked time, and force installation of the latest updates.'}
+                ? 'Consultez la version, gérez les mises à jour et réinitialisez vos statistiques d\'apprentissage et badges.' 
+                : 'Check version, manage automatic updates, and reset your learning statistics and badges.'}
             </p>
 
             <button

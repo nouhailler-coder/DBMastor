@@ -34,6 +34,7 @@ import {
   QuestionAttemptLog
 } from '../types';
 import { adaptiveLearningModules } from '../data/adaptiveLearningData';
+import { ProgressiveExplainPanel } from './ProgressiveExplainPanel';
 
 interface AdaptiveLearningViewProps {
   lang: 'fr' | 'en';
@@ -552,6 +553,29 @@ export const AdaptiveLearningView: React.FC<AdaptiveLearningViewProps> = ({
                   );
                 })}
               </div>
+
+              {/* FONCTIONNALITÉ « EXPLIQUE-MOI » : [Réponse] [Indice] [Expliquer] [Voir la solution] */}
+              <ProgressiveExplainPanel
+                questionId={currentQ.id}
+                topic={currentQ.domain}
+                subtopic={currentQ.subconceptLabel}
+                promptText={isFr ? currentQ.promptFr : currentQ.promptEn}
+                codeSnippet={currentQ.sqlCode}
+                explanationText={
+                  isFr
+                    ? currentQ.options.find(o => o.isCorrect)?.explanationFr
+                    : currentQ.options.find(o => o.isCorrect)?.explanationEn
+                }
+                correctOptionLetter={currentQ.options.find(o => o.isCorrect)?.label}
+                correctOptionText={
+                  isFr
+                    ? currentQ.options.find(o => o.isCorrect)?.textFr
+                    : currentQ.options.find(o => o.isCorrect)?.textEn
+                }
+                hasSelectedAnswer={userCurrentAnswers.length > 0}
+                lang={lang}
+                theme={theme}
+              />
 
               {/* Navigation entre questions */}
               <div className="flex items-center justify-between pt-4 mt-2 border-t border-[#1b2b3f]/20">

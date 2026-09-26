@@ -26,6 +26,8 @@ import {
 import { sampleExamQuestions } from '../data/mockData';
 import { ExamQuestion } from '../types';
 import { AdaptiveLearningView } from './AdaptiveLearningView';
+import { GeminiPedagogicalTutor } from './GeminiPedagogicalTutor';
+import { ProgressiveExplainPanel } from './ProgressiveExplainPanel';
 
 interface PracticeExamViewProps {
   lang: 'fr' | 'en';
@@ -464,6 +466,21 @@ EMPLOYEE_ID FIRST_NAME  LAST_NAME   EMAIL      SALARY
               })}
             </div>
 
+            {/* FONCTIONNALITÉ « EXPLIQUE-MOI » : [Réponse] [Indice] [Expliquer] [Voir la solution] */}
+            <ProgressiveExplainPanel
+              questionId={currentQ.id}
+              topic={currentQ.domain}
+              subtopic={currentQ.subdomain}
+              promptText={currentQ.questionText}
+              codeSnippet={currentQ.sqlCode}
+              explanationText={currentQ.explanation.correctReasons.join(' ')}
+              correctOptionLetter={currentQ.options.find(o => o.isCorrect)?.label}
+              correctOptionText={currentQ.options.find(o => o.isCorrect)?.text}
+              hasSelectedAnswer={currentSelections.length > 0}
+              lang={lang}
+              theme={theme}
+            />
+
             {/* PEDAGOGICAL EDUCATIONAL SECTION */}
             {instantExplanations && (
               <div className="mt-2 rounded-xl bg-[#0b1c30] border border-[#26364a] overflow-hidden">
@@ -553,6 +570,25 @@ EMPLOYEE_ID FIRST_NAME  LAST_NAME   EMAIL      SALARY
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Tuteur Pédagogique Gemini après une mauvaise réponse */}
+            {instantExplanations && currentSelections.length > 0 && currentSelections.some(id => !currentQ.options.find(o => o.id === id)?.isCorrect) && (
+              <div className="mt-3">
+                <GeminiPedagogicalTutor
+                  questionPrompt={currentQ.questionText}
+                  codeSnippet={currentQ.sqlCode}
+                  chosenLetter={currentQ.options.find((o) => currentSelections.includes(o.id) && !o.isCorrect)?.label || 'B'}
+                  chosenText={currentQ.options.find((o) => currentSelections.includes(o.id) && !o.isCorrect)?.text || ''}
+                  correctLetter={currentQ.options.find((o) => o.isCorrect)?.label || 'C'}
+                  correctText={currentQ.options.find((o) => o.isCorrect)?.text || ''}
+                  conceptName={currentQ.domain || currentQ.subdomain || 'SQL Fundamentals'}
+                  explanation={currentQ.explanation.correctReasons.join(' ')}
+                  lang={isFr ? 'fr' : 'en'}
+                  theme={theme}
+                  autoLoadExplanation={true}
+                />
               </div>
             )}
 

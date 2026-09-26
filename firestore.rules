@@ -1,0 +1,322 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // PRIMITIVE HELPERS
+    // =========================================================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function userProfileExists(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId));
+    }
+
+    // =========================================================================
+    // VALIDATION BLUEPRINTS (Strict Sync with firebase-blueprint.json)
+    // =========================================================================
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll([
+          'uid',
+          'displayName',
+          'selectedCert',
+          'overallAccuracy',
+          'questionsAnswered',
+          'streakDays',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid',
+          'displayName',
+          'selectedCert',
+          'overallAccuracy',
+          'questionsAnswered',
+          'streakDays',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.uid is string
+        && data.uid.size() >= 1
+        && data.uid.size() <= 128
+        && data.uid.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.uid == userId
+        && data.uid == request.auth.uid
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 100
+        && data.selectedCert is string
+        && data.selectedCert.size() <= 64
+        && data.selectedCert in [
+          'oracle-1z0-071',
+          'azure-dp-900',
+          'azure-dp-800',
+          'postgres-edb',
+          'mysql-80-dba'
+        ]
+        && data.overallAccuracy is number
+        && data.overallAccuracy >= 0
+        && data.overallAccuracy <= 100
+        && data.questionsAnswered is number
+        && data.questionsAnswered >= 0
+        && data.questionsAnswered <= 1000000
+        && data.streakDays is number
+        && data.streakDays >= 0
+        && data.streakDays <= 10000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidQuestionAttempt(data, userId, attemptId) {
+      return data.keys().hasAll([
+          'attemptId',
+          'userId',
+          'questionId',
+          'answer',
+          'isCorrect',
+          'timeSpent',
+          'difficulty',
+          'topic',
+          'hintRequested',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'attemptId',
+          'userId',
+          'questionId',
+          'answer',
+          'isCorrect',
+          'timeSpent',
+          'difficulty',
+          'topic',
+          'hintRequested',
+          'createdAt'
+        ])
+        && data.attemptId is string
+        && data.attemptId.size() >= 1
+        && data.attemptId.size() <= 128
+        && data.attemptId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.attemptId == attemptId
+        && data.userId is string
+        && data.userId.size() >= 1
+        && data.userId.size() <= 128
+        && data.userId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.questionId is string
+        && data.questionId.size() >= 1
+        && data.questionId.size() <= 128
+        && data.answer is string
+        && data.answer.size() >= 1
+        && data.answer.size() <= 200
+        && data.isCorrect is bool
+        && data.timeSpent is number
+        && data.timeSpent >= 1
+        && data.timeSpent <= 3600
+        && data.difficulty is number
+        && data.difficulty >= 1
+        && data.difficulty <= 5
+        && data.topic is string
+        && data.topic.size() >= 1
+        && data.topic.size() <= 64
+        && data.hintRequested is bool
+        && data.createdAt is timestamp;
+    }
+
+    function isValidTrapProgress(data, userId, trapId) {
+      return data.keys().hasAll([
+          'trapId',
+          'userId',
+          'trap',
+          'topic',
+          'subtopic',
+          'difficulty',
+          'totalAttempts',
+          'errorCount',
+          'successCount',
+          'masteryStatus',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'trapId',
+          'userId',
+          'trap',
+          'topic',
+          'subtopic',
+          'difficulty',
+          'totalAttempts',
+          'errorCount',
+          'successCount',
+          'masteryStatus',
+          'updatedAt'
+        ])
+        && data.trapId is string
+        && data.trapId.size() >= 1
+        && data.trapId.size() <= 128
+        && data.trapId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.trapId == trapId
+        && data.userId is string
+        && data.userId.size() >= 1
+        && data.userId.size() <= 128
+        && data.userId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.trap is string
+        && data.trap.size() >= 1
+        && data.trap.size() <= 120
+        && data.topic is string
+        && data.topic.size() >= 1
+        && data.topic.size() <= 64
+        && data.subtopic is string
+        && data.subtopic.size() >= 1
+        && data.subtopic.size() <= 64
+        && data.difficulty is number
+        && data.difficulty >= 1
+        && data.difficulty <= 5
+        && data.totalAttempts is number
+        && data.totalAttempts >= 0
+        && data.totalAttempts <= 100000
+        && data.errorCount is number
+        && data.errorCount >= 0
+        && data.errorCount <= 100000
+        && data.successCount is number
+        && data.successCount >= 0
+        && data.successCount <= 100000
+        && data.masteryStatus is string
+        && data.masteryStatus.size() <= 32
+        && data.masteryStatus in ['critical_alert', 'learning', 'mastered']
+        && data.updatedAt is timestamp;
+    }
+
+    // =========================================================================
+    // COLLECTION 1: /users/{userId}
+    // =========================================================================
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action 1: Update profile & readiness stats
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'displayName',
+            'selectedCert',
+            'overallAccuracy',
+            'questionsAnswered',
+            'streakDays',
+            'updatedAt'
+          ])
+        );
+
+      allow delete: if false;
+
+      // =======================================================================
+      // SUBCOLLECTION 2: /users/{userId}/attempts/{attemptId}
+      // =======================================================================
+      match /attempts/{attemptId} {
+        allow get: if isOwner(userId)
+          && isValidId(userId)
+          && isValidId(attemptId)
+          && existing().userId == request.auth.uid
+          && userProfileExists(userId);
+
+        allow list: if isOwner(userId)
+          && existing().userId == request.auth.uid;
+
+        allow create: if isOwner(userId)
+          && isValidId(userId)
+          && isValidId(attemptId)
+          && isValidQuestionAttempt(incoming(), userId, attemptId)
+          && incoming().createdAt == request.time
+          && userProfileExists(userId);
+
+        allow update: if false;
+        allow delete: if false;
+      }
+
+      // =======================================================================
+      // SUBCOLLECTION 3: /users/{userId}/traps/{trapId}
+      // =======================================================================
+      match /traps/{trapId} {
+        allow get: if isOwner(userId)
+          && isValidId(userId)
+          && isValidId(trapId)
+          && existing().userId == request.auth.uid
+          && userProfileExists(userId);
+
+        allow list: if isOwner(userId)
+          && existing().userId == request.auth.uid;
+
+        allow create: if isOwner(userId)
+          && isValidId(userId)
+          && isValidId(trapId)
+          && isValidTrapProgress(incoming(), userId, trapId)
+          && incoming().updatedAt == request.time
+          && userProfileExists(userId);
+
+        allow update: if isOwner(userId)
+          && isValidId(userId)
+          && isValidId(trapId)
+          && isValidTrapProgress(incoming(), userId, trapId)
+          && incoming().userId == existing().userId
+          && incoming().trapId == existing().trapId
+          && incoming().updatedAt == request.time
+          && (
+            // Action: Record trap attempt & update mastery status
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'trap',
+              'topic',
+              'subtopic',
+              'difficulty',
+              'totalAttempts',
+              'errorCount',
+              'successCount',
+              'masteryStatus',
+              'updatedAt'
+            ])
+          )
+          && userProfileExists(userId);
+
+        allow delete: if false;
+      }
+    }
+  }
+}
