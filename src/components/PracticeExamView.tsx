@@ -28,19 +28,23 @@ import { ExamQuestion } from '../types';
 import { AdaptiveLearningView } from './AdaptiveLearningView';
 import { GeminiPedagogicalTutor } from './GeminiPedagogicalTutor';
 import { ProgressiveExplainPanel } from './ProgressiveExplainPanel';
+import { ShortSessionsWidget } from './ShortSessionsWidget';
+import { ShortSessionMode } from '../data/shortSessionsData';
 
 interface PracticeExamViewProps {
   lang: 'fr' | 'en';
   theme?: 'light' | 'dark';
   onFinishExam: (score: number) => void;
   onNavigateToTab?: (tab: string) => void;
+  onStartShortSession?: (mode: ShortSessionMode) => void;
 }
 
 export const PracticeExamView: React.FC<PracticeExamViewProps> = ({ 
   lang, 
   theme = 'dark',
   onFinishExam,
-  onNavigateToTab
+  onNavigateToTab,
+  onStartShortSession
 }) => {
   const isFr = lang === 'fr';
   const isLight = theme === 'light';
@@ -164,6 +168,19 @@ EMPLOYEE_ID FIRST_NAME  LAST_NAME   EMAIL      SALARY
 
   return (
     <div id="practice-exam-view" className="p-6 max-w-[1720px] mx-auto w-full flex flex-col gap-6">
+      {/* SYSTÈME DE SESSIONS COURTES (5 min & 30 min) */}
+      <ShortSessionsWidget
+        lang={lang}
+        compact
+        onStartShortSession={(mode) => {
+          if (onStartShortSession) {
+            onStartShortSession(mode);
+          } else {
+            window.dispatchEvent(new CustomEvent('dbmastery:start_short_session', { detail: mode }));
+          }
+        }}
+      />
+
       {/* 0. SELECTEUR DE FORMAT : APPRENTISSAGE ADAPTATIF vs EXAMEN CHRONOMETRE */}
       <div className={`p-3 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm ${
         isLight ? 'bg-white border-[#e2e8f0]' : 'bg-[#0b1c30] border-[#1b2b3f]'

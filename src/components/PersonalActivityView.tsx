@@ -29,11 +29,14 @@ import {
 } from '../services/statsService';
 import { NavigationTab } from '../types';
 import type { User } from '../services/firebaseSyncService';
+import { ShortSessionsWidget } from './ShortSessionsWidget';
+import { ShortSessionMode } from '../data/shortSessionsData';
 
 interface PersonalActivityViewProps {
   lang: 'fr' | 'en';
   onNavigate?: (tab: NavigationTab) => void;
   onOpenTargetedSession?: () => void;
+  onStartShortSession?: (mode: ShortSessionMode) => void;
   currentUser?: User | null;
   cloudSyncedCount?: number;
 }
@@ -213,6 +216,7 @@ export const PersonalActivityView: React.FC<PersonalActivityViewProps> = ({
   lang,
   onNavigate,
   onOpenTargetedSession,
+  onStartShortSession,
   currentUser,
   cloudSyncedCount = 0,
 }) => {
@@ -344,6 +348,19 @@ export const PersonalActivityView: React.FC<PersonalActivityViewProps> = ({
           )}
         </div>
       </div>
+
+      {/* SYSTÈME DE SESSIONS COURTES : « J'ai 5 minutes » (⚡ Quick Training) & « J'ai 30 minutes » (🎯 Training Session) */}
+      <ShortSessionsWidget
+        lang={lang}
+        compact
+        onStartShortSession={(mode) => {
+          if (onStartShortSession) {
+            onStartShortSession(mode);
+          } else {
+            window.dispatchEvent(new CustomEvent('dbmastery:start_short_session', { detail: mode }));
+          }
+        }}
+      />
 
       {/* =====================================================================
           HERO SECTION : EXACT "MON ACTIVITÉ / CETTE SEMAINE" LEDGER + VISUALS

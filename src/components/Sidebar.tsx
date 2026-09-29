@@ -197,6 +197,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Footer Area with Cluster Status & System Settings */}
       <div className="flex flex-col gap-2 p-3">
+        {/* Système de Sessions Courtes : ⚡ 5 min & 🎯 30 min */}
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            id="sidebar-quick-5m-btn"
+            type="button"
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent('dbmastery:start_short_session', { detail: 'quick_5min' }))
+            }
+            className="p-2 rounded-lg bg-[#061322] hover:bg-[#102034] border border-[#f59e0b]/40 hover:border-[#f59e0b] text-left transition-all flex flex-col gap-0.5 cursor-pointer"
+          >
+            <span className="font-mono text-[10px] text-[#fbbf24] font-bold">⚡ 5 min</span>
+            <span className="text-[11px] font-bold text-white leading-tight">
+              {isFr ? 'Quick (5Q)' : 'Quick (5Q)'}
+            </span>
+          </button>
+          <button
+            id="sidebar-training-30m-btn"
+            type="button"
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent('dbmastery:start_short_session', { detail: 'training_30min' }))
+            }
+            className="p-2 rounded-lg bg-[#061322] hover:bg-[#102034] border border-[#38bdf8]/40 hover:border-[#38bdf8] text-left transition-all flex flex-col gap-0.5 cursor-pointer"
+          >
+            <span className="font-mono text-[10px] text-[#38bdf8] font-bold">🎯 30 min</span>
+            <span className="text-[11px] font-bold text-white leading-tight">
+              {isFr ? 'Session (20Q)' : 'Session (20Q)'}
+            </span>
+          </button>
+        </div>
+
         {/* Quick Launch Targeted AI Drill */}
         <button
           id="sidebar-targeted-session-btn"

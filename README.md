@@ -32,6 +32,7 @@
 ## 🧭 Table des Matières
 
 - [✨ Fonctionnalités Clés](#-fonctionnalités-clés)
+  - [⏱️ 0. Système de Sessions Courtes (5 min & 30 min)](#️-0-système-de-sessions-courtes-5-min--30-min)
   - [💡 1. Système Pédagogique « Explique-moi » (3 Niveaux)](#-1-système-pédagogique--explique-moi--3-niveaux)
   - [📊 2. Historique Personnel — Page « Mon activité »](#-2-historique-personnel--page--mon-activité-)
   - [☁️ 3. Authentification Google & Synchronisation Cloud Firestore](#️-3-authentification-google--synchronisation-cloud-firestore)
@@ -45,6 +46,19 @@
 ---
 
 ## ✨ Fonctionnalités Clés
+
+### ⏱️ 0. Système de Sessions Courtes (5 min & 30 min)
+
+Pour s'adapter au rythme quotidien de l'apprenant, deux formats d'entraînement immédiats sont accessibles en 1 clic depuis le **Tableau de bord**, la page **Mon activité**, la vue **Apprentissage & Quiz** et la **Barre latérale** :
+
+| Format | « J'ai 5 minutes » — ⚡ Quick Training | « J'ai 30 minutes » — 🎯 Training Session |
+| :--- | :--- | :--- |
+| **Volume** | `5 questions` | `20 questions` |
+| **Durée** | `5 minutes` (chrono `05:00`) | `30 minutes` (chrono `30:00`) |
+| **Ciblage & Progression** | **Notions faibles uniquement** (`Subqueries`, `JOIN`, `Indexes`) | **Difficulté progressive** (`Fondamental` → `Intermédiaire` → `Avancé`) & **Adaptée à mon niveau** |
+| **Action** | `[Commencer]` | `[Commencer]` |
+
+---
 
 ### 💡 1. Système Pédagogique « Explique-moi » (3 Niveaux)
 

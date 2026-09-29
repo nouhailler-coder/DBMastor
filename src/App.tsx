@@ -15,6 +15,8 @@ import { ExamSummaryModal } from './components/ExamSummaryModal';
 import { HamburgerMenu } from './components/HamburgerMenu';
 import { SystemSettingsModal } from './components/SystemSettingsModal';
 import { TargetedSessionModal } from './components/TargetedSessionModal';
+import { ShortSessionRunnerModal } from './components/ShortSessionRunnerModal';
+import { ShortSessionMode } from './data/shortSessionsData';
 import {
    NavigationTab,
   CertificationTrackId,
@@ -56,6 +58,7 @@ export default function App() {
   const [isHamburgerOpen, setIsHamburgerOpen] = useState(false);
   const [isSystemSettingsOpen, setIsSystemSettingsOpen] = useState(false);
   const [isTargetedSessionOpen, setIsTargetedSessionOpen] = useState(false);
+  const [shortSessionMode, setShortSessionMode] = useState<ShortSessionMode | null>(null);
   const [systemInfo, setSystemInfo] = useState<SystemVersionInfo>(() => getInitialSystemVersionInfo());
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -145,8 +148,18 @@ export default function App() {
 
   useEffect(() => {
     const handleOpenTargeted = () => setIsTargetedSessionOpen(true);
+    const handleStartShortSession = (e: Event) => {
+      const customEvent = e as CustomEvent<ShortSessionMode>;
+      if (customEvent.detail === 'quick_5min' || customEvent.detail === 'training_30min') {
+        setShortSessionMode(customEvent.detail);
+      }
+    };
     window.addEventListener('dbmastery:open_targeted_session', handleOpenTargeted);
-    return () => window.removeEventListener('dbmastery:open_targeted_session', handleOpenTargeted);
+    window.addEventListener('dbmastery:start_short_session', handleStartShortSession);
+    return () => {
+      window.removeEventListener('dbmastery:open_targeted_session', handleOpenTargeted);
+      window.removeEventListener('dbmastery:start_short_session', handleStartShortSession);
+    };
   }, []);
 
   const systemInfoRef = useRef(systemInfo);
@@ -397,6 +410,7 @@ export default function App() {
               selectedCert={selectedCert}
               lang={lang}
               onOpenTargetedSession={() => setIsTargetedSessionOpen(true)}
+              onStartShortSession={(mode) => setShortSessionMode(mode)}
               currentUser={currentUser}
               cloudSyncedCount={cloudSyncedCount}
               onGoogleSignIn={handleGoogleSignIn}
@@ -409,6 +423,7 @@ export default function App() {
               lang={lang}
               onNavigate={(tab) => setCurrentTab(tab)}
               onOpenTargetedSession={() => setIsTargetedSessionOpen(true)}
+              onStartShortSession={(mode) => setShortSessionMode(mode)}
               currentUser={currentUser}
               cloudSyncedCount={cloudSyncedCount}
             />
@@ -438,6 +453,7 @@ export default function App() {
               theme={theme}
               onFinishExam={handleFinishExam}
               onNavigateToTab={(tab) => setCurrentTab(tab as NavigationTab)}
+              onStartShortSession={(mode) => setShortSessionMode(mode)}
             />
           )}
 
@@ -587,6 +603,16 @@ export default function App() {
       <TargetedSessionModal
         isOpen={isTargetedSessionOpen}
         onClose={() => setIsTargetedSessionOpen(false)}
+        lang={lang}
+        theme={theme}
+        onNavigateToTab={(tab) => setCurrentTab(tab as NavigationTab)}
+      />
+
+      {/* Système de Sessions Courtes : « J'ai 5 minutes » (5Q) & « J'ai 30 minutes » (20Q) */}
+      <ShortSessionRunnerModal
+        mode={shortSessionMode}
+        onClose={() => setShortSessionMode(null)}
+        onSwitchMode={(newMode) => setShortSessionMode(newMode)}
         lang={lang}
         theme={theme}
         onNavigateToTab={(tab) => setCurrentTab(tab as NavigationTab)}

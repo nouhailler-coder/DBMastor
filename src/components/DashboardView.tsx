@@ -35,6 +35,8 @@ import { TrapDiagnosticsCard } from './TrapDiagnosticsCard';
 import { TrapExplorerModal } from './TrapExplorerModal';
 import { ResponseTimeAnalyticsCard } from './ResponseTimeAnalyticsCard';
 import { ProgressiveExplainPanel } from './ProgressiveExplainPanel';
+import { ShortSessionsWidget } from './ShortSessionsWidget';
+import { ShortSessionMode } from '../data/shortSessionsData';
 import type { User } from '../services/firebaseSyncService';
 import { LogOut } from 'lucide-react';
 
@@ -44,6 +46,7 @@ interface DashboardViewProps {
   selectedCert?: CertificationTrackId;
   lang: 'fr' | 'en';
   onOpenTargetedSession?: () => void;
+  onStartShortSession?: (mode: ShortSessionMode) => void;
   currentUser?: User | null;
   cloudSyncedCount?: number;
   onGoogleSignIn?: () => void;
@@ -56,6 +59,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   selectedCert = 'oracle-1z0-071',
   lang,
   onOpenTargetedSession,
+  onStartShortSession,
   currentUser,
   cloudSyncedCount = 0,
   onGoogleSignIn,
@@ -239,6 +243,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* SYSTÈME DE SESSIONS COURTES : « J'ai 5 minutes » (⚡ Quick Training) & « J'ai 30 minutes » (🎯 Training Session) */}
+      <ShortSessionsWidget
+        lang={lang}
+        onStartShortSession={(mode) => {
+          if (onStartShortSession) {
+            onStartShortSession(mode);
+          } else {
+            window.dispatchEvent(new CustomEvent('dbmastery:start_short_session', { detail: mode }));
+          }
+        }}
+      />
 
       {/* WIDGET HISTORIQUE PERSONNEL : MON ACTIVITÉ — CETTE SEMAINE */}
       <div
