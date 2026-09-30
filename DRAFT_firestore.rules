@@ -23,6 +23,10 @@ service cloud.firestore {
       return isVerifiedUser() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'nouhailler@gmail.com';
+    }
+
     function isValidId(id) {
       return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
@@ -39,9 +43,60 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/users/$(userId));
     }
 
+    function isApprovedUser(userId) {
+      return exists(/databases/$(database)/documents/user_access/$(userId))
+        && get(/databases/$(database)/documents/user_access/$(userId)).data.status == 'approved';
+    }
+
     // =========================================================================
     // VALIDATION BLUEPRINTS (Strict Sync with firebase-blueprint.json)
     // =========================================================================
+    function isValidUserAccess(data, userId) {
+      return data.keys().hasAll([
+          'uid',
+          'email',
+          'displayName',
+          'role',
+          'status',
+          'accessReason',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid',
+          'email',
+          'displayName',
+          'role',
+          'status',
+          'accessReason',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.uid is string
+        && data.uid.size() >= 1
+        && data.uid.size() <= 128
+        && data.uid.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.uid == userId
+        && (data.uid == request.auth.uid || isAdmin())
+        && data.email is string
+        && data.email.size() >= 3
+        && data.email.size() <= 160
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 100
+        && data.role is string
+        && data.role.size() <= 32
+        && data.role in ['admin', 'student', 'auditor']
+        && data.status is string
+        && data.status.size() <= 32
+        && data.status in ['pending', 'approved', 'revoked']
+        && data.accessReason is string
+        && data.accessReason.size() >= 1
+        && data.accessReason.size() <= 240
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
     function isValidUserProfile(data, userId) {
       return data.keys().hasAll([
           'uid',
@@ -216,17 +271,88 @@ service cloud.firestore {
     }
 
     // =========================================================================
-    // COLLECTION 1: /users/{userId}
+    // COLLECTION 0: /user_access/{userId} (Access Control Gatekeeper & RBAC)
+    // =========================================================================
+    match /user_access/{userId} {
+      allow get: if (
+          isOwner(userId)
+          || isAdmin()
+          || (isVerifiedUser() && existing().email == request.auth.token.email)
+        )
+        && isValidId(userId);
+
+      allow list: if isAdmin()
+        || (isOwner(userId) && existing().uid == request.auth.uid)
+        || (isVerifiedUser() && existing().email == request.auth.token.email);
+
+      allow create: if isVerifiedUser()
+        && isValidId(userId)
+        && isValidUserAccess(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          // Action 1: Admin creates or pre-authorizes an access profile
+          isAdmin()
+          ||
+          // Action 2: Regular verified user requests access (strictly pending student)
+          (
+            isOwner(userId)
+            && incoming().email == request.auth.token.email
+            && incoming().role == 'student'
+            && incoming().status == 'pending'
+          )
+        );
+
+      allow update: if isVerifiedUser()
+        && isValidId(userId)
+        && isValidUserAccess(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().email == existing().email
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Tier 1: Admin can modify status, role, displayName, and accessReason
+          (
+            isAdmin()
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'displayName',
+              'role',
+              'status',
+              'accessReason',
+              'updatedAt'
+            ])
+          )
+          ||
+          // Tier 2: Pending user can update their request note/name before terminal decision
+          (
+            isOwner(userId)
+            && existing().status == 'pending'
+            && incoming().status == 'pending'
+            && incoming().role == existing().role
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'displayName',
+              'accessReason',
+              'updatedAt'
+            ])
+          )
+        );
+
+      allow delete: if isAdmin() && isValidId(userId);
+    }
+
+    // =========================================================================
+    // COLLECTION 1: /users/{userId} (Requires Approved Access Status)
     // =========================================================================
     match /users/{userId} {
-      allow get: if isOwner(userId) && isValidId(userId);
+      allow get: if isOwner(userId) && isValidId(userId) && isApprovedUser(userId);
       allow list: if false;
 
       allow create: if isOwner(userId)
         && isValidId(userId)
         && isValidUserProfile(incoming(), userId)
         && incoming().createdAt == request.time
-        && incoming().updatedAt == request.time;
+        && incoming().updatedAt == request.time
+        && isApprovedUser(userId);
 
       allow update: if isOwner(userId)
         && isValidId(userId)
@@ -244,7 +370,8 @@ service cloud.firestore {
             'streakDays',
             'updatedAt'
           ])
-        );
+        )
+        && isApprovedUser(userId);
 
       allow delete: if false;
 
@@ -256,7 +383,8 @@ service cloud.firestore {
           && isValidId(userId)
           && isValidId(attemptId)
           && existing().userId == request.auth.uid
-          && userProfileExists(userId);
+          && userProfileExists(userId)
+          && isApprovedUser(userId);
 
         allow list: if isOwner(userId)
           && existing().userId == request.auth.uid;
@@ -266,7 +394,8 @@ service cloud.firestore {
           && isValidId(attemptId)
           && isValidQuestionAttempt(incoming(), userId, attemptId)
           && incoming().createdAt == request.time
-          && userProfileExists(userId);
+          && userProfileExists(userId)
+          && isApprovedUser(userId);
 
         allow update: if false;
         allow delete: if false;
@@ -280,7 +409,8 @@ service cloud.firestore {
           && isValidId(userId)
           && isValidId(trapId)
           && existing().userId == request.auth.uid
-          && userProfileExists(userId);
+          && userProfileExists(userId)
+          && isApprovedUser(userId);
 
         allow list: if isOwner(userId)
           && existing().userId == request.auth.uid;
@@ -290,7 +420,8 @@ service cloud.firestore {
           && isValidId(trapId)
           && isValidTrapProgress(incoming(), userId, trapId)
           && incoming().updatedAt == request.time
-          && userProfileExists(userId);
+          && userProfileExists(userId)
+          && isApprovedUser(userId);
 
         allow update: if isOwner(userId)
           && isValidId(userId)
@@ -313,7 +444,8 @@ service cloud.firestore {
               'updatedAt'
             ])
           )
-          && userProfileExists(userId);
+          && userProfileExists(userId)
+          && isApprovedUser(userId);
 
         allow delete: if false;
       }

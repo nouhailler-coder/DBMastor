@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { ShortSessionMode } from '../data/shortSessionsData';
 import { getStoredCompetencies, UserCompetency } from '../services/competencyService';
+import { SmartTooltip } from './SmartTooltip';
 
 interface ShortSessionsWidgetProps {
   lang: 'fr' | 'en';
@@ -82,7 +83,7 @@ export const ShortSessionsWidget: React.FC<ShortSessionsWidgetProps> = ({
                 <span className="font-mono text-xs sm:text-sm font-bold text-[#fbbf24]">
                   {isFr ? '« J\'ai 5 minutes »' : '"I have 5 minutes"'}
                 </span>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                <h3 className="text-xl sm:text-2xl font-extrabold text-[#d3e4fe] tracking-tight flex items-center gap-2">
                   <span>⚡ Quick Training</span>
                 </h3>
               </div>
@@ -103,7 +104,7 @@ export const ShortSessionsWidget: React.FC<ShortSessionsWidgetProps> = ({
                 <span className="text-[11px] text-[#89929b] uppercase">
                   {isFr ? 'Volume' : 'Volume'}
                 </span>
-                <span className="text-base font-extrabold text-white">
+                <span className="text-base font-extrabold text-[#d3e4fe]">
                   {isFr ? '5 questions' : '5 questions'}
                 </span>
               </div>
@@ -121,9 +122,20 @@ export const ShortSessionsWidget: React.FC<ShortSessionsWidgetProps> = ({
                 <span className="text-[11px] text-[#89929b] uppercase">
                   {isFr ? 'Ciblage' : 'Targeting'}
                 </span>
-                <span className="text-sm font-extrabold text-[#4edea3] leading-snug">
-                  {isFr ? 'Notions faibles uniquement' : 'Weak concepts only'}
-                </span>
+                <SmartTooltip
+                  title={isFr ? 'Ciblage des Notions Faibles' : 'Weak Concepts Targeting'}
+                  description={
+                    isFr
+                      ? 'Sélectionne automatiquement 5 questions sur vos compétences ayant le score de maîtrise le plus bas (ex: Subqueries, JOIN, Indexes).'
+                      : 'Automatically selects 5 questions focusing on your lowest-scoring SQL competencies.'
+                  }
+                  badge="5 min"
+                  showInfoIcon
+                >
+                  <span className="text-sm font-extrabold text-[#4edea3] leading-snug">
+                    {isFr ? 'Notions faibles uniquement' : 'Weak concepts only'}
+                  </span>
+                </SmartTooltip>
               </div>
             </div>
 
@@ -179,7 +191,7 @@ export const ShortSessionsWidget: React.FC<ShortSessionsWidgetProps> = ({
                 <span className="font-mono text-xs sm:text-sm font-bold text-[#38bdf8]">
                   {isFr ? '« J\'ai 30 minutes »' : '"I have 30 minutes"'}
                 </span>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                <h3 className="text-xl sm:text-2xl font-extrabold text-[#d3e4fe] tracking-tight flex items-center gap-2">
                   <span>🎯 Training Session</span>
                 </h3>
               </div>
@@ -200,7 +212,7 @@ export const ShortSessionsWidget: React.FC<ShortSessionsWidgetProps> = ({
                 <span className="text-[11px] text-[#89929b] uppercase">
                   {isFr ? 'Volume' : 'Volume'}
                 </span>
-                <span className="text-base font-extrabold text-white">
+                <span className="text-base font-extrabold text-[#d3e4fe]">
                   {isFr ? '20 questions' : '20 questions'}
                 </span>
               </div>
@@ -209,18 +221,40 @@ export const ShortSessionsWidget: React.FC<ShortSessionsWidgetProps> = ({
                 <span className="text-[11px] text-[#89929b] uppercase">
                   {isFr ? 'Progression' : 'Ramp'}
                 </span>
-                <span className="text-sm font-extrabold text-[#38bdf8] leading-snug">
-                  {isFr ? 'Difficulté progressive' : 'Progressive difficulty'}
-                </span>
+                <SmartTooltip
+                  title={isFr ? 'Difficulté Progressive (3 Paliers)' : 'Progressive Difficulty (3 Tiers)'}
+                  description={
+                    isFr
+                      ? 'Q1 à Q6 : Fondamental • Q7 à Q14 : Intermédiaire • Q15 à Q20 : Avancé & Pièges d\'examen.'
+                      : 'Q1–6: Fundamental • Q7–14: Intermediate • Q15–20: Advanced & Exam Traps.'
+                  }
+                  badge="3 Paliers"
+                  showInfoIcon
+                >
+                  <span className="text-sm font-extrabold text-[#38bdf8] leading-snug">
+                    {isFr ? 'Difficulté progressive' : 'Progressive difficulty'}
+                  </span>
+                </SmartTooltip>
               </div>
 
               <div className="p-3.5 rounded-xl bg-[#061322] border border-[#1b2b3f] flex flex-col gap-1">
                 <span className="text-[11px] text-[#89929b] uppercase">
                   {isFr ? 'Calibrage' : 'Calibration'}
                 </span>
-                <span className="text-sm font-extrabold text-[#4edea3] leading-snug">
-                  {isFr ? 'Adaptée à mon niveau' : 'Adapted to my level'}
-                </span>
+                <SmartTooltip
+                  title={isFr ? 'Calibrage Adaptatif' : 'Adaptive Calibration'}
+                  description={
+                    isFr
+                      ? `Ajuste le dosage des questions selon votre niveau global actuel (${averageLevel}%) et met à jour vos scores en temps réel.`
+                      : `Adjusts question weighting to your current overall mastery (${averageLevel}%) and updates your scores live.`
+                  }
+                  badge={`${averageLevel}%`}
+                  showInfoIcon
+                >
+                  <span className="text-sm font-extrabold text-[#4edea3] leading-snug">
+                    {isFr ? 'Adaptée à mon niveau' : 'Adapted to my level'}
+                  </span>
+                </SmartTooltip>
               </div>
             </div>
 

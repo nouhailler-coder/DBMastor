@@ -637,7 +637,7 @@ export const SqlLabView: React.FC<SqlLabViewProps> = ({
                   <button
                     onClick={handleRunQuery}
                     disabled={isRunning}
-                    className="ml-1 px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#006ca7] to-[#3198dc] hover:from-[#005a8c] hover:to-[#2883bd] text-white font-mono text-xs font-bold flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-50"
+                    className="ml-1 px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#0284c7] to-[#3198dc] hover:from-[#0369a1] hover:to-[#0284c7] text-white font-mono text-xs font-bold flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-50"
                   >
                     <Play className={`w-3.5 h-3.5 fill-current ${isRunning ? 'animate-spin' : ''}`} />
                     <span>{isRunning ? (isFr ? 'Exécution...' : 'Running...') : (isFr ? '▶ Exécuter' : '▶ Run Query')}</span>
@@ -648,7 +648,7 @@ export const SqlLabView: React.FC<SqlLabViewProps> = ({
 
               {/* Textarea Code Input */}
               <div className={`p-4 border-b transition-colors ${
-                isLight ? 'bg-slate-900 border-slate-800' : 'bg-[#000f21] border-[#1b2b3f]'
+                isLight ? 'bg-[#f8fafc] border-slate-200' : 'bg-[#000f21] border-[#1b2b3f]'
               }`}>
                 <textarea
                   id="sql-code-editor-textarea"
@@ -661,7 +661,9 @@ export const SqlLabView: React.FC<SqlLabViewProps> = ({
                     }
                   }}
                   rows={editorExpanded ? 22 : (isFocusMode ? 14 : 9)}
-                  className="w-full bg-transparent text-[#93ccff] font-mono text-xs leading-relaxed outline-none resize-none selection:bg-[#3198dc]/30 font-semibold"
+                  className={`w-full bg-transparent font-mono text-xs leading-relaxed outline-none resize-none selection:bg-[#3198dc]/30 font-semibold ${
+                    isLight ? 'text-[#0f172a]' : 'text-[#93ccff]'
+                  }`}
                   spellCheck={false}
                 />
               </div>

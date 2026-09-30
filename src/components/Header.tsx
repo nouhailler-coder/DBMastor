@@ -16,11 +16,14 @@ import {
   RefreshCw,
   LogIn,
   LogOut,
-  Cloud
+  Cloud,
+  HelpCircle,
+  Compass
 } from 'lucide-react';
 import { CertificationTrackId, SystemVersionInfo } from '../types';
 import { certificationTracks } from '../data/mockData';
 import type { User } from '../services/firebaseSyncService';
+import { SmartTooltip } from './SmartTooltip';
 
 interface HeaderProps {
   selectedCert: CertificationTrackId;
@@ -32,10 +35,14 @@ interface HeaderProps {
   onThemeToggle?: () => void;
   onOpenHamburger: () => void;
   onOpenSystemSettings: () => void;
+  onOpenOnboarding?: () => void;
+  onOpenContextualHelp?: () => void;
   systemInfo: SystemVersionInfo;
   currentUser?: User | null;
   isAuthReady?: boolean;
   cloudSyncedCount?: number;
+  accessStatus?: 'pending' | 'approved' | 'revoked' | null;
+  onOpenAccessControl?: () => void;
   onGoogleSignIn?: () => void;
   onSignOut?: () => void;
 }
@@ -50,10 +57,14 @@ export const Header: React.FC<HeaderProps> = ({
   onThemeToggle,
   onOpenHamburger,
   onOpenSystemSettings,
+  onOpenOnboarding,
+  onOpenContextualHelp,
   systemInfo,
   currentUser,
   isAuthReady = true,
   cloudSyncedCount = 0,
+  accessStatus,
+  onOpenAccessControl,
   onGoogleSignIn,
   onSignOut,
 }) => {
@@ -217,6 +228,86 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
         </div>
+
+        {/* Contrôle d'Accès Firestore (RBAC Gatekeeper) */}
+        {onOpenAccessControl && (
+          <SmartTooltip
+            title={isFr ? 'Contrôle d\'Accès & Sécurité Firestore' : 'Firestore Access Control & RBAC'}
+            description={
+              isFr
+                ? 'Gérez la liste des utilisateurs autorisés (/user_access), testez le blocage serveur Firestore et l\'écran Gatekeeper.'
+                : 'Manage authorized users (/user_access), test server-side Firestore blocking and the Gatekeeper lock screen.'
+            }
+            badge="RBAC"
+            placement="bottom"
+          >
+            <button
+              id="header-access-control-btn"
+              type="button"
+              onClick={onOpenAccessControl}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer border ${
+                accessStatus === 'revoked'
+                  ? 'bg-[#ef4444]/20 border-[#ef4444] text-[#ffb4ab]'
+                  : accessStatus === 'pending'
+                  ? 'bg-[#f59e0b]/20 border-[#fbbf24] text-[#fbbf24]'
+                  : 'bg-[#102034] hover:bg-[#1b2b3f] border-[#38bdf8]/40 hover:border-[#38bdf8] text-[#89ceff]'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-[#4edea3]" />
+              <span className="hidden lg:inline">
+                {isFr ? 'Contrôle d\'Accès' : 'Access Control'}
+              </span>
+            </button>
+          </SmartTooltip>
+        )}
+
+        {/* Guide Onboarding Interactif */}
+        {onOpenOnboarding && (
+          <SmartTooltip
+            title={isFr ? 'Guide d\'Onboarding (6 étapes)' : 'Onboarding Tour (6 steps)'}
+            description={
+              isFr
+                ? 'Découvrez le fonctionnement des sessions courtes (5 et 30 min), de l\'aide « Explique-moi » et du suivi « Mon activité ».'
+                : 'Explore how short sessions (5 & 30 min), "Explain to Me" hints, and "My Activity" tracking work.'
+            }
+            badge="Guide"
+            placement="bottom"
+          >
+            <button
+              id="header-onboarding-btn"
+              type="button"
+              onClick={onOpenOnboarding}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#4edea3]/40 hover:border-[#4edea3] rounded-lg text-xs font-mono font-bold text-[#4edea3] transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
+            >
+              <Compass className="w-3.5 h-3.5 text-[#4edea3]" />
+              <span className="hidden lg:inline">{isFr ? 'Onboarding' : 'Tour'}</span>
+            </button>
+          </SmartTooltip>
+        )}
+
+        {/* Aide Contextuelle de l'écran actif */}
+        {onOpenContextualHelp && (
+          <SmartTooltip
+            title={isFr ? 'Aide Contextuelle (?)' : 'Contextual Help (?)'}
+            description={
+              isFr
+                ? 'Affiche les instructions, raccourcis et astuces SQL spécifiques à la page que vous consultez actuellement.'
+                : 'Displays instructions, shortcuts, and SQL exam tips tailored to your current screen.'
+            }
+            badge="Aide"
+            placement="bottom"
+          >
+            <button
+              id="header-contextual-help-btn"
+              type="button"
+              onClick={onOpenContextualHelp}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/40 hover:border-[#38bdf8] rounded-lg text-xs font-mono font-bold text-[#93ccff] hover:text-white transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-[#38bdf8]" />
+              <span className="hidden lg:inline">{isFr ? 'Aide' : 'Help'}</span>
+            </button>
+          </SmartTooltip>
+        )}
 
         {/* System Settings & Update Trigger */}
         <button

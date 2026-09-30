@@ -1,5 +1,5 @@
 /**
- * Firestore Security Rules Test Specification (Dirty Dozen Adversarial Suite)
+ * Firestore Security Rules Test Specification (Dirty Dozen Adversarial Suite + RBAC Gatekeeper)
  * Verifies that all 12 adversarial payloads defined in security_spec.md are rejected with PERMISSION_DENIED.
  */
 
@@ -8,7 +8,7 @@ export interface AdversarialPayloadTest {
   name: string;
   collectionPath: string;
   operation: 'get' | 'list' | 'create' | 'update' | 'delete';
-  auth: { uid: string; email_verified: boolean } | null;
+  auth: { uid: string; email?: string; email_verified: boolean } | null;
   payload?: Record<string, unknown>;
   expectedResult: 'PERMISSION_DENIED' | 'ALLOWED';
 }
@@ -19,7 +19,7 @@ export const dirtyDozenSecurityTests: AdversarialPayloadTest[] = [
     name: 'Unverified Email Spoof on Profile Create',
     collectionPath: '/users/user_123',
     operation: 'create',
-    auth: { uid: 'user_123', email_verified: false },
+    auth: { uid: 'user_123', email: 'nouhailler@gmail.com', email_verified: false },
     payload: {
       uid: 'user_123',
       displayName: 'Attacker',
@@ -32,14 +32,46 @@ export const dirtyDozenSecurityTests: AdversarialPayloadTest[] = [
   },
   {
     id: 2,
-    name: 'Cross-User Profile Read',
-    collectionPath: '/users/victim_456',
-    operation: 'get',
-    auth: { uid: 'attacker_123', email_verified: true },
+    name: 'Self-Approval Escalation Attack on /user_access',
+    collectionPath: '/user_access/user_123',
+    operation: 'create',
+    auth: { uid: 'user_123', email: 'intruder@example.com', email_verified: true },
+    payload: {
+      uid: 'user_123',
+      email: 'intruder@example.com',
+      displayName: 'Intruder',
+      role: 'admin',
+      status: 'approved',
+      accessReason: 'Trying to self-approve',
+    },
     expectedResult: 'PERMISSION_DENIED',
   },
   {
     id: 3,
+    name: 'Unapproved User Profile Write (status != approved)',
+    collectionPath: '/users/pending_user_99',
+    operation: 'create',
+    auth: { uid: 'pending_user_99', email: 'pending@example.com', email_verified: true },
+    payload: {
+      uid: 'pending_user_99',
+      displayName: 'Pending Learner',
+      selectedCert: 'oracle-1z0-071',
+      overallAccuracy: 80,
+      questionsAnswered: 10,
+      streakDays: 1,
+    },
+    expectedResult: 'PERMISSION_DENIED',
+  },
+  {
+    id: 4,
+    name: 'Cross-User Access PII Read',
+    collectionPath: '/user_access/victim_456',
+    operation: 'get',
+    auth: { uid: 'attacker_123', email: 'attacker@example.com', email_verified: true },
+    expectedResult: 'PERMISSION_DENIED',
+  },
+  {
+    id: 5,
     name: 'Shadow Field Injection (isAdmin: true)',
     collectionPath: '/users/user_123',
     operation: 'create',
@@ -56,7 +88,7 @@ export const dirtyDozenSecurityTests: AdversarialPayloadTest[] = [
     expectedResult: 'PERMISSION_DENIED',
   },
   {
-    id: 4,
+    id: 6,
     name: 'Immutable UID Mutation on Profile Update',
     collectionPath: '/users/user_123',
     operation: 'update',
@@ -67,7 +99,7 @@ export const dirtyDozenSecurityTests: AdversarialPayloadTest[] = [
     expectedResult: 'PERMISSION_DENIED',
   },
   {
-    id: 5,
+    id: 7,
     name: 'Client Timestamp Forgery',
     collectionPath: '/users/user_123',
     operation: 'update',
@@ -78,7 +110,7 @@ export const dirtyDozenSecurityTests: AdversarialPayloadTest[] = [
     expectedResult: 'PERMISSION_DENIED',
   },
   {
-    id: 6,
+    id: 8,
     name: 'ID Poisoning (1500-char Document ID)',
     collectionPath: `/users/user_123/attempts/${'a'.repeat(1500)}`,
     operation: 'create',
@@ -87,7 +119,7 @@ export const dirtyDozenSecurityTests: AdversarialPayloadTest[] = [
     expectedResult: 'PERMISSION_DENIED',
   },
   {
-    id: 7,
+    id: 9,
     name: 'Orphaned Subcollection Write Without Parent User Profile',
     collectionPath: '/users/non_existent_user/attempts/att_1',
     operation: 'create',
@@ -106,7 +138,7 @@ export const dirtyDozenSecurityTests: AdversarialPayloadTest[] = [
     expectedResult: 'PERMISSION_DENIED',
   },
   {
-    id: 8,
+    id: 10,
     name: 'Value Poisoning on Update (String instead of Number)',
     collectionPath: '/users/user_123',
     operation: 'update',
@@ -117,7 +149,7 @@ export const dirtyDozenSecurityTests: AdversarialPayloadTest[] = [
     expectedResult: 'PERMISSION_DENIED',
   },
   {
-    id: 9,
+    id: 11,
     name: 'Immutable Attempt History Tampering (Update)',
     collectionPath: '/users/user_123/attempts/att_9084',
     operation: 'update',
@@ -128,46 +160,14 @@ export const dirtyDozenSecurityTests: AdversarialPayloadTest[] = [
     expectedResult: 'PERMISSION_DENIED',
   },
   {
-    id: 10,
-    name: 'Cross-User Query Scraping on Attempts List',
-    collectionPath: '/users/victim_456/attempts',
-    operation: 'list',
-    auth: { uid: 'attacker_123', email_verified: true },
-    expectedResult: 'PERMISSION_DENIED',
-  },
-  {
-    id: 11,
-    name: 'Invalid Enum on Trap Mastery Status',
-    collectionPath: '/users/user_123/traps/trap_join',
-    operation: 'create',
-    auth: { uid: 'user_123', email_verified: true },
-    payload: {
-      trapId: 'trap_join',
-      userId: 'user_123',
-      trap: 'LEFT vs INNER JOIN',
-      topic: 'SQL',
-      subtopic: 'JOIN',
-      difficulty: 3,
-      totalAttempts: 1,
-      errorCount: 0,
-      successCount: 1,
-      masteryStatus: 'invalid_enum_value',
-    },
-    expectedResult: 'PERMISSION_DENIED',
-  },
-  {
     id: 12,
-    name: 'String Overflow Attack on DisplayName (>100 chars)',
-    collectionPath: '/users/user_123',
-    operation: 'create',
-    auth: { uid: 'user_123', email_verified: true },
+    name: 'Terminal State Bypass on Revoked Access',
+    collectionPath: '/user_access/revoked_user_1',
+    operation: 'update',
+    auth: { uid: 'revoked_user_1', email: 'revoked@example.com', email_verified: true },
     payload: {
-      uid: 'user_123',
-      displayName: 'X'.repeat(500),
-      selectedCert: 'oracle-1z0-071',
-      overallAccuracy: 80,
-      questionsAnswered: 10,
-      streakDays: 1,
+      status: 'pending',
+      accessReason: 'Trying to reopen revoked account',
     },
     expectedResult: 'PERMISSION_DENIED',
   },

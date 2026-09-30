@@ -8,7 +8,22 @@ export type NavigationTab =
   | 'syllabus'
   | 'flashcards'
   | 'analytics'
-  | 'glossary';
+  | 'glossary'
+  | 'access_control';
+
+export type UserAccessRole = 'admin' | 'student' | 'auditor';
+export type UserAccessStatus = 'pending' | 'approved' | 'revoked';
+
+export interface UserAccessRecord {
+  uid: string;
+  email: string;
+  displayName: string;
+  role: UserAccessRole;
+  status: UserAccessStatus;
+  accessReason: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export type ExamPillar = 'sql' | 'modelisation' | 'transactions' | 'administration';
 

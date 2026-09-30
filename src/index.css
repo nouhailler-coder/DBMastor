@@ -52,68 +52,160 @@
 }
 
 /* Base Surfaces & Cards */
-.theme-light [class*="bg-[#031427]"] {
+.theme-light [class*="bg-[#031427]"],
+.theme-light [class*="bg-[#000f21]"],
+.theme-light [class*="bg-[#071322]"],
+.theme-light [class*="bg-[#020b14]"],
+.theme-light [class*="bg-[#0e1d2f]"],
+.theme-light [class*="bg-[#030d1a]"],
+.theme-light [class*="bg-[#051020]"],
+.theme-light [class*="bg-[#061220]"],
+.theme-light [class*="bg-slate-950"] {
   background-color: #f8fafc !important;
 }
 
-.theme-light [class*="bg-[#000f21]"] {
-  background-color: #f8fafc !important;
-}
-
-.theme-light [class*="bg-[#0b1c30]"] {
+.theme-light [class*="bg-[#0b1c30]"],
+.theme-light [class*="bg-[#102034]"],
+.theme-light [class*="bg-[#0c1e33]"],
+.theme-light [class*="bg-[#0b1c2a]"],
+.theme-light [class*="bg-[#091829]"],
+.theme-light [class*="bg-[#0e1e33]"],
+.theme-light [class*="bg-[#0f233a]"],
+.theme-light [class*="bg-slate-900"] {
   background-color: #ffffff !important;
 }
 
-.theme-light [class*="bg-[#102034]"] {
-  background-color: #ffffff !important;
-}
-
-.theme-light [class*="bg-[#1b2b3f]"] {
+.theme-light [class*="bg-[#1b2b3f]"],
+.theme-light [class*="bg-[#061322]"],
+.theme-light [class*="bg-[#081729]"],
+.theme-light [class*="bg-[#122336]"],
+.theme-light [class*="bg-[#16273f]"] {
   background-color: #f1f5f9 !important;
 }
 
-.theme-light [class*="bg-[#26364a]"] {
+.theme-light [class*="bg-[#26364a]"],
+.theme-light [class*="bg-[#263548]"],
+.theme-light [class*="bg-[#051329]"] {
   background-color: #e2e8f0 !important;
 }
 
-.theme-light [class*="bg-[#071322]"] {
-  background-color: #f8fafc !important;
+/* Selected cards & active rows in Light Mode (Crisp Sky Tint instead of Dark Navy) */
+.theme-light [class*="bg-[#12253c]"],
+.theme-light [class*="bg-[#13253c]"],
+.theme-light [class*="bg-[#17263b]"],
+.theme-light [class*="bg-[#002847]"],
+.theme-light [class*="bg-[#002c47]"] {
+  background-color: #e0f2fe !important;
 }
 
-.theme-light [class*="bg-[#081729]"] {
-  background-color: #f1f5f9 !important;
-}
-
-.theme-light [class*="bg-[#0c1e33]"] {
+/* Dark Navy Gradients mapped to Crisp Light Gradients in Light Mode */
+.theme-light [class*="from-[#003859]"],
+.theme-light [class*="from-[#102034]"],
+.theme-light [class*="from-[#1b2b3f]"],
+.theme-light [class*="from-[#0b1c30]"],
+.theme-light [class*="from-[#0c2438]"] {
+  background-image: linear-gradient(135deg, #f0f9ff 0%, #ffffff 55%, #f8fafc 100%) !important;
   background-color: #ffffff !important;
+  border-color: #bae6fd !important;
 }
 
-.theme-light [class*="bg-[#17263b]"] {
-  background-color: #f0f9ff !important;
+.theme-light [class*="from-[#003824]"] {
+  background-image: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
+  background-color: #ecfdf5 !important;
 }
 
-.theme-light [class*="bg-[#020b14]"] {
-  background-color: #f8fafc !important;
+.theme-light [class*="from-[#450a0a]"] {
+  background-image: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%) !important;
+  background-color: #fef2f2 !important;
 }
 
-.theme-light [class*="bg-[#0e1d2f]"] {
-  background-color: #f8fafc !important;
+/* Ensure text-white on light-mapped surfaces is dark slate, while solid & gradient action buttons stay crisp white */
+.theme-light .text-white {
+  color: #0f172a !important;
 }
 
-.theme-light [class*="bg-[#0b1c2a]"] {
-  background-color: #ffffff !important;
+.theme-light .bg-\[\#0284c7\].text-white,
+.theme-light .bg-\[\#0284c7\] .text-white,
+.theme-light .bg-\[\#0284c7\] span,
+.theme-light .bg-\[\#0369a1\].text-white,
+.theme-light .bg-\[\#0369a1\] .text-white,
+.theme-light .bg-\[\#0369a1\] span,
+.theme-light .bg-\[\#3198dc\].text-white,
+.theme-light .bg-\[\#3198dc\] .text-white,
+.theme-light .bg-\[\#3198dc\] span,
+.theme-light .bg-\[\#10b981\].text-white,
+.theme-light .bg-\[\#10b981\] .text-white,
+.theme-light .bg-\[\#10b981\] span,
+.theme-light .bg-\[\#059669\].text-white,
+.theme-light .bg-\[\#059669\] .text-white,
+.theme-light .bg-\[\#059669\] span,
+.theme-light .bg-\[\#ef4444\].text-white,
+.theme-light .bg-\[\#ef4444\] .text-white,
+.theme-light .bg-\[\#dc2626\].text-white,
+.theme-light .bg-\[\#dc2626\] .text-white,
+.theme-light .bg-\[\#93000a\].text-white,
+.theme-light .bg-\[\#93000a\] .text-white,
+.theme-light .bg-\[\#f59e0b\].text-white,
+.theme-light .bg-\[\#f59e0b\] .text-white,
+.theme-light .bg-\[\#8b5cf6\].text-white,
+.theme-light .bg-\[\#8b5cf6\] .text-white,
+.theme-light [class*="from-[#0284c7]"].text-white,
+.theme-light [class*="from-[#0284c7]"] .text-white,
+.theme-light [class*="from-[#0284c7]"] span,
+.theme-light [class*="from-[#0284c7]"] svg,
+.theme-light [class*="from-[#3198dc]"].text-white,
+.theme-light [class*="from-[#3198dc]"] .text-white,
+.theme-light [class*="from-[#3198dc]"] span,
+.theme-light [class*="from-[#3198dc]"] svg,
+.theme-light [class*="from-[#10b981]"].text-white,
+.theme-light [class*="from-[#10b981]"] .text-white,
+.theme-light [class*="from-[#10b981]"] span,
+.theme-light [class*="from-[#10b981]"] svg,
+.theme-light [class*="from-[#059669]"].text-white,
+.theme-light [class*="from-[#059669]"] .text-white,
+.theme-light [class*="from-[#059669]"] span,
+.theme-light [class*="from-[#f59e0b]"].text-white,
+.theme-light [class*="from-[#f59e0b]"] .text-white,
+.theme-light [class*="from-[#f59e0b]"] span,
+.theme-light [class*="from-[#8b5cf6]"].text-white,
+.theme-light [class*="from-[#8b5cf6]"] .text-white,
+.theme-light [class*="from-[#8b5cf6]"] span,
+.theme-light [class*="from-[#6366f1]"].text-white,
+.theme-light [class*="from-[#6366f1]"] .text-white,
+.theme-light [class*="from-[#6366f1]"] span {
+  color: #ffffff !important;
 }
 
-.theme-light [class*="bg-[#150f1d]"] {
+.theme-light [class*="text-[#fbbf24]"],
+.theme-light [class*="text-[#fde68a]"] {
+  color: #b45309 !important;
+}
+
+.theme-light [class*="text-[#38bdf8]"] {
+  color: #0284c7 !important;
+}
+
+.theme-light [class*="bg-[#150f1d]"],
+.theme-light [class*="bg-[#2a1215]"],
+.theme-light [class*="bg-[#450a0a]"] {
   background-color: #fff1f2 !important;
 }
 
-.theme-light [class*="bg-[#181814]"] {
+.theme-light [class*="bg-[#181814]"],
+.theme-light [class*="bg-[#3d2400]"],
+.theme-light [class*="bg-[#451a03]"] {
   background-color: #fffbeb !important;
 }
 
-.theme-light [class*="bg-[#002c47]"] {
-  background-color: #e0f2fe !important;
+.theme-light [class*="bg-[#002419]"],
+.theme-light [class*="bg-[#00281b]"],
+.theme-light [class*="bg-[#042f2e]"],
+.theme-light [class*="bg-[#052e16]"] {
+  background-color: #ecfdf5 !important;
+}
+
+.theme-light [class*="bg-[#2e1065]"] {
+  background-color: #f5f3ff !important;
 }
 
 /* Hover Backgrounds */
@@ -331,36 +423,18 @@
 /* Code Snippets & SQL Previews */
 .theme-light pre,
 .theme-light code {
-  color: #0f172a;
+  color: #0f172a !important;
 }
 
-/* Ensure code blocks and text on dark surfaces always have crisp, high-contrast light text */
-.dark-terminal-code pre,
-.dark-terminal-code code,
-.dark-surface pre,
-.dark-surface code,
-.dark-card pre,
-.dark-card code,
-[class*="bg-black"] pre,
-[class*="bg-black"] code,
-[class*="bg-slate-900"] pre,
-[class*="bg-slate-900"] code,
-[class*="bg-slate-950"] pre,
-[class*="bg-slate-950"] code,
-[class*="bg-[#000f21]"] pre,
-[class*="bg-[#000f21]"] code,
-[class*="bg-[#031427]"] pre,
-[class*="bg-[#031427]"] code,
-[class*="bg-[#0b1c30]"] pre,
-[class*="bg-[#0b1c30]"] code {
-  color: #f8fafc !important;
+.theme-light pre[class*="bg-"] {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
 }
 
-.dark-terminal-code pre code span,
-.dark-terminal-code code span,
-.dark-surface pre code span,
-.dark-card pre code span {
-  color: inherit;
+/* Ensure code blocks and text on dark surfaces in Dark Mode have crisp, high-contrast light text */
+.theme-dark pre,
+.theme-dark code {
+  color: #f8fafc;
 }
 
 /* ==========================================================================

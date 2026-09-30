@@ -1,9 +1,17 @@
 <div align="center">
 
+<img
+  src="./src/assets/images/dbmastery_logo_1790662821248.jpg"
+  alt="Logo officiel DBMastery Studio"
+  referrerPolicy="no-referrer"
+  width="110"
+  height="110"
+/>
+
 # 🗄️ DBMastery Studio — SQL & Database Engineering Platform
 
 **Plateforme interactive d'apprentissage, d'entraînement adaptatif et de certification SQL & Architecture SGBD**  
-*Oracle Database SQL (1Z0-071) • PostgreSQL • MySQL • Microsoft Azure SQL (DP-300)*
+*Oracle Database SQL (1Z0-071) • PostgreSQL EDB • MySQL 8.0 DBA • Microsoft Azure SQL (DP-900 / DP-800)*
 
 [![React 19](https://img.shields.io/badge/React-19.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -15,29 +23,42 @@
 
 ---
 
-## 📸 Aperçu de l'Application
+## 📸 Captures d'Écran de l'Application
+
+<div align="center">
+  <img
+    src="./src/assets/images/dbmastery_onboarding_screenshot_1790662834983.jpg"
+    alt="Capture d'écran DBMastery Studio — Onboarding interactif, Aide contextuelle, Infobulles et Sessions courtes"
+    referrerPolicy="no-referrer"
+    width="100%"
+  />
+  <p><em><strong>Vue 1</strong> : Guide d'Onboarding interactif en 6 étapes, tiroir d'Aide Contextuelle dynamique, Infobulles pédagogiques et Sessions Courtes (5 min & 30 min).</em></p>
+</div>
+
+<br />
 
 <div align="center">
   <img
     src="./src/assets/images/dbmastery_studio_screenshot_1790453723903.jpg"
-    alt="Capture d'écran de DBMastery Studio — Tableau de bord, Mon activité hebdomadaire et moteur SQL interactif"
+    alt="Capture d'écran DBMastery Studio — Tableau de bord, Mon activité hebdomadaire et moteur SQL interactif"
     referrerPolicy="no-referrer"
     width="100%"
   />
-  <p><em>Interface principale de <strong>DBMastery Studio</strong> : Tableau de bord analytique, suivi « Mon activité — Cette semaine », synchronisation Google Cloud Firestore et aide pédagogique progressive « Explique-moi ».</em></p>
+  <p><em><strong>Vue 2</strong> : Tableau de bord analytique, suivi « Mon activité — Cette semaine » (+12 % sur SQL), synchronisation Google Cloud Firestore et module « Explique-moi ».</em></p>
 </div>
 
 ---
 
 ## 🧭 Table des Matières
 
+- [🎨 Identité Visuelle & Logo Officiel](#-identité-visuelle--logo-officiel)
 - [✨ Fonctionnalités Clés](#-fonctionnalités-clés)
-  - [⏱️ 0. Système de Sessions Courtes (5 min & 30 min)](#️-0-système-de-sessions-courtes-5-min--30-min)
-  - [💡 1. Système Pédagogique « Explique-moi » (3 Niveaux)](#-1-système-pédagogique--explique-moi--3-niveaux)
-  - [📊 2. Historique Personnel — Page « Mon activité »](#-2-historique-personnel--page--mon-activité-)
-  - [☁️ 3. Authentification Google & Synchronisation Cloud Firestore](#️-3-authentification-google--synchronisation-cloud-firestore)
-  - [⚡ 4. Laboratoire SQL Live & Visualiseur de Jointures](#-4-laboratoire-sql-live--visualiseur-de-jointures)
-  - [🎯 5. Skill Map Quadridimensionnelle & Simulateur d'Examen](#-5-skill-map-quadridimensionnelle--simulateur-dexamen)
+  - [🎓 1. Onboarding Interactif, Aide Contextuelle & Infobulles](#-1-onboarding-interactif-aide-contextuelle--infobulles)
+  - [⏱️ 2. Système de Sessions Courtes (5 min & 30 min)](#️-2-système-de-sessions-courtes-5-min--30-min)
+  - [💡 3. Système Pédagogique « Explique-moi » (3 Niveaux)](#-3-système-pédagogique--explique-moi--3-niveaux)
+  - [📊 4. Historique Personnel — Page « Mon activité »](#-4-historique-personnel--page--mon-activité-)
+  - [☁️ 5. Authentification Google & Synchronisation Cloud Firestore](#️-5-authentification-google--synchronisation-cloud-firestore)
+  - [⚡ 6. Laboratoire SQL Live & Skill Map 4D](#-6-laboratoire-sql-live--skill-map-4d)
 - [🏗️ Architecture du Projet](#️-architecture-du-projet)
 - [🛡️ Sécurité Firestore (Zero-Trust Rules)](#️-sécurité-firestore-zero-trust-rules)
 - [🚀 Installation & Démarrage Rapide](#-installation--démarrage-rapide)
@@ -45,30 +66,62 @@
 
 ---
 
-## ✨ Fonctionnalités Clés
+## 🎨 Identité Visuelle & Logo Officiel
 
-### ⏱️ 0. Système de Sessions Courtes (5 min & 30 min)
-
-Pour s'adapter au rythme quotidien de l'apprenant, deux formats d'entraînement immédiats sont accessibles en 1 clic depuis le **Tableau de bord**, la page **Mon activité**, la vue **Apprentissage & Quiz** et la **Barre latérale** :
-
-| Format | « J'ai 5 minutes » — ⚡ Quick Training | « J'ai 30 minutes » — 🎯 Training Session |
-| :--- | :--- | :--- |
-| **Volume** | `5 questions` | `20 questions` |
-| **Durée** | `5 minutes` (chrono `05:00`) | `30 minutes` (chrono `30:00`) |
-| **Ciblage & Progression** | **Notions faibles uniquement** (`Subqueries`, `JOIN`, `Indexes`) | **Difficulté progressive** (`Fondamental` → `Intermédiaire` → `Avancé`) & **Adaptée à mon niveau** |
-| **Action** | `[Commencer]` | `[Commencer]` |
+L'application intègre un logo officiel vectoriel (`public/logo.svg` & composant `AppLogo.tsx`) ainsi qu'un emblème haute résolution :
+- 🛢️ **Cylindres SGBD superposés** symbolisant l'architecture relationnelle et le stockage transactionnel.
+- ⚡ **Éclair ambré & anneau émeraude** illustrant l'exécution SQL temps réel et les sessions d'entraînement rapides.
+- 🔖 **Favicon SVG natif** déclaré dans `index.html` et affiché dans l'en-tête de la barre latérale, le guide d'Onboarding et le tiroir d'aide.
 
 ---
 
-### 💡 1. Système Pédagogique « Explique-moi » (3 Niveaux)
+## ✨ Fonctionnalités Clés
+
+### 🎓 1. Onboarding Interactif, Aide Contextuelle & Infobulles
+
+Pour garantir une prise en main immédiate et accompagner l'apprenant sur chaque concept SQL, trois dispositifs d'assistance sont intégrés :
+
+| Composant | Icône | Rôle & Fonctionnement | Accès |
+| :--- | :---: | :--- | :--- |
+| **Guide d'Onboarding** (`OnboardingModal`) | 🧭 | Parcours interactif en **6 étapes** au premier lancement : choix de la certification, test des sessions courtes (5/30 min), démo interactive du module *« Explique-moi »* et aperçu de *« Mon activité »*. | Automatique à la 1ère visite ou via le bouton **`Onboarding`** (barre supérieure / barre latérale). |
+| **Aide Contextuelle** (`ContextualHelpDrawer`) | ❓ | Tiroir latéral intelligent dont le contenu **s'adapte dynamiquement à l'écran actif** : objectif de la vue, guide étape par étape et **Mémo SQL / Pièges d'examen** liés à l'écran consulté. | Bouton flottant **`? Aide contextuelle`** en bas à droite ou bouton **`Aide`** dans la barre supérieure. |
+| **Infobulles Intelligentes** (`SmartTooltip`) | 💬 | Popovers haute lisibilité au survol ou au focus clavier sur les indicateurs, badges et paramètres de session (activables/désactivables en 1 clic depuis l'aide contextuelle). | Survol des métriques, boutons de navigation et cartes de sessions courtes. |
+
+---
+
+### ⏱️ 2. Système de Sessions Courtes (5 min & 30 min)
+
+Deux formats d'entraînement quotidien sont accessibles en 1 clic depuis le **Tableau de bord**, la page **Mon activité**, la vue **Apprentissage & Quiz** et la **Barre latérale** :
+
+```text
+┌──────────────────────────────────────────┐   ┌──────────────────────────────────────────┐
+│ « J'ai 5 minutes »                       │   │ « J'ai 30 minutes »                      │
+│ ⚡ Quick Training                        │   │ 🎯 Training Session                      │
+│                                          │   │                                          │
+│ • 5 questions                            │   │ • 20 questions                           │
+│ • 5 minutes                              │   │ • Difficulté progressive                 │
+│ • Notions faibles uniquement             │   │ • Adaptée à mon niveau                   │
+│                                          │   │                                          │
+│ [ ▶ Commencer ]                          │   │ [ ▶ Commencer ]                          │
+└──────────────────────────────────────────┘   └──────────────────────────────────────────┘
+```
+
+| Critère | ⚡ Quick Training (« J'ai 5 minutes ») | 🎯 Training Session (« J'ai 30 minutes ») |
+| :--- | :--- | :--- |
+| **Volume** | `5 questions` | `20 questions` |
+| **Durée** | `5 minutes` (chronomètre `05:00`) | `30 minutes` (chronomètre `30:00`) |
+| **Algorithme** | **Notions faibles uniquement** (`Subqueries`, `JOIN`, `Indexes`) | **Difficulté progressive** (`Q1–6 Fondamental` → `Q7–14 Intermédiaire` → `Q15–20 Avancé`) & **Adaptée à mon niveau** |
+| **Bilan final** | Recalcul immédiat des scores de compétences + synchronisation avec *Mon activité* | Bilan complet par palier + recalcul des compétences + synchronisation Cloud |
+
+---
+
+### 💡 3. Système Pédagogique « Explique-moi » (3 Niveaux)
 
 Pour éviter de donner immédiatement la réponse lors d'un blocage sur une question QCM ou un défi d'écriture SQL, chaque exercice intègre une barre d'assistance graduée :
 
 ```text
 [ Réponse ]   [ 💡 Indice ]   [ 🧠 Expliquer ]   [ 👁️ Voir la solution ]
 ```
-
-Lorsque l'apprenant clique sur **`[ Expliquer ]`** ou **`[ Indice ]`**, un panneau structuré en **3 paliers progressifs** s'affiche :
 
 | Niveau | Badge | Objectif Pédagogique | Exemple de Contenu |
 | :--- | :--- | :--- | :--- |
@@ -78,9 +131,9 @@ Lorsque l'apprenant clique sur **`[ Expliquer ]`** ou **`[ Indice ]`**, un panne
 
 ---
 
-### 📊 2. Historique Personnel — Page « Mon activité »
+### 📊 4. Historique Personnel — Page « Mon activité »
 
-Une vue dédiée **« Mon activité »** (accessible depuis la barre latérale et le Tableau de bord) synthétise la régularité et la progression hebdomadaire en temps réel :
+Une page dédiée **« Mon activité »** synthétise la régularité et la progression hebdomadaire en temps réel :
 
 ```text
 Mon activité
@@ -104,36 +157,20 @@ Ven     ███████████
 
 - 🔍 **Filtrage interactif par jour** : Cliquez sur n'importe quelle barre (`Lun` à `Ven`) pour inspecter le détail de la journée (nombre de questions, taux de réussite, vitesse moyenne et journal des tentatives).
 - 📈 **Comparaison hebdomadaire par sous-domaine** : Décomposition de la progression sur `SELECT`, `WHERE`, `JOIN`, `GROUP BY / HAVING`, `Subqueries / CTE` et `Normalisation`.
-- ⏱️ **Mise à jour automatique** : Chaque question validée dans le QCM ou le Lab SQL met immédiatement à jour les compteurs et le temps moyen de réponse.
 
 ---
 
-### ☁️ 3. Authentification Google & Synchronisation Cloud Firestore
+### ☁️ 5. Authentification Google & Synchronisation Cloud Firestore
 
-- 🔐 **Connexion Google en 1 clic** : Bouton **« Connexion Google »** disponible dans la barre supérieure (`Header`), la barre latérale (`Sidebar`) et le bandeau d'état du Tableau de bord.
-- 🔄 **Synchronisation Temps Réel (`onSnapshot`)** :
-  - **Profil de progression (`userProfiles`)** : XP, niveau, série actuelle (*streak*), maîtrise par domaine et statistiques hebdomadaires.
-  - **Mémoire adaptative (`userMemories`)** : Historique des erreurs récurrentes, concepts fragiles et plan de révision personnalisé.
-  - **Journal d'activité (`questionAttempts`)** : Historique horodaté de chaque question répondue avec temps passé et statut de réussite.
+- 🔐 **Connexion Google en 1 clic** : Bouton **« Connexion Google »** visible dans la barre supérieure (`Header`), la barre latérale (`Sidebar`) et le bandeau d'état du Tableau de bord.
+- 🔄 **Synchronisation Temps Réel (`onSnapshot`)** : Sauvegarde automatique du profil, des scores de compétences, des tentatives de questions et des pièges SQL identifiés.
 
 ---
 
-### ⚡ 4. Laboratoire SQL Live & Visualiseur de Jointures
+### ⚡ 6. Laboratoire SQL Live & Skill Map 4D
 
-- 🖥️ **Exécution SQL In-Browser (AlaSQL)** : Écrivez et exécutez de vraies requêtes SQL (`SELECT`, `INNER/LEFT/RIGHT/FULL JOIN`, `GROUP BY`, `HAVING`, `CTE WITH`, fonctions de fenêtrage) sur un schéma relationnel pré-chargé (`employees`, `departments`, `projects`, `sales`).
-- 🔗 **Visualiseur Interactif de Jointures** : Diagrammes de Venn dynamiques et aperçu ligne par ligne des correspondances de clés primaires/étrangères (`PK` / `FK`) et gestion des valeurs `NULL`.
-- 🏛️ **Explorateur d'Architecture SGBD** : Schémas interactifs de la mémoire (SGA, PGA, Buffer Cache, Redo Log Buffer) et des processus d'arrière-plan (`DBWn`, `LGWR`, `CKPT`, `SMON`, `PMON`).
-
----
-
-### 🎯 5. Skill Map Quadridimensionnelle & Simulateur d'Examen
-
-- 🧭 **Évaluation sur 4 Piliers** :
-  1. 🟦 **Syntaxe SQL** (`SELECT`, `DML`, `DDL`, fonctions analytiques)
-  2. 🟪 **Conception & Modélisation** (`1NF`, `2NF`, `3NF`, `BCNF`, clés et contraintes)
-  3. 🟧 **Architecture Interne SGBD** (Transactions `ACID`, verrous, index B-Tree/Bitmap, mémoire)
-  4. 🟩 **Diagnostic & Optimisation** (Plans d'exécution, résolution d'erreurs `ORA-*`, tuning)
-- ⏳ **Simulateur d'Examen Chronométré** : Conditions réelles de certification (ex. **Oracle 1Z0-071**), marquage des questions pour révision, score de préparation (*Exam Readiness Score*) et rapport post-examen détaillé.
+- 🖥️ **Exécution SQL In-Browser (AlaSQL)** : Écrivez et exécutez de vraies requêtes SQL (`SELECT`, `INNER/LEFT/RIGHT JOIN`, `GROUP BY`, `HAVING`, `CTE WITH`) sur un schéma relationnel pré-chargé (`employees`, `departments`, `jobs`, `locations`).
+- 🧭 **Skill Map Quadridimensionnelle** : Cartographie interactive sur 4 piliers (Syntaxe SQL, Modélisation & 3NF, Architecture Interne SGBD, Diagnostic & Optimisation).
 
 ---
 
@@ -141,90 +178,72 @@ Ven     ███████████
 
 ```text
 📦 dbmastery-studio
- ┣ 📂 public/                        # Ressources statiques et schémas
+ ┣ 📂 public/
+ ┃ ┗ 🎨 logo.svg                       # Logo vectoriel officiel & Favicon SVG
  ┣ 📂 src/
- ┃ ┣ 📂 assets/images/               # Captures d'écran et illustrations générées
+ ┃ ┣ 📂 assets/images/                 # Logo HD & Captures d'écran de l'application
  ┃ ┣ 📂 components/
- ┃ ┃ ┣ 📄 Header.tsx                 # Barre supérieure fixe + Connexion Google + Recherche
- ┃ ┃ ┣ 📄 Sidebar.tsx                # Navigation latérale + Statut Cloud + XP
- ┃ ┃ ┣ 📄 DashboardView.tsx          # Tableau de bord + Encart « Mon activité » + Skill Map
- ┃ ┃ ┣ 📄 PersonalActivityView.tsx   # Page « Mon activité » (Historique personnel & Progression)
- ┃ ┃ ┣ 📄 ExplainMePanel.tsx         # Panneau pédagogique 3 niveaux (💡 Indice, 🧠 Explication, 📖 Cours)
- ┃ ┃ ┣ 📄 QuizView.tsx               # Entraînement QCM adaptatif & Simulateur d'examen
- ┃ ┃ ┣ 📄 SqlSandboxView.tsx         # Éditeur SQL Live (AlaSQL) + Défis d'écriture SQL
- ┃ ┃ ┣ 📄 JoinVisualizerView.tsx     # Visualiseur interactif de jointures SQL
- ┃ ┃ ┣ 📄 ArchitectureView.tsx       # Explorateur d'architecture SGBD (SGA/PGA, Processus)
- ┃ ┃ ┗ 📄 CoursesView.tsx            # Modules de cours structurés et fiches de révision
+ ┃ ┃ ┣ 🎨 AppLogo.tsx                  # Composant Logo officiel (variantes SVG & Image)
+ ┃ ┃ ┣ 🧭 OnboardingModal.tsx          # Guide d'onboarding interactif en 6 étapes
+ ┃ ┃ ┣ ❓ ContextualHelpDrawer.tsx     # Tiroir d'aide contextuelle dynamique par écran
+ ┃ ┃ ┣ 💬 SmartTooltip.tsx             # Système d'infobulles pédagogiques accessibles
+ ┃ ┃ ┣ ⚡ ShortSessionsWidget.tsx      # Cartes « J'ai 5 minutes » (5Q) & « J'ai 30 minutes » (20Q)
+ ┃ ┃ ┣ 🎯 ShortSessionRunnerModal.tsx  # Exécuteur de sessions courtes avec chrono & bilan
+ ┃ ┃ ┣ 💡 ProgressiveExplainPanel.tsx  # Module « Explique-moi » (💡 Indice, 🧠 Explication, 📖 Cours)
+ ┃ ┃ ┣ 📊 PersonalActivityView.tsx     # Page « Mon activité » (Historique personnel & Progression)
+ ┃ ┃ ┣ 📄 Header.tsx                   # Barre supérieure fixe + Connexion Google + Onboarding/Aide
+ ┃ ┃ ┣ 📄 Sidebar.tsx                  # Navigation latérale + Logo + Accès rapide 5 min / 30 min
+ ┃ ┃ ┣ 📄 DashboardView.tsx            # Tableau de bord analytique principal
+ ┃ ┃ ┗ 📄 SqlLabView.tsx               # Éditeur SQL Live (AlaSQL) + Défis d'écriture SQL
  ┃ ┣ 📂 data/
- ┃ ┃ ┣ 📄 mockData.ts                # Banque de questions SQL/SGBD, défis SQL et cours
- ┃ ┃ ┗ 📄 explainMeCatalog.ts        # Générateur et catalogue d'indices/explications/cours
+ ┃ ┃ ┣ 📄 shortSessionsData.ts         # Catalogue calibré pour les sessions 5 min et 30 min
+ ┃ ┃ ┗ 📄 mockData.ts                  # Banque de questions SQL/SGBD, défis SQL et cours
  ┃ ┣ 📂 services/
- ┃ ┃ ┣ 📄 statsService.ts            # Calcul des métriques, série (streak) et activité hebdomadaire
- ┃ ┃ ┣ 📄 userMemoryService.ts       # Moteur de mémoire adaptative et détection des points faibles
- ┃ ┃ ┗ 📄 firestoreSyncService.ts    # Synchronisation temps réel Firestore & gestion d'erreurs
- ┃ ┣ 📄 firebase.ts                  # Initialisation Firebase SDK (Auth + Firestore)
- ┃ ┣ 📄 types.ts                     # Interfaces TypeScript globales
- ┃ ┗ 📄 App.tsx                      # Orchestrateur principal et gestionnaire d'état
- ┣ 📄 firebase-blueprint.json        # Schéma des entités et collections Firestore
- ┣ 📄 firestore.rules                # Règles de sécurité Firestore Zero-Trust
- ┣ 📄 security_spec.md               # Spécification de sécurité et audit Red Team
- ┣ 📄 package.json                   # Dépendances et scripts NPM
- ┗ 📄 vite.config.ts                 # Configuration Vite + Tailwind CSS
+ ┃ ┃ ┣ 📄 statsService.ts              # Calcul des métriques, série (streak) et activité hebdomadaire
+ ┃ ┃ ┣ 📄 competencyService.ts         # Recalcul dynamique des compétences SQL
+ ┃ ┃ ┗ 📄 firebaseSyncService.ts       # Synchronisation temps réel Firestore & gestion d'erreurs
+ ┃ ┣ 📄 firebase.ts                    # Initialisation Firebase SDK (Auth + Firestore)
+ ┃ ┣ 📄 types.ts                       # Interfaces TypeScript globales
+ ┃ ┗ 📄 App.tsx                        # Orchestrateur principal
+ ┣ 📄 firebase-blueprint.json          # Schéma des entités et collections Firestore
+ ┣ 📄 firestore.rules                  # Règles de sécurité Firestore Zero-Trust
+ ┗ 📄 package.json                     # Dépendances et scripts NPM
 ```
 
 ---
 
 ## 🛡️ Sécurité Firestore (Zero-Trust Rules)
 
-La base de données Cloud Firestore est protégée par des règles de sécurité strictes (`firestore.rules`) conformes aux 8 piliers Zero-Trust :
-
 | Collection | Chemin Firestore | Règle d'Accès | Validation des Données |
 | :--- | :--- | :--- | :--- |
-| **Profil Utilisateur** | `/userProfiles/{userId}` | Propriétaire uniquement (`request.auth.uid == userId`) | Clés strictes (`hasOnly`), bornes numériques (`xp`, `streak`) et horodatage serveur |
-| **Mémoire Adaptative** | `/userMemories/{userId}` | Propriétaire uniquement (`request.auth.uid == userId`) | Validation de taille du JSON de télémétrie (`<= 900 KB`) et intégrité de `uid` |
-| **Tentatives QCM/SQL** | `/questionAttempts/{attemptId}` | Lecture/Création par propriétaire (`resource.data.uid == request.auth.uid`) | Immuabilité après création, validation des types (`timeSpentMs`, `isCorrect`) |
+| **Profil Utilisateur** | `/users/{userId}` | Propriétaire uniquement (`request.auth.uid == userId`) | Clés strictes (`hasOnly`), validation des types et bornes |
+| **Tentatives QCM/SQL** | `/users/{userId}/attempts/{attemptId}` | Lecture/Écriture par propriétaire uniquement | Validation des durées (`timeSpent`), difficulté et horodatage |
+| **Pièges SQL** | `/users/{userId}/traps/{trapId}` | Lecture/Écriture par propriétaire uniquement | Suivi de vulnérabilité et compteur d'occurrences |
 
 ---
 
 ## 🚀 Installation & Démarrage Rapide
 
-### 1️⃣ Prérequis
-
-- **Node.js** `>= 20.x`
-- **npm** ou **bun**
-
-### 2️⃣ Installation des dépendances
-
 ```bash
+# 1. Installer les dépendances
 npm install
-```
 
-### 3️⃣ Lancer le serveur de développement
-
-```bash
+# 2. Démarrer le serveur de développement (port 3000)
 npm run dev
+
+# 3. Compiler pour la production
+npm run build
 ```
-
-L'application démarre sur **`http://localhost:3000`**.
-
-### 4️⃣ Scripts disponibles
-
-| Commande | Description |
-| :--- | :--- |
-| `npm run dev` | Démarre le serveur de développement sur le port `3000` |
-| `npm run build` | Compile l'application pour la production dans `dist/` |
-| `npm run lint` | Vérifie le typage statique TypeScript (`tsc --noEmit`) |
-| `npm run preview` | Prévisualise le build de production localement |
 
 ---
 
 ## 🛠️ Stack Technique
 
 - ⚛️ **Frontend** : React 19, TypeScript 5.8, Vite 6
-- 🎨 **Design System & UI** : Tailwind CSS 4, Lucide Icons, Motion (animations fluides), thèmes *Dark Slate* & *High-Contrast Light*
-- 🗄️ **Moteur SQL Embarqué** : AlaSQL (exécution SQL relationnelle en mémoire côté client)
-- 🔥 **Backend & Cloud** : Firebase Authentication (Google Sign-In) & Cloud Firestore (persistance temps réel)
-- 🌐 **Internationalisation** : Interface bilingue Français 🇫🇷 / Anglais 🇬🇧 instantanée
+- 🎨 **UI & Design** : Tailwind CSS 4, Lucide Icons, thèmes *Dark Obsidian Slate* & *High-Contrast Light*
+- 🗄️ **Moteur SQL Embarqué** : AlaSQL (exécution SQL relationnelle en mémoire)
+- 🔥 **Cloud & Auth** : Firebase Authentication (Google Sign-In) & Cloud Firestore
+- 🌐 **Internationalisation** : Français 🇫🇷 / Anglais 🇬🇧 instantané
 
 ---
 

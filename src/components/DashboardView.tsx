@@ -207,9 +207,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* BANNIÈRE CENTRALE EXAMEN BLANC DE CERTIFICATION */}
-      <div className="relative overflow-hidden p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-[#003859] via-[#0b2742] to-[#102034] border border-[#3198dc]/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-5 group">
+      <div className="relative overflow-hidden p-5 sm:p-6 rounded-2xl bg-[#102034] border border-[#3198dc]/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-5 group">
         <div className="flex items-start sm:items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#3198dc] to-[#89ceff] text-[#002c47] flex items-center justify-center shrink-0 shadow-lg shadow-[#3198dc]/30">
+          <div className="w-12 h-12 rounded-2xl bg-[#3198dc] text-[#002c47] flex items-center justify-center shrink-0 shadow-lg shadow-[#3198dc]/30">
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div className="flex flex-col gap-1">
@@ -221,7 +221,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 {isFr ? 'Conditions réelles d\'examen' : 'Real exam conditions'}
               </span>
             </div>
-            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+            <h2 className="text-lg sm:text-xl font-bold text-[#d3e4fe] tracking-tight">
               {isFr ? 'Examen Blanc : 60 questions — 90 minutes' : 'Practice Exam: 60 questions — 90 minutes'}
             </h2>
             <p className="text-xs text-[#bfc7d2] max-w-xl leading-relaxed">
@@ -619,8 +619,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* LEFT COLUMN (8 cols) */}
         <div className="lg:col-span-8 flex flex-col gap-6">
           {/* RECOMMENDED DAILY SMART SESSION CARD */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-[#102034] via-[#1b2b3f] to-[#102034] p-6 rounded-xl border border-[#26364a] shadow-xl">
-            <div className="absolute -right-16 -top-16 w-64 h-64 bg-[#3198dc]/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="relative overflow-hidden bg-[#102034] p-6 rounded-xl border border-[#26364a] shadow-xl">
+            <div className="absolute -right-16 -top-16 w-64 h-64 bg-[#3198dc]/10 rounded-full blur-3xl pointer-events-none"></div>
 
             <div className="relative flex flex-col gap-4">
               <div className="flex items-center justify-between">

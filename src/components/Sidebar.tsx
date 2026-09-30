@@ -17,10 +17,13 @@ import {
   Zap,
   Cloud,
   LogOut,
-  Activity
+  Activity,
+  Compass,
+  HelpCircle
 } from 'lucide-react';
 import { NavigationTab } from '../types';
 import type { User } from '../services/firebaseSyncService';
+import { AppLogo } from './AppLogo';
 
 interface SidebarProps {
   currentTab: NavigationTab;
@@ -28,6 +31,8 @@ interface SidebarProps {
   lang: 'fr' | 'en';
   onOpenHamburger?: () => void;
   onOpenSystemSettings?: () => void;
+  onOpenOnboarding?: () => void;
+  onOpenContextualHelp?: () => void;
   systemVersion?: string;
   currentUser?: User | null;
   cloudSyncedCount?: number;
@@ -41,6 +46,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   lang,
   onOpenHamburger,
   onOpenSystemSettings,
+  onOpenOnboarding,
+  onOpenContextualHelp,
   systemVersion = 'v2.4.2',
   currentUser,
   cloudSyncedCount = 0,
@@ -60,6 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'sandbox', labelFr: 'Lab SQL & Pratique', labelEn: 'SQL Lab & Practice', icon: Terminal },
     { id: 'syllabus', labelFr: 'Fiches & Compétences', labelEn: 'Study Sheets & Skills', icon: BookOpen },
     { id: 'analytics', labelFr: 'Statistiques & Badges', labelEn: 'Stats & Badges', icon: BarChart3 },
+    { id: 'access_control', labelFr: 'Contrôle d\'Accès', labelEn: 'Access Control (RBAC)', icon: ShieldCheck, badge: 'Firestore' },
   ];
 
   return (
@@ -70,19 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="flex flex-col">
         {/* Brand Header */}
         <div className="h-16 px-4 flex items-center justify-between bg-[#000f21] border-b border-[#102034]">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#006398] to-[#3198dc] flex items-center justify-center text-white shadow-md shadow-[#006398]/30">
-              <Database className="w-5 h-5 text-[#93ccff]" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[17px] font-bold tracking-tight leading-none text-[#d3e4fe] flex items-center gap-1.5 font-sans">
-                DBMastery
-              </span>
-              <span className="text-[10px] text-[#93ccff] uppercase tracking-wider font-mono font-semibold mt-0.5">
-                Studio Engine
-              </span>
-            </div>
-          </div>
+          <AppLogo size="md" subtitle="Studio Engine" />
 
           {/* Hamburger Icon in Sidebar header */}
           {onOpenHamburger && (
@@ -241,6 +237,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
             Gemini
           </span>
         </button>
+
+        {/* Guide Onboarding & Aide Contextuelle */}
+        <div className="grid grid-cols-2 gap-1.5">
+          {onOpenOnboarding && (
+            <button
+              id="sidebar-onboarding-btn"
+              type="button"
+              onClick={onOpenOnboarding}
+              className="px-2.5 py-2 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] border border-[#4edea3]/30 hover:border-[#4edea3] text-xs font-mono font-bold text-[#4edea3] flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+            >
+              <Compass className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{isFr ? 'Onboarding' : 'Tour'}</span>
+            </button>
+          )}
+          {onOpenContextualHelp && (
+            <button
+              id="sidebar-contextual-help-btn"
+              type="button"
+              onClick={onOpenContextualHelp}
+              className="px-2.5 py-2 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/30 hover:border-[#38bdf8] text-xs font-mono font-bold text-[#93ccff] flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+            >
+              <HelpCircle className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{isFr ? 'Aide (?)' : 'Help (?)'}</span>
+            </button>
+          )}
+        </div>
 
         {/* System Settings & Version Link */}
         {onOpenSystemSettings && (

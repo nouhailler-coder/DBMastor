@@ -17,12 +17,18 @@ import { SystemSettingsModal } from './components/SystemSettingsModal';
 import { TargetedSessionModal } from './components/TargetedSessionModal';
 import { ShortSessionRunnerModal } from './components/ShortSessionRunnerModal';
 import { ShortSessionMode } from './data/shortSessionsData';
+import { OnboardingModal, hasCompletedOnboarding } from './components/OnboardingModal';
+import { ContextualHelpDrawer } from './components/ContextualHelpDrawer';
+import { AccessControlView, AccessGatekeeperOverlay } from './components/AccessControlView';
 import {
    NavigationTab,
   CertificationTrackId,
   SystemVersionInfo,
   QuestionAttemptTelemetry,
-  TrapDiagnosticRecord
+  TrapDiagnosticRecord,
+  UserAccessRecord,
+  UserAccessRole,
+  UserAccessStatus
 } from './types';
 import { 
   getInitialSystemVersionInfo, 
@@ -34,13 +40,36 @@ import { auth } from './firebase';
 import {
   signInWithGoogle,
   signOutFromFirebase,
+  ensureUserAccessInFirestore,
   ensureUserProfileInFirestore,
+  subscribeToOwnAccessRecord,
+  subscribeToAllUserAccessRecords,
   subscribeToUserFirestoreData,
   syncAttemptToFirestore,
   syncTrapToFirestore,
+  adminUpsertUserAccess,
+  adminDeleteUserAccess,
+  isUserBootstrappedAdmin,
+  sanitizeId,
   onAuthStateChanged,
   User
 } from './services/firebaseSyncService';
+import {
+  SiteGateConfig,
+  Step2EmailSession,
+  loadSiteGateConfig,
+  saveSiteGateConfig,
+  isStep1SitePasswordUnlocked,
+  unlockStep1WithPassword,
+  lockStep1SitePassword,
+  loadStep2EmailSession,
+  saveStep2EmailSession,
+  loadLocalEmailRecords,
+  upsertLocalEmailRecord,
+  removeLocalEmailRecord,
+  verifyEmailValidationCode,
+  emailToDeterministicUid
+} from './services/siteAccessGateService';
 import { Zap, CheckCircle2, X, RefreshCw, Settings } from 'lucide-react';
 
 export default function App() {
@@ -59,19 +88,39 @@ export default function App() {
   const [isSystemSettingsOpen, setIsSystemSettingsOpen] = useState(false);
   const [isTargetedSessionOpen, setIsTargetedSessionOpen] = useState(false);
   const [shortSessionMode, setShortSessionMode] = useState<ShortSessionMode | null>(null);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(() => !hasCompletedOnboarding());
+  const [isContextualHelpOpen, setIsContextualHelpOpen] = useState<boolean>(false);
   const [systemInfo, setSystemInfo] = useState<SystemVersionInfo>(() => getInitialSystemVersionInfo());
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [cloudSyncedCount, setCloudSyncedCount] = useState(0);
+  const [ownAccessRecord, setOwnAccessRecord] = useState<UserAccessRecord | null>(null);
+  const [allAccessRecords, setAllAccessRecords] = useState<UserAccessRecord[]>([]);
+  const [localEmailRecords, setLocalEmailRecords] = useState<UserAccessRecord[]>(() =>
+    loadLocalEmailRecords()
+  );
+  const [siteGateConfig, setSiteGateConfig] = useState<SiteGateConfig>(() =>
+    loadSiteGateConfig()
+  );
+  const [isStep1Unlocked, setIsStep1Unlocked] = useState<boolean>(() =>
+    isStep1SitePasswordUnlocked()
+  );
+  const [step2EmailSession, setStep2EmailSession] = useState<Step2EmailSession | null>(() =>
+    loadStep2EmailSession()
+  );
+  const [isGatekeeperPreviewOpen, setIsGatekeeperPreviewOpen] = useState<boolean>(false);
+  const [previewStepOverride, setPreviewStepOverride] = useState<1 | 2 | null>(null);
   const [bgUpdateToast, setBgUpdateToast] = useState<{
     version: string;
     type: 'auto' | 'forced';
     notes: string;
   } | null>(null);
 
-  // Firebase Auth & Firestore Real-time Sync
+  // Firebase Auth & Firestore Real-time Sync + RBAC Access Control
   useEffect(() => {
     let unsubFirestore: (() => void) | null = null;
+    let unsubOwnAccess: (() => void) | null = null;
+    let unsubAllAccess: (() => void) | null = null;
 
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
@@ -81,17 +130,44 @@ export default function App() {
         unsubFirestore();
         unsubFirestore = null;
       }
+      if (unsubOwnAccess) {
+        unsubOwnAccess();
+        unsubOwnAccess = null;
+      }
+      if (unsubAllAccess) {
+        unsubAllAccess();
+        unsubAllAccess = null;
+      }
 
       if (user && user.emailVerified) {
         try {
-          await ensureUserProfileInFirestore(user, selectedCert);
-          unsubFirestore = subscribeToUserFirestoreData(user, (count) => {
-            setCloudSyncedCount(count);
+          const accessDoc = await ensureUserAccessInFirestore(user);
+          setOwnAccessRecord(accessDoc);
+
+          unsubOwnAccess = subscribeToOwnAccessRecord(user, (updatedAccess) => {
+            setOwnAccessRecord(updatedAccess);
           });
+
+          if (isUserBootstrappedAdmin(user)) {
+            unsubAllAccess = subscribeToAllUserAccessRecords(user, (records) => {
+              setAllAccessRecords(records);
+            });
+          }
+
+          if (accessDoc?.status === 'approved') {
+            await ensureUserProfileInFirestore(user, selectedCert);
+            unsubFirestore = subscribeToUserFirestoreData(user, (count) => {
+              setCloudSyncedCount(count);
+            });
+          } else {
+            setCloudSyncedCount(0);
+          }
         } catch (err) {
           console.error('Firebase sync initialization error:', err);
         }
       } else {
+        setOwnAccessRecord(null);
+        setAllAccessRecords([]);
         setCloudSyncedCount(0);
       }
     });
@@ -99,14 +175,233 @@ export default function App() {
     return () => {
       unsubAuth();
       if (unsubFirestore) unsubFirestore();
+      if (unsubOwnAccess) unsubOwnAccess();
+      if (unsubAllAccess) unsubAllAccess();
     };
   }, [selectedCert]);
 
-  // Synchroniser automatiquement les nouvelles tentatives et pièges vers Firestore
+  const handleAdminSelfRestoreApproved = async () => {
+    if (!currentUser || !currentUser.email) return;
+    await adminUpsertUserAccess({
+      uid: sanitizeId(currentUser.uid, 'admin_uid'),
+      email: currentUser.email,
+      displayName: currentUser.displayName || currentUser.email.split('@')[0] || 'Admin DBA',
+      role: 'admin',
+      status: 'approved',
+      accessReason: 'Ré-autorisation immédiate par l\'administrateur',
+    });
+    setIsGatekeeperPreviewOpen(false);
+    setPreviewStepOverride(null);
+  };
+
+  // Fusionner les enregistrements Firestore (/user_access) et les demandes Email locales
+  const mergedAccessRecords = React.useMemo(() => {
+    const byEmail = new Map<string, UserAccessRecord>();
+    localEmailRecords.forEach((rec) => {
+      byEmail.set(rec.email.trim().toLowerCase(), rec);
+    });
+    if (ownAccessRecord) {
+      byEmail.set(ownAccessRecord.email.trim().toLowerCase(), ownAccessRecord);
+    }
+    allAccessRecords.forEach((rec) => {
+      byEmail.set(rec.email.trim().toLowerCase(), rec);
+    });
+    return Array.from(byEmail.values()).sort((a, b) =>
+      b.updatedAt.localeCompare(a.updatedAt)
+    );
+  }, [allAccessRecords, localEmailRecords, ownAccessRecord]);
+
+  const handleUpdateSiteGateConfig = (next: SiteGateConfig) => {
+    const saved = saveSiteGateConfig(next);
+    setSiteGateConfig(saved);
+    setIsStep1Unlocked(isStep1SitePasswordUnlocked());
+  };
+
+  const handleUnlockStep1 = (pwd: string): boolean => {
+    const ok = unlockStep1WithPassword(pwd);
+    if (ok) {
+      setIsStep1Unlocked(true);
+    }
+    return ok;
+  };
+
+  const handleLockStep1 = () => {
+    lockStep1SitePassword();
+    setIsStep1Unlocked(false);
+  };
+
+  const handleUpdateStep2Session = (session: Step2EmailSession | null) => {
+    saveStep2EmailSession(session);
+    setStep2EmailSession(session);
+  };
+
+  const handleUpsertEmailRecord = async (params: {
+    uid?: string;
+    email: string;
+    displayName: string;
+    role: UserAccessRole;
+    status: UserAccessStatus;
+    accessReason: string;
+  }) => {
+    const cleanEmail = params.email.trim().toLowerCase();
+    const uid = params.uid || emailToDeterministicUid(cleanEmail);
+    upsertLocalEmailRecord({
+      email: cleanEmail,
+      displayName: params.displayName,
+      role: params.role,
+      status: params.status,
+      accessReason: params.accessReason,
+    });
+    setLocalEmailRecords(loadLocalEmailRecords());
+
+    if (currentUser && isUserBootstrappedAdmin(currentUser)) {
+      await adminUpsertUserAccess({
+        uid,
+        email: cleanEmail,
+        displayName: params.displayName,
+        role: params.role,
+        status: params.status,
+        accessReason: params.accessReason,
+      });
+    }
+  };
+
+  const handleDeleteEmailRecord = async (record: UserAccessRecord) => {
+    removeLocalEmailRecord(record.email);
+    removeLocalEmailRecord(record.uid);
+    setLocalEmailRecords(loadLocalEmailRecords());
+    if (currentUser && isUserBootstrappedAdmin(currentUser)) {
+      try {
+        await adminDeleteUserAccess(record.uid);
+      } catch {
+        // Ignorer si l'entrée n'existait que localement
+      }
+    }
+  };
+
+  const handleSubmitEmailRequest = async (params: {
+    email: string;
+    displayName: string;
+    accessReason: string;
+    validationCode?: string;
+  }): Promise<{ approved: boolean; message: string }> => {
+    const cleanEmail = params.email.trim().toLowerCase();
+    const existingRecord = mergedAccessRecords.find(
+      (r) => r.email.trim().toLowerCase() === cleanEmail
+    );
+
+    const codeValid = params.validationCode
+      ? verifyEmailValidationCode(cleanEmail, params.validationCode)
+      : false;
+
+    const isAlreadyApproved =
+      codeValid ||
+      existingRecord?.status === 'approved' ||
+      (currentUser?.email?.toLowerCase() === cleanEmail &&
+        ownAccessRecord?.status === 'approved');
+
+    const finalStatus: UserAccessStatus = isAlreadyApproved
+      ? 'approved'
+      : existingRecord?.status === 'revoked'
+      ? 'revoked'
+      : 'pending';
+
+    upsertLocalEmailRecord({
+      email: cleanEmail,
+      displayName: params.displayName,
+      role: existingRecord?.role || 'student',
+      status: finalStatus,
+      accessReason: params.accessReason,
+    });
+    setLocalEmailRecords(loadLocalEmailRecords());
+
+    // Si l'admin teste un email sur sa session, l'enregistrer aussi dans Firestore /user_access
+    if (currentUser && isUserBootstrappedAdmin(currentUser)) {
+      try {
+        await adminUpsertUserAccess({
+          uid: existingRecord?.uid || emailToDeterministicUid(cleanEmail),
+          email: cleanEmail,
+          displayName: params.displayName,
+          role: existingRecord?.role || 'student',
+          status: finalStatus,
+          accessReason: params.accessReason,
+        });
+      } catch {
+        // ignore
+      }
+    }
+
+    const sessionObj: Step2EmailSession = {
+      email: cleanEmail,
+      displayName: params.displayName,
+      accessReason: params.accessReason,
+      validatedByCode: isAlreadyApproved,
+      submittedAt: new Date().toISOString(),
+    };
+    handleUpdateStep2Session(sessionObj);
+
+    if (isAlreadyApproved) {
+      setIsGatekeeperPreviewOpen(false);
+      setPreviewStepOverride(null);
+      return {
+        approved: true,
+        message:
+          lang === 'fr'
+            ? `Email "${cleanEmail}" validé ! Accès au site autorisé.`
+            : `Email "${cleanEmail}" verified! Site access granted.`,
+      };
+    }
+
+    if (finalStatus === 'revoked') {
+      return {
+        approved: false,
+        message:
+          lang === 'fr'
+            ? `L'accès pour l'adresse "${cleanEmail}" a été révoqué par l'administrateur.`
+            : `Access for "${cleanEmail}" has been revoked by the administrator.`,
+      };
+    }
+
+    return {
+      approved: false,
+      message:
+        lang === 'fr'
+          ? `Votre demande pour "${cleanEmail}" a bien été enregistrée en statut EN ATTENTE (PENDING). Dès que l'administrateur valide votre email dans la console Contrôle d'Accès (ou vous transmet votre code VAL-XXXX-XXXX), votre accès sera déverrouillé.`
+          : `Your request for "${cleanEmail}" has been recorded as PENDING. Once the administrator approves your email in the Access Control console (or sends your VAL-XXXX-XXXX code), your access will unlock.`,
+    };
+  };
+
+  // Vérifier si l'utilisateur courant a franchi l'Étape 1 (Mot de passe) et l'Étape 2 (Email validé)
+  const isStep2EmailApproved = React.useMemo(() => {
+    if (!siteGateConfig.requireEmailValidation) return true;
+    if (currentUser && ownAccessRecord?.status === 'approved') return true;
+    if (step2EmailSession) {
+      if (step2EmailSession.validatedByCode) return true;
+      const match = mergedAccessRecords.find(
+        (r) => r.email.trim().toLowerCase() === step2EmailSession.email.toLowerCase()
+      );
+      if (match?.status === 'approved') return true;
+    }
+    return false;
+  }, [
+    siteGateConfig.requireEmailValidation,
+    currentUser,
+    ownAccessRecord?.status,
+    step2EmailSession,
+    mergedAccessRecords,
+  ]);
+
+  const shouldShowGatekeeperOverlay =
+    isGatekeeperPreviewOpen ||
+    (siteGateConfig.gateEnabled &&
+      isAuthReady &&
+      ((siteGateConfig.requireSitePassword && !isStep1Unlocked) || !isStep2EmailApproved));
+
+  // Synchroniser automatiquement les nouvelles tentatives et pièges vers Firestore (uniquement si approuvé)
   useEffect(() => {
     const handleAttemptRecorded = (e: Event) => {
       const customEvent = e as CustomEvent<QuestionAttemptTelemetry>;
-      if (customEvent.detail && auth.currentUser) {
+      if (customEvent.detail && auth.currentUser && ownAccessRecord?.status === 'approved') {
         syncAttemptToFirestore(customEvent.detail).catch((err) =>
           console.error('Failed to sync attempt to Firestore:', err)
         );
@@ -115,7 +410,7 @@ export default function App() {
 
     const handleTrapRecorded = (e: Event) => {
       const customEvent = e as CustomEvent<TrapDiagnosticRecord>;
-      if (customEvent.detail && auth.currentUser) {
+      if (customEvent.detail && auth.currentUser && ownAccessRecord?.status === 'approved') {
         syncTrapToFirestore(customEvent.detail).catch((err) =>
           console.error('Failed to sync trap to Firestore:', err)
         );
@@ -128,7 +423,7 @@ export default function App() {
       window.removeEventListener('dbmastery:attempt_recorded', handleAttemptRecorded);
       window.removeEventListener('dbmastery:trap_recorded', handleTrapRecorded);
     };
-  }, []);
+  }, [ownAccessRecord?.status]);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -364,6 +659,8 @@ export default function App() {
           lang={lang}
           onOpenHamburger={() => setIsHamburgerOpen(true)}
           onOpenSystemSettings={() => setIsSystemSettingsOpen(true)}
+          onOpenOnboarding={() => setIsOnboardingOpen(true)}
+          onOpenContextualHelp={() => setIsContextualHelpOpen(true)}
           systemVersion={systemInfo.currentVersion}
           currentUser={currentUser}
           cloudSyncedCount={cloudSyncedCount}
@@ -388,10 +685,14 @@ export default function App() {
             onThemeToggle={handleThemeToggle}
             onOpenHamburger={() => setIsHamburgerOpen(true)}
             onOpenSystemSettings={() => setIsSystemSettingsOpen(true)}
+            onOpenOnboarding={() => setIsOnboardingOpen(true)}
+            onOpenContextualHelp={() => setIsContextualHelpOpen(true)}
             systemInfo={systemInfo}
             currentUser={currentUser}
             isAuthReady={isAuthReady}
             cloudSyncedCount={cloudSyncedCount}
+            accessStatus={ownAccessRecord?.status || null}
+            onOpenAccessControl={() => setCurrentTab('access_control')}
             onGoogleSignIn={handleGoogleSignIn}
             onSignOut={handleSignOut}
           />
@@ -498,6 +799,31 @@ export default function App() {
             <StatsView
               lang={lang}
               onOpenSettings={() => setIsSystemSettingsOpen(true)}
+            />
+          )}
+
+          {currentTab === 'access_control' && (
+            <AccessControlView
+              lang={lang}
+              currentUser={currentUser}
+              ownAccessRecord={ownAccessRecord}
+              allAccessRecords={mergedAccessRecords}
+              selectedCert={selectedCert}
+              siteGateConfig={siteGateConfig}
+              isStep1Unlocked={isStep1Unlocked}
+              step2EmailSession={step2EmailSession}
+              onUpdateSiteGateConfig={handleUpdateSiteGateConfig}
+              onLockStep1ForTest={handleLockStep1}
+              onUnlockStep1WithPassword={handleUnlockStep1}
+              onUpdateStep2EmailSession={handleUpdateStep2Session}
+              onUpsertEmailRecord={handleUpsertEmailRecord}
+              onDeleteEmailRecord={handleDeleteEmailRecord}
+              onOpenGatekeeperPreview={(step) => {
+                setPreviewStepOverride(step || null);
+                setIsGatekeeperPreviewOpen(true);
+              }}
+              onGoogleSignIn={handleGoogleSignIn}
+              onSignOut={handleSignOut}
             />
           )}
         </main>
@@ -617,6 +943,59 @@ export default function App() {
         theme={theme}
         onNavigateToTab={(tab) => setCurrentTab(tab as NavigationTab)}
       />
+
+      {/* Guide d'Onboarding Interactif (6 étapes) */}
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+        lang={lang}
+        selectedCert={selectedCert}
+        onSelectCert={setSelectedCert}
+        onStartShortSession={(mode) => setShortSessionMode(mode)}
+        onNavigateToTab={(tab) => setCurrentTab(tab)}
+        onOpenContextualHelp={() => setIsContextualHelpOpen(true)}
+      />
+
+      {/* Aide Contextuelle Dynamique par écran + Contrôle des Infobulles */}
+      <ContextualHelpDrawer
+        isOpen={isContextualHelpOpen}
+        onClose={() => setIsContextualHelpOpen(false)}
+        onOpen={() => setIsContextualHelpOpen(true)}
+        currentTab={currentTab}
+        lang={lang}
+        onOpenOnboarding={() => setIsOnboardingOpen(true)}
+        onStartShortSession={(mode) => setShortSessionMode(mode)}
+        onNavigateToTab={(tab) => setCurrentTab(tab)}
+      />
+
+      {/* Portail de Verrouillage en 2 Étapes : 1. Mot de passe du site (Netlify) -> 2. Email validé par l'Admin */}
+      {shouldShowGatekeeperOverlay && (
+        <AccessGatekeeperOverlay
+          lang={lang}
+          currentUser={currentUser}
+          ownAccessRecord={ownAccessRecord}
+          allAccessRecords={mergedAccessRecords}
+          siteGateConfig={siteGateConfig}
+          isStep1Unlocked={isStep1Unlocked}
+          step2EmailSession={step2EmailSession}
+          previewStepOverride={previewStepOverride}
+          isPreviewMode={isGatekeeperPreviewOpen}
+          onUnlockStep1WithPassword={handleUnlockStep1}
+          onLockStep1={handleLockStep1}
+          onSubmitEmailRequest={handleSubmitEmailRequest}
+          onClosePreview={() => {
+            setIsGatekeeperPreviewOpen(false);
+            setPreviewStepOverride(null);
+          }}
+          onOpenAdminConsole={() => {
+            setCurrentTab('access_control');
+          }}
+          onGoogleSignIn={handleGoogleSignIn}
+          onSignOut={handleSignOut}
+          onAdminSelfRestoreApproved={handleAdminSelfRestoreApproved}
+          selectedCert={selectedCert}
+        />
+      )}
     </div>
   );
 }

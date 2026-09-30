@@ -1,5 +1,68 @@
 {
   "entities": {
+    "UserAccess": {
+      "title": "UserAccess",
+      "description": "Access control gatekeeper and role-based authorization record for each user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Target user UID matching document ID.",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "description": "Verified email address of the user.",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Display name of the user requesting or holding access.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "role": {
+          "type": "string",
+          "description": "Assigned RBAC role.",
+          "maxLength": 32,
+          "enum": ["admin", "student", "auditor"]
+        },
+        "status": {
+          "type": "string",
+          "description": "Authorization decision state.",
+          "maxLength": 32,
+          "enum": ["pending", "approved", "revoked"]
+        },
+        "accessReason": {
+          "type": "string",
+          "description": "Justification for access or administrator note.",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the access record was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the access record was last updated."
+        }
+      },
+      "required": [
+        "uid",
+        "email",
+        "displayName",
+        "role",
+        "status",
+        "accessReason",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
     "UserProfile": {
       "title": "UserProfile",
       "description": "User profile, certification readiness metrics, and active track preferences.",
@@ -212,17 +275,21 @@
     }
   },
   "firestore": {
+    "/user_access/{userId}": {
+      "schema": { "$ref": "#/entities/UserAccess" },
+      "description": "Access control gatekeeper storing role and approval status (pending, approved, revoked) for each user."
+    },
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/UserProfile" },
-      "description": "Stores each authenticated user's profile and global certification stats."
+      "description": "Stores each authenticated and approved user's profile and global certification stats."
     },
     "/users/{userId}/attempts/{attemptId}": {
       "schema": { "$ref": "#/entities/QuestionAttempt" },
-      "description": "Subcollection storing individual timed question attempts for the user."
+      "description": "Subcollection storing individual timed question attempts for the approved user."
     },
     "/users/{userId}/traps/{trapId}": {
       "schema": { "$ref": "#/entities/TrapProgress" },
-      "description": "Subcollection storing certification trap mastery and error counts for the user."
+      "description": "Subcollection storing certification trap mastery and error counts for the approved user."
     }
   }
 }
