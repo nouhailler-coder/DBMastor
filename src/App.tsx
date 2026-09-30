@@ -394,8 +394,8 @@ export default function App() {
   const shouldShowGatekeeperOverlay =
     isGatekeeperPreviewOpen ||
     (siteGateConfig.gateEnabled &&
-      isAuthReady &&
-      ((siteGateConfig.requireSitePassword && !isStep1Unlocked) || !isStep2EmailApproved));
+      ((siteGateConfig.requireSitePassword && !isStep1Unlocked) ||
+        (isAuthReady && !isStep2EmailApproved)));
 
   // Synchroniser automatiquement les nouvelles tentatives et pièges vers Firestore (uniquement si approuvé)
   useEffect(() => {
