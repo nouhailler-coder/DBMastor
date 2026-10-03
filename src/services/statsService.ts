@@ -1,4 +1,5 @@
 import { QuestionAttemptTelemetry, TopicResponseTimeStat, PedagogicalSpeedProfile } from '../types';
+import { recordAnswerInMasteryTree } from './masteryTreeService';
 
 export interface UserBadge {
   id: string;
@@ -721,6 +722,13 @@ export function recordQuestionAttemptTelemetry(input: {
     localStorage.setItem(TELEMETRY_STORAGE_KEY, JSON.stringify(updatedLogs));
   } catch {
     // ignore storage errors
+  }
+
+  // Mettre à jour l'arbre hiérarchique MON NIVEAU
+  try {
+    recordAnswerInMasteryTree(normalizedTopic, input.isCorrect);
+  } catch (e) {
+    console.error('Error updating mastery tree:', e);
   }
 
   window.dispatchEvent(new CustomEvent('dbmastery:attempt_recorded', { detail: newAttempt }));

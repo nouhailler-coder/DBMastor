@@ -1,3 +1,5 @@
+import { applyExamSessionToMastery } from './masteryTreeService';
+
 export interface UserCompetency {
   id: string;
   name: string;
@@ -208,6 +210,13 @@ export function recalculateCompetenciesAfterSession(
   );
 
   saveCompetencies(updatedCompetencies);
+
+  // Synchroniser avec l'arbre hiérarchique MON NIVEAU
+  try {
+    applyExamSessionToMastery(sessionResults);
+  } catch (e) {
+    console.error('Error applying session to mastery tree:', e);
+  }
 
   const result: CompetencyRecalculationResult = {
     updatedCompetencies,

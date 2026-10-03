@@ -36,9 +36,18 @@ import { TrapExplorerModal } from './TrapExplorerModal';
 import { ResponseTimeAnalyticsCard } from './ResponseTimeAnalyticsCard';
 import { ProgressiveExplainPanel } from './ProgressiveExplainPanel';
 import { ShortSessionsWidget } from './ShortSessionsWidget';
+import { MasteryTreeCard } from './MasteryTreeCard';
+import { DailySessionCard } from './DailySessionCard';
 import { ShortSessionMode } from '../data/shortSessionsData';
 import type { User } from '../services/firebaseSyncService';
-import { LogOut } from 'lucide-react';
+import { LogOut, Brain, Target } from 'lucide-react';
+import {
+  hasCompletedInitialDiagnostic,
+  getSavedInitialDiagnostic,
+  dismissInitialDiagnostic,
+  isDiagnosticDismissed,
+  InitialDiagnosticResult
+} from '../services/initialDiagnosticService';
 
 interface DashboardViewProps {
   onNavigate: (tab: NavigationTab) => void;
@@ -47,6 +56,7 @@ interface DashboardViewProps {
   lang: 'fr' | 'en';
   onOpenTargetedSession?: () => void;
   onStartShortSession?: (mode: ShortSessionMode) => void;
+  onStartDailySession?: () => void;
   currentUser?: User | null;
   cloudSyncedCount?: number;
   onGoogleSignIn?: () => void;
@@ -60,6 +70,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   lang,
   onOpenTargetedSession,
   onStartShortSession,
+  onStartDailySession,
   currentUser,
   cloudSyncedCount = 0,
   onGoogleSignIn,
@@ -71,13 +82,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [competencies, setCompetencies] = useState<UserCompetency[]>(() => getStoredCompetencies());
   const [isTrapExplorerOpen, setIsTrapExplorerOpen] = useState(false);
   const [demoJoinAnswer, setDemoJoinAnswer] = useState<string | null>(null);
+  const [initialDiagnosticResult, setInitialDiagnosticResult] = useState<InitialDiagnosticResult | null>(() => getSavedInitialDiagnostic());
+  const [isDiagnosticDismissedState, setIsDiagnosticDismissedState] = useState<boolean>(() => isDiagnosticDismissed());
 
   React.useEffect(() => {
     const handleUpdate = () => {
       setCompetencies(getStoredCompetencies());
     };
+    const handleDiagUpdate = () => {
+      setInitialDiagnosticResult(getSavedInitialDiagnostic());
+      setIsDiagnosticDismissedState(isDiagnosticDismissed());
+    };
     window.addEventListener('dbmastery:competencies_updated', handleUpdate);
-    return () => window.removeEventListener('dbmastery:competencies_updated', handleUpdate);
+    window.addEventListener('dbmastery:diagnostic_completed', handleDiagUpdate);
+    window.addEventListener('dbmastery:diagnostic_reset', handleDiagUpdate);
+    return () => {
+      window.removeEventListener('dbmastery:competencies_updated', handleUpdate);
+      window.removeEventListener('dbmastery:diagnostic_completed', handleDiagUpdate);
+      window.removeEventListener('dbmastery:diagnostic_reset', handleDiagUpdate);
+    };
   }, []);
 
   const activeTrackObj = certificationTracks.find(t => t.id === selectedCert) || certificationTracks[0];
@@ -243,6 +266,124 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* BANNIÈRE DIAGNOSTIC INITIAL : PREMIÈRE UTILISATION OU PROFIL CALIBRÉ */}
+      {!initialDiagnosticResult && !isDiagnosticDismissedState ? (
+        <div
+          id="initial-diagnostic-prompt-banner"
+          className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-[#00223d] via-[#0b1c30] to-[#00172c] border border-[#0284c7]/50 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 w-80 h-80 bg-[#38bdf8]/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+
+          <div className="flex items-start gap-4 z-10">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#0284c7] to-[#38bdf8] flex items-center justify-center text-white shrink-0 shadow-lg shadow-[#0284c7]/25 mt-0.5">
+              <Brain className="w-6 h-6 animate-pulse" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#0284c7]/20 text-[#38bdf8] font-mono text-[10px] uppercase font-bold tracking-wider border border-[#38bdf8]/40">
+                  {isFr ? '🎯 Première Utilisation • Diagnostic Recommandé' : '🎯 First Use • Recommended Diagnostic'}
+                </span>
+                <span className="text-[11px] font-mono text-[#4edea3] font-semibold">
+                  20 questions • ~10 min
+                </span>
+              </div>
+              <h2 className="text-lg sm:text-xl font-bold font-sans text-white">
+                {isFr
+                  ? 'Évaluez votre niveau initial pour personnaliser vos séances'
+                  : 'Assess your initial level to personalize your training path'}
+              </h2>
+              <p className="text-xs text-[#bfc7d2] max-w-2xl leading-relaxed">
+                {isFr
+                  ? 'Couvre les 10 thèmes clés : SQL, Modélisation, Normalisation, Transactions, Index, Contraintes, Sécurité, Administration, Performances, et concepts NoSQL. Permet à l\'IA de déduire ce que vous maîtrisez et de calibrer votre arbre MON NIVEAU.'
+                  : 'Covers 10 core pillars: SQL, Data Modeling, Normalization, Transactions, Indexes, Constraints, Security, Administration, Performance, and NoSQL concepts. Powers AI-generated study sessions.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 z-10 shrink-0 self-stretch md:self-auto justify-end">
+            <button
+              onClick={() => {
+                dismissInitialDiagnostic();
+                setIsDiagnosticDismissedState(true);
+              }}
+              className="px-4 py-2.5 rounded-xl bg-[#102034] hover:bg-[#1b2b3f] text-[#89929b] hover:text-[#d3e4fe] font-mono text-xs font-semibold transition-colors cursor-pointer"
+            >
+              {isFr ? 'Plus tard' : 'Later'}
+            </button>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('dbmastery:open_initial_diagnostic'))}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0284c7] to-[#38bdf8] hover:from-[#0369a1] hover:to-[#0284c7] text-white font-bold text-xs shadow-lg shadow-[#0284c7]/25 flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+            >
+              <Zap className="w-4 h-4 fill-white" />
+              <span>{isFr ? 'Lancer le Diagnostic (20Q)' : 'Start Diagnostic (20Q)'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      ) : initialDiagnosticResult ? (
+        <div
+          id="initial-diagnostic-completed-ribbon"
+          className="p-4 rounded-xl bg-[#00172c]/90 border border-[#00a572]/40 shadow-md flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs font-mono"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-[#003824] border border-[#4edea3]/40 flex items-center justify-center text-[#4edea3] shrink-0">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="text-white font-bold">
+                {isFr ? 'Profil Calibré par Diagnostic Initial' : 'Profile Calibrated by Initial Diagnostic'} :
+              </span>
+              {initialDiagnosticResult.domainScores.map((d) => (
+                <span key={d.domainId} className="text-[#89ceff]">
+                  {d.nameFr}{' '}
+                  <strong className={d.score >= 70 ? 'text-[#4edea3]' : d.score >= 50 ? 'text-[#38bdf8]' : 'text-[#f43f5e]'}>
+                    {d.score}%
+                  </strong>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-end lg:self-auto">
+            <span className="text-[11px] text-[#4edea3] font-semibold hidden sm:inline">
+              {isFr ? '✓ Parcours personnalisé par l\'IA' : '✓ AI Personalized Path'}
+            </span>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('dbmastery:open_initial_diagnostic'))}
+              className="px-3 py-1.5 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] text-[#38bdf8] text-xs font-semibold border border-[#38bdf8]/30 transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Target className="w-3.5 h-3.5" />
+              <span>{isFr ? 'Voir mon profil / Refaire' : 'View Profile / Retake'}</span>
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {/* QUESTION QUOTIDIENNE CENTRALE : « QUE DOIS-JE TRAVAILLER AUJOURD'HUI ? » (🎯 MA SÉANCE DU JOUR) */}
+      <DailySessionCard
+        lang={lang}
+        onStartDailySession={() => {
+          if (onStartDailySession) {
+            onStartDailySession();
+          } else {
+            window.dispatchEvent(new CustomEvent('dbmastery:open_daily_session'));
+          }
+        }}
+      />
+
+      {/* CŒUR DE L'APPLICATION : MON NIVEAU — ARBRE HIÉRARCHIQUE DE COMPÉTENCES & DIAGNOSTIC */}
+      <MasteryTreeCard
+        lang={lang}
+        onStartTargetedTopic={(subtopicId) => {
+          if (onStartShortSession) {
+            onStartShortSession('quick_5min');
+          } else {
+            window.dispatchEvent(new CustomEvent('dbmastery:start_short_session', { detail: 'quick_5min' }));
+          }
+        }}
+        onNavigateToSyllabus={() => onNavigate('syllabus')}
+      />
 
       {/* SYSTÈME DE SESSIONS COURTES : « J'ai 5 minutes » (⚡ Quick Training) & « J'ai 30 minutes » (🎯 Training Session) */}
       <ShortSessionsWidget

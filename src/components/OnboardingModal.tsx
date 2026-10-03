@@ -21,6 +21,7 @@ import { CertificationTrackId, NavigationTab } from '../types';
 import { ShortSessionMode } from '../data/shortSessionsData';
 import { AppLogo } from './AppLogo';
 import logoImg from '../assets/images/dbmastery_logo_1790662821248.jpg';
+import { hasCompletedInitialDiagnostic } from '../services/initialDiagnosticService';
 
 const ONBOARDING_STORAGE_KEY = 'dbmastery_onboarding_completed_v1';
 
@@ -72,6 +73,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const handleComplete = () => {
     markOnboardingCompleted();
     onClose();
+    if (!hasCompletedInitialDiagnostic()) {
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('dbmastery:open_initial_diagnostic'));
+      }, 350);
+    }
   };
 
   const certChoices: { id: CertificationTrackId; name: string; tag: string }[] = [

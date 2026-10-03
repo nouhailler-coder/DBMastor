@@ -18,6 +18,8 @@ import { TargetedSessionModal } from './components/TargetedSessionModal';
 import { ShortSessionRunnerModal } from './components/ShortSessionRunnerModal';
 import { ShortSessionMode } from './data/shortSessionsData';
 import { OnboardingModal, hasCompletedOnboarding } from './components/OnboardingModal';
+import { InitialDiagnosticModal } from './components/InitialDiagnosticModal';
+import { DailySessionRunnerModal } from './components/DailySessionRunnerModal';
 import { ContextualHelpDrawer } from './components/ContextualHelpDrawer';
 import { AccessControlView, AccessGatekeeperOverlay } from './components/AccessControlView';
 import {
@@ -87,6 +89,8 @@ export default function App() {
   const [isHamburgerOpen, setIsHamburgerOpen] = useState(false);
   const [isSystemSettingsOpen, setIsSystemSettingsOpen] = useState(false);
   const [isTargetedSessionOpen, setIsTargetedSessionOpen] = useState(false);
+  const [isInitialDiagnosticOpen, setIsInitialDiagnosticOpen] = useState(false);
+  const [isDailySessionOpen, setIsDailySessionOpen] = useState(false);
   const [shortSessionMode, setShortSessionMode] = useState<ShortSessionMode | null>(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(() => !hasCompletedOnboarding());
   const [isContextualHelpOpen, setIsContextualHelpOpen] = useState<boolean>(false);
@@ -449,11 +453,17 @@ export default function App() {
         setShortSessionMode(customEvent.detail);
       }
     };
+    const handleOpenDiagnostic = () => setIsInitialDiagnosticOpen(true);
+    const handleOpenDailySession = () => setIsDailySessionOpen(true);
     window.addEventListener('dbmastery:open_targeted_session', handleOpenTargeted);
     window.addEventListener('dbmastery:start_short_session', handleStartShortSession);
+    window.addEventListener('dbmastery:open_initial_diagnostic', handleOpenDiagnostic);
+    window.addEventListener('dbmastery:open_daily_session', handleOpenDailySession);
     return () => {
       window.removeEventListener('dbmastery:open_targeted_session', handleOpenTargeted);
       window.removeEventListener('dbmastery:start_short_session', handleStartShortSession);
+      window.removeEventListener('dbmastery:open_initial_diagnostic', handleOpenDiagnostic);
+      window.removeEventListener('dbmastery:open_daily_session', handleOpenDailySession);
     };
   }, []);
 
@@ -712,6 +722,7 @@ export default function App() {
               lang={lang}
               onOpenTargetedSession={() => setIsTargetedSessionOpen(true)}
               onStartShortSession={(mode) => setShortSessionMode(mode)}
+              onStartDailySession={() => setIsDailySessionOpen(true)}
               currentUser={currentUser}
               cloudSyncedCount={cloudSyncedCount}
               onGoogleSignIn={handleGoogleSignIn}
@@ -954,6 +965,32 @@ export default function App() {
         onStartShortSession={(mode) => setShortSessionMode(mode)}
         onNavigateToTab={(tab) => setCurrentTab(tab)}
         onOpenContextualHelp={() => setIsContextualHelpOpen(true)}
+      />
+
+      {/* Diagnostic Initial — 20 questions (SQL, Modélisation, Transactions, Index, Administration) */}
+      <InitialDiagnosticModal
+        isOpen={isInitialDiagnosticOpen}
+        onClose={() => setIsInitialDiagnosticOpen(false)}
+        lang={lang}
+        onStartTargetedSession={(domainId) => {
+          setIsInitialDiagnosticOpen(false);
+          setIsTargetedSessionOpen(true);
+        }}
+        onNavigateToDashboard={() => {
+          setIsInitialDiagnosticOpen(false);
+          setCurrentTab('dashboard');
+        }}
+      />
+
+      {/* 🎯 Ma séance du jour : 15 questions ≈ 12 min (JOIN 5, Transactions 4, Indexes 3, SQL avancé 3) */}
+      <DailySessionRunnerModal
+        isOpen={isDailySessionOpen}
+        onClose={() => setIsDailySessionOpen(false)}
+        lang={lang}
+        onNavigateToDashboard={() => {
+          setIsDailySessionOpen(false);
+          setCurrentTab('dashboard');
+        }}
       />
 
       {/* Aide Contextuelle Dynamique par écran + Contrôle des Infobulles */}
