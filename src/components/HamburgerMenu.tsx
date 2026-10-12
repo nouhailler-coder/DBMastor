@@ -23,7 +23,8 @@ import {
   BookMarked,
   Brain,
   Network,
-  Activity
+  Activity,
+  Scale
 } from 'lucide-react';
 import { NavigationTab, CertificationTrackId, SystemVersionInfo } from '../types';
 
@@ -35,6 +36,7 @@ interface HamburgerMenuProps {
   selectedCert: CertificationTrackId;
   onCertChange: (cert: CertificationTrackId) => void;
   onOpenSystemSettings: () => void;
+  onOpenLegalMentions?: () => void;
   systemInfo: SystemVersionInfo;
   lang: 'fr' | 'en';
   onLangToggle: () => void;
@@ -50,6 +52,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   selectedCert,
   onCertChange,
   onOpenSystemSettings,
+  onOpenLegalMentions,
   systemInfo,
   lang,
   onLangToggle,
@@ -404,6 +407,23 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
               <Settings className="w-3.5 h-3.5" />
               <span>{isFr ? 'Ouvrir les Paramètres Système' : 'Open System Settings'}</span>
               <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+            </button>
+
+            <button
+              id="hamburger-open-legal-btn"
+              onClick={() => {
+                onClose();
+                if (onOpenLegalMentions) {
+                  onOpenLegalMentions();
+                } else {
+                  window.dispatchEvent(new CustomEvent('dbmastery:open_legal_mentions'));
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] text-[#89ceff] hover:text-[#d3e4fe] border border-[#1b2b3f] text-xs font-mono transition-all cursor-pointer"
+            >
+              <Scale className="w-3.5 h-3.5 text-[#38bdf8]" />
+              <span>{isFr ? 'Mentions Légales & Marques' : 'Legal Notices & Trademarks'}</span>
+              <span className="text-[10px] text-[#4edea3] font-bold ml-auto">{isFr ? 'Indépendant' : 'Independent'}</span>
             </button>
           </div>
         </div>

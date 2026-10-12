@@ -18,7 +18,8 @@ import {
   LogOut,
   Cloud,
   HelpCircle,
-  Compass
+  Compass,
+  Scale
 } from 'lucide-react';
 import { CertificationTrackId, SystemVersionInfo } from '../types';
 import { certificationTracks } from '../data/mockData';
@@ -37,6 +38,7 @@ interface HeaderProps {
   onOpenSystemSettings: () => void;
   onOpenOnboarding?: () => void;
   onOpenContextualHelp?: () => void;
+  onOpenLegalMentions?: () => void;
   systemInfo: SystemVersionInfo;
   currentUser?: User | null;
   isAuthReady?: boolean;
@@ -59,6 +61,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSystemSettings,
   onOpenOnboarding,
   onOpenContextualHelp,
+  onOpenLegalMentions,
   systemInfo,
   currentUser,
   isAuthReady = true,
@@ -284,6 +287,34 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </SmartTooltip>
         )}
+
+        {/* Mentions Légales & Avis d'Indépendance */}
+        <SmartTooltip
+          title={isFr ? 'Mentions Légales & Avis d’Indépendance' : 'Legal Notices & Trademark Disclaimer'}
+          description={
+            isFr
+              ? 'Précision formelle : DBMastery Studio n’a aucun lien avec Oracle, Azure, PostgreSQL ou MySQL. Consultez les mentions légales complètes.'
+              : 'Formal notice: DBMastery Studio has no affiliation with Oracle, Azure, PostgreSQL, or MySQL. View full legal terms.'
+          }
+          badge="Légal"
+          placement="bottom"
+        >
+          <button
+            id="header-legal-mentions-btn"
+            type="button"
+            onClick={() => {
+              if (onOpenLegalMentions) {
+                onOpenLegalMentions();
+              } else {
+                window.dispatchEvent(new CustomEvent('dbmastery:open_legal_mentions'));
+              }
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/40 hover:border-[#38bdf8] rounded-lg text-xs font-mono font-bold text-[#89ceff] hover:text-white transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
+          >
+            <Scale className="w-3.5 h-3.5 text-[#38bdf8]" />
+            <span className="hidden xl:inline">{isFr ? 'Mentions Légales' : 'Legal'}</span>
+          </button>
+        </SmartTooltip>
 
         {/* Aide Contextuelle de l'écran actif */}
         {onOpenContextualHelp && (

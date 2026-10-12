@@ -20,6 +20,7 @@ import { ShortSessionMode } from './data/shortSessionsData';
 import { OnboardingModal, hasCompletedOnboarding } from './components/OnboardingModal';
 import { InitialDiagnosticModal } from './components/InitialDiagnosticModal';
 import { DailySessionRunnerModal } from './components/DailySessionRunnerModal';
+import { LegalMentionsModal } from './components/LegalMentionsModal';
 import { ContextualHelpDrawer } from './components/ContextualHelpDrawer';
 import { AccessControlView, AccessGatekeeperOverlay } from './components/AccessControlView';
 import {
@@ -91,6 +92,7 @@ export default function App() {
   const [isTargetedSessionOpen, setIsTargetedSessionOpen] = useState(false);
   const [isInitialDiagnosticOpen, setIsInitialDiagnosticOpen] = useState(false);
   const [isDailySessionOpen, setIsDailySessionOpen] = useState(false);
+  const [isLegalMentionsOpen, setIsLegalMentionsOpen] = useState(false);
   const [shortSessionMode, setShortSessionMode] = useState<ShortSessionMode | null>(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(() => !hasCompletedOnboarding());
   const [isContextualHelpOpen, setIsContextualHelpOpen] = useState<boolean>(false);
@@ -455,15 +457,21 @@ export default function App() {
     };
     const handleOpenDiagnostic = () => setIsInitialDiagnosticOpen(true);
     const handleOpenDailySession = () => setIsDailySessionOpen(true);
+    const handleOpenLegalMentions = () => setIsLegalMentionsOpen(true);
+    const handleOpenOnboarding = () => setIsOnboardingOpen(true);
     window.addEventListener('dbmastery:open_targeted_session', handleOpenTargeted);
     window.addEventListener('dbmastery:start_short_session', handleStartShortSession);
     window.addEventListener('dbmastery:open_initial_diagnostic', handleOpenDiagnostic);
     window.addEventListener('dbmastery:open_daily_session', handleOpenDailySession);
+    window.addEventListener('dbmastery:open_legal_mentions', handleOpenLegalMentions);
+    window.addEventListener('dbmastery:open_onboarding', handleOpenOnboarding);
     return () => {
       window.removeEventListener('dbmastery:open_targeted_session', handleOpenTargeted);
       window.removeEventListener('dbmastery:start_short_session', handleStartShortSession);
       window.removeEventListener('dbmastery:open_initial_diagnostic', handleOpenDiagnostic);
       window.removeEventListener('dbmastery:open_daily_session', handleOpenDailySession);
+      window.removeEventListener('dbmastery:open_legal_mentions', handleOpenLegalMentions);
+      window.removeEventListener('dbmastery:open_onboarding', handleOpenOnboarding);
     };
   }, []);
 
@@ -671,6 +679,7 @@ export default function App() {
           onOpenSystemSettings={() => setIsSystemSettingsOpen(true)}
           onOpenOnboarding={() => setIsOnboardingOpen(true)}
           onOpenContextualHelp={() => setIsContextualHelpOpen(true)}
+          onOpenLegalMentions={() => setIsLegalMentionsOpen(true)}
           systemVersion={systemInfo.currentVersion}
           currentUser={currentUser}
           cloudSyncedCount={cloudSyncedCount}
@@ -697,6 +706,7 @@ export default function App() {
             onOpenSystemSettings={() => setIsSystemSettingsOpen(true)}
             onOpenOnboarding={() => setIsOnboardingOpen(true)}
             onOpenContextualHelp={() => setIsContextualHelpOpen(true)}
+            onOpenLegalMentions={() => setIsLegalMentionsOpen(true)}
             systemInfo={systemInfo}
             currentUser={currentUser}
             isAuthReady={isAuthReady}
@@ -849,6 +859,7 @@ export default function App() {
         selectedCert={selectedCert}
         onCertChange={setSelectedCert}
         onOpenSystemSettings={() => setIsSystemSettingsOpen(true)}
+        onOpenLegalMentions={() => setIsLegalMentionsOpen(true)}
         systemInfo={systemInfo}
         lang={lang}
         onLangToggle={handleLangToggle}
@@ -965,6 +976,14 @@ export default function App() {
         onStartShortSession={(mode) => setShortSessionMode(mode)}
         onNavigateToTab={(tab) => setCurrentTab(tab)}
         onOpenContextualHelp={() => setIsContextualHelpOpen(true)}
+        onOpenLegalMentions={() => setIsLegalMentionsOpen(true)}
+      />
+
+      {/* Mentions Légales, Avis d'Indépendance & Propriété Intellectuelle (Oracle, Azure, PostgreSQL, MySQL) */}
+      <LegalMentionsModal
+        isOpen={isLegalMentionsOpen}
+        onClose={() => setIsLegalMentionsOpen(false)}
+        lang={lang}
       />
 
       {/* Diagnostic Initial — 20 questions (SQL, Modélisation, Transactions, Index, Administration) */}

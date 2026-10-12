@@ -40,7 +40,7 @@ import { MasteryTreeCard } from './MasteryTreeCard';
 import { DailySessionCard } from './DailySessionCard';
 import { ShortSessionMode } from '../data/shortSessionsData';
 import type { User } from '../services/firebaseSyncService';
-import { LogOut, Brain, Target } from 'lucide-react';
+import { LogOut, Brain, Target, Scale, ShieldAlert } from 'lucide-react';
 import {
   hasCompletedInitialDiagnostic,
   getSavedInitialDiagnostic,
@@ -1397,6 +1397,115 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           ))}
         </div>
       </div>
+
+      {/* ============================================================
+          PIED DE PAGE OFFICIEL : AVIS D'INDÉPENDANCE & MENTIONS LÉGALES
+          Clarification formelle : Aucun lien avec Oracle, Azure, PostgreSQL ou MySQL
+         ============================================================ */}
+      <footer
+        id="dashboard-legal-footer"
+        className="mt-6 p-5 sm:p-6 rounded-2xl bg-gradient-to-b from-[#08182b] to-[#040e1b] border border-[#1b2b3f] shadow-lg flex flex-col gap-5 text-[#bfc7d2]"
+      >
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-[#1b2b3f]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#002847] border border-[#38bdf8]/40 flex items-center justify-center text-[#38bdf8] shrink-0 shadow-inner">
+              <Scale className="w-5 h-5 text-[#38bdf8]" />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs font-bold text-[#d3e4fe] tracking-wide">
+                  DBMastery Studio
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#4edea3]/10 border border-[#4edea3]/30 text-[#4edea3] font-bold">
+                  {isFr ? 'Plateforme Indépendante' : 'Independent Platform'}
+                </span>
+              </div>
+              <p className="text-xs text-[#89929b]">
+                {isFr
+                  ? 'Simulateur pédagogique d’entraînement SQL, architecture SGBD et diagnostic de compétences'
+                  : 'Pedagogical simulator for SQL practice, DBMS internals, and skill benchmarking'}
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+            <button
+              id="footer-open-legal-btn"
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('dbmastery:open_legal_mentions'))}
+              className="px-3.5 py-2 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-mono font-bold flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer"
+            >
+              <Scale className="w-3.5 h-3.5 text-white" />
+              <span>{isFr ? 'Mentions Légales & Marques' : 'Legal Notices & Trademarks'}</span>
+            </button>
+
+            <button
+              id="footer-relaunch-onboarding-btn"
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('dbmastery:open_onboarding'))}
+              className="px-3.5 py-2 rounded-xl bg-[#102034] hover:bg-[#1b2b3f] border border-[#4edea3]/30 hover:border-[#4edea3] text-xs font-mono font-bold text-[#4edea3] flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+            >
+              <Compass className="w-3.5 h-3.5 text-[#4edea3]" />
+              <span>{isFr ? 'Guide de démarrage (6 étapes)' : 'Onboarding Tour'}</span>
+            </button>
+
+            <button
+              id="footer-open-diagnostic-btn"
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('dbmastery:open_initial_diagnostic'))}
+              className="px-3 py-2 rounded-xl bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/30 hover:border-[#38bdf8] text-xs font-mono font-bold text-[#89ceff] flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+            >
+              <Brain className="w-3.5 h-3.5 text-[#38bdf8]" />
+              <span>{isFr ? 'Diagnostic initial (20Q)' : 'Initial Diagnostic (20Q)'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Formal Disclaimer Box */}
+        <div className="p-4 rounded-xl bg-[#031120] border border-[#f59e0b]/40 flex items-start gap-3.5 text-xs">
+          <div className="w-8 h-8 rounded-lg bg-[#f59e0b]/20 border border-[#f59e0b]/40 flex items-center justify-center shrink-0 mt-0.5">
+            <ShieldAlert className="w-4 h-4 text-[#fbbf24]" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs font-bold text-[#fbbf24] uppercase tracking-wider">
+                {isFr ? 'Déclaration d’Indépendance Légale' : 'Legal Independence Declaration'}
+              </span>
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#f59e0b]/20 text-[#fde047] font-semibold">
+                {isFr ? 'Aucun lien avec les éditeurs officiels' : 'No Official Vendor Affiliation'}
+              </span>
+            </div>
+            <p className="text-[#d3e4fe] leading-relaxed">
+              {isFr
+                ? 'DBMastery Studio est une initiative d’auto-formation indépendante. L’application et son auteur ne possèdent AUCUN LIEN, aucun partenariat, aucun parrainage, ni aucun agrément officiel avec Oracle Corporation, Microsoft Azure, PostgreSQL Global Development Group ou MySQL.'
+                : 'DBMastery Studio is an independent training tool. The platform and its author have NO affiliation, partnership, sponsorship, or endorsement with Oracle Corporation, Microsoft Azure, PostgreSQL Global Development Group, or MySQL.'}
+            </p>
+            <p className="text-[#89929b] text-[11px] leading-relaxed">
+              {isFr
+                ? 'Les marques « Oracle® », « Microsoft Azure® », « PostgreSQL® », « MySQL® » ainsi que les codes d’examens associés (1Z0-071, DP-900, DP-800, EDB Associate, 1Z0-908) restent la propriété intellectuelle exclusive de leurs détenteurs légaux respectifs. Leur utilisation s’inscrit strictement dans le cadre de l’usage loyal (Nominative Fair Use) à des fins d’orientation éducative et de préparation aux compétences techniques.'
+                : 'Trademarks "Oracle®", "Microsoft Azure®", "PostgreSQL®", "MySQL®" and corresponding exam codes belong exclusively to their respective owners. Their mention is strictly for educational guidance and curriculum alignment.'}
+            </p>
+          </div>
+        </div>
+
+        {/* Footer Meta */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] font-mono text-[#89929b]">
+          <div>
+            <span>© {new Date().getFullYear()} DBMastery Studio • {isFr ? 'Tous droits réservés' : 'All rights reserved'}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span>{isFr ? 'Conformité RGPD : Données locales' : 'GDPR: Local storage by default'}</span>
+            <span>•</span>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('dbmastery:open_legal_mentions'))}
+              className="text-[#38bdf8] hover:underline cursor-pointer"
+            >
+              {isFr ? 'Mentions légales intégrales' : 'Full legal notice'}
+            </button>
+          </div>
+        </div>
+      </footer>
 
       {/* MODAL OBSERVATOIRE DES PIÈGES */}
       <TrapExplorerModal

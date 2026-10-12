@@ -19,7 +19,8 @@ import {
   LogOut,
   Activity,
   Compass,
-  HelpCircle
+  HelpCircle,
+  Scale
 } from 'lucide-react';
 import { NavigationTab } from '../types';
 import type { User } from '../services/firebaseSyncService';
@@ -33,6 +34,7 @@ interface SidebarProps {
   onOpenSystemSettings?: () => void;
   onOpenOnboarding?: () => void;
   onOpenContextualHelp?: () => void;
+  onOpenLegalMentions?: () => void;
   systemVersion?: string;
   currentUser?: User | null;
   cloudSyncedCount?: number;
@@ -48,6 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenSystemSettings,
   onOpenOnboarding,
   onOpenContextualHelp,
+  onOpenLegalMentions,
   systemVersion = 'v2.4.2',
   currentUser,
   cloudSyncedCount = 0,
@@ -280,6 +283,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </span>
           </button>
         )}
+
+        {/* Mentions Légales & Avis d'Indépendance */}
+        <button
+          id="sidebar-legal-mentions-btn"
+          type="button"
+          onClick={() => {
+            if (onOpenLegalMentions) {
+              onOpenLegalMentions();
+            } else {
+              window.dispatchEvent(new CustomEvent('dbmastery:open_legal_mentions'));
+            }
+          }}
+          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg bg-[#061322] hover:bg-[#102034] text-[#89929b] hover:text-[#38bdf8] border border-[#1b2b3f] text-[11px] font-mono transition-all cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            <Scale className="w-3.5 h-3.5 text-[#38bdf8]" />
+            <span>{isFr ? 'Mentions Légales' : 'Legal Notices'}</span>
+          </div>
+          <span className="text-[9px] text-[#fbbf24] font-bold">
+            {isFr ? 'Indépendant' : 'Independent'}
+          </span>
+        </button>
 
         {/* Cluster Sandbox Status Footer */}
         <div className="p-3 bg-[#000f21] rounded-lg border border-[#1b2b3f] flex flex-col gap-1.5 shadow-inner">

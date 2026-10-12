@@ -25,7 +25,9 @@ import {
   Award,
   AlertTriangle,
   Flame,
-  Check
+  Check,
+  Scale,
+  ShieldAlert
 } from 'lucide-react';
 import { SystemVersionInfo } from '../types';
 import { formatRelativeTime } from '../services/updateService';
@@ -62,7 +64,7 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
 }) => {
   const isFr = lang === 'fr';
   const isLight = theme === 'light';
-  const [activeSubTab, setActiveSubTab] = useState<'updates' | 'history' | 'diagnostics' | 'data'>('updates');
+  const [activeSubTab, setActiveSubTab] = useState<'updates' | 'history' | 'diagnostics' | 'data' | 'legal'>('updates');
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
   const [currentStats, setCurrentStats] = useState<UserStatsData>(loadUserStats);
   const [isConfirmingReset, setIsConfirmingReset] = useState(false);
@@ -247,6 +249,19 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
           >
             <RotateCcw className="w-3.5 h-3.5 text-rose-500" />
             <span>{isFr ? 'Données & Réinitialisation' : 'Data & Reset'}</span>
+          </button>
+
+          <button
+            id="tab-btn-legal"
+            onClick={() => setActiveSubTab('legal')}
+            className={`pb-2.5 px-3 font-mono text-xs font-semibold flex items-center gap-2 border-b-2 transition-colors ${
+              activeSubTab === 'legal'
+                ? isLight ? 'border-amber-500 text-amber-700 font-bold' : 'border-[#fbbf24] text-[#fbbf24] font-bold'
+                : isLight ? 'border-transparent text-slate-500 hover:text-slate-900' : 'border-transparent text-slate-300 hover:text-white'
+            }`}
+          >
+            <Scale className="w-3.5 h-3.5 text-[#fbbf24]" />
+            <span>{isFr ? 'Mentions Légales & Marques' : 'Legal & Trademarks'}</span>
           </button>
         </div>
 
@@ -790,6 +805,118 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {activeSubTab === 'legal' && (
+            <div className="space-y-6 animate-fade-in text-xs sm:text-sm">
+              {/* Highlight Banner */}
+              <div className={`p-4 rounded-xl border flex items-start gap-3.5 ${
+                isLight
+                  ? 'bg-amber-50/80 border-amber-300 text-amber-950'
+                  : 'bg-[#1a0f00] border-[#f59e0b]/50 text-[#fde68a]'
+              }`}>
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0 mt-0.5">
+                  <ShieldAlert className="w-4 h-4 text-amber-500" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                      {isFr ? 'Avis d’Indépendance Officiel' : 'Official Independence Notice'}
+                    </span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold">
+                      {isFr ? 'Aucun lien tiers' : 'Zero Affiliation'}
+                    </span>
+                  </div>
+                  <p className="font-semibold leading-relaxed">
+                    {isFr
+                      ? 'DBMastery Studio est une plateforme d\'entraînement indépendante. Ce service et son auteur n\'ont AUCUN LIEN, aucun partenariat, aucun parrainage ni aucune affiliation officielle avec Oracle Corporation, Microsoft Azure, PostgreSQL Global Development Group ou MySQL.'
+                      : 'DBMastery Studio is an independent training simulator. The service and its author have NO affiliation, partnership, sponsorship, or official link with Oracle Corporation, Microsoft Azure, PostgreSQL Global Development Group, or MySQL.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Four pillars of independence */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <div className={`p-3.5 rounded-xl border ${
+                  isLight ? 'bg-white border-slate-200' : 'bg-[#061322] border-[#1b2b3f]'
+                }`}>
+                  <div className="flex items-center gap-2 text-rose-500 font-bold text-xs mb-1 font-mono">
+                    <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                    <span>Oracle & 1Z0-071</span>
+                  </div>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    {isFr
+                      ? 'Oracle® et Oracle Database® sont des marques déposées d’Oracle Corporation. Aucun lien avec Oracle University.'
+                      : 'Oracle® and Oracle Database® are registered trademarks of Oracle Corporation. No link to Oracle University.'}
+                  </p>
+                </div>
+
+                <div className={`p-3.5 rounded-xl border ${
+                  isLight ? 'bg-white border-slate-200' : 'bg-[#061322] border-[#1b2b3f]'
+                }`}>
+                  <div className="flex items-center gap-2 text-sky-500 font-bold text-xs mb-1 font-mono">
+                    <span className="w-2 h-2 rounded-full bg-sky-500"></span>
+                    <span>Microsoft Azure (DP-900 / DP-800)</span>
+                  </div>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    {isFr
+                      ? 'Microsoft® et Azure® sont des marques déposées de Microsoft Corporation. Usage loyal à titre de référence pédagogique.'
+                      : 'Microsoft® and Azure® are registered trademarks of Microsoft Corporation. Fair use for curriculum identification.'}
+                  </p>
+                </div>
+
+                <div className={`p-3.5 rounded-xl border ${
+                  isLight ? 'bg-white border-slate-200' : 'bg-[#061322] border-[#1b2b3f]'
+                }`}>
+                  <div className="flex items-center gap-2 text-blue-500 font-bold text-xs mb-1 font-mono">
+                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                    <span>PostgreSQL & EnterpriseDB</span>
+                  </div>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    {isFr
+                      ? 'PostgreSQL® est géré par la PostgreSQL Community Association. EDB est une marque d’EnterpriseDB Corp. Aucun lien officiel.'
+                      : 'PostgreSQL® is managed by PostgreSQL Community Association. EDB is a trademark of EnterpriseDB Corp. No official link.'}
+                  </p>
+                </div>
+
+                <div className={`p-3.5 rounded-xl border ${
+                  isLight ? 'bg-white border-slate-200' : 'bg-[#061322] border-[#1b2b3f]'
+                }`}>
+                  <div className="flex items-center gap-2 text-amber-500 font-bold text-xs mb-1 font-mono">
+                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span>MySQL & 1Z0-908 DBA</span>
+                  </div>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    {isFr
+                      ? 'MySQL® est une marque déposée d’Oracle Corporation. DBMastery Studio est développé de manière totalement autonome.'
+                      : 'MySQL® is a registered trademark of Oracle Corporation. DBMastery Studio is developed completely autonomously.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* RGPD & Data Rights */}
+              <div className={`p-4 rounded-xl border space-y-2 ${
+                isLight ? 'bg-slate-50 border-slate-200' : 'bg-[#0b1c30] border-[#1b2b3f]'
+              }`}>
+                <div className="flex items-center gap-2 font-mono text-xs font-bold text-[#4edea3]">
+                  <Scale className="w-4 h-4 text-[#4edea3]" />
+                  <span>{isFr ? 'Protection des données & Vocation non-certifiante' : 'Data Protection & Non-certifying status'}</span>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {isFr
+                    ? '1. DBMastery Studio fonctionne localement sur votre navigateur (LocalStorage). Aucune revente de données.\n2. L’obtention de scores d’entraînement ne confère aucun diplôme officiel et ne dispense pas des épreuves chez Pearson VUE ou Certiport.'
+                    : '1. DBMastery Studio operates locally in your browser (LocalStorage). No data is resold.\n2. Earning training scores does not constitute official vendor credentials.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent('dbmastery:open_legal_mentions'))}
+                  className="mt-2 text-xs font-mono text-sky-500 hover:text-sky-400 underline font-semibold flex items-center gap-1 cursor-pointer"
+                >
+                  <Scale className="w-3.5 h-3.5" />
+                  <span>{isFr ? 'Ouvrir le document intégral des Mentions Légales →' : 'Open full Legal Notices document →'}</span>
+                </button>
               </div>
             </div>
           )}

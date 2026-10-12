@@ -16,6 +16,8 @@ import {
   Play,
   ShieldCheck,
   X,
+  Scale,
+  ShieldAlert,
 } from 'lucide-react';
 import { CertificationTrackId, NavigationTab } from '../types';
 import { ShortSessionMode } from '../data/shortSessionsData';
@@ -50,6 +52,7 @@ interface OnboardingModalProps {
   onStartShortSession: (mode: ShortSessionMode) => void;
   onNavigateToTab: (tab: NavigationTab) => void;
   onOpenContextualHelp: () => void;
+  onOpenLegalMentions?: () => void;
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({
@@ -61,10 +64,19 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   onStartShortSession,
   onNavigateToTab,
   onOpenContextualHelp,
+  onOpenLegalMentions,
 }) => {
   const isFr = lang === 'fr';
   const [step, setStep] = useState(0);
   const [previewExplainLevel, setPreviewExplainLevel] = useState<'hint' | 'explain' | 'course'>('hint');
+
+  const handleOpenLegal = () => {
+    if (onOpenLegalMentions) {
+      onOpenLegalMentions();
+    } else {
+      window.dispatchEvent(new CustomEvent('dbmastery:open_legal_mentions'));
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -205,6 +217,36 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* Encadré officiel : Absence de lien avec Oracle, Azure, PostgreSQL et MySQL */}
+              <div className="p-3.5 rounded-xl bg-[#061322] border border-[#f59e0b]/40 flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[#f59e0b]/20 border border-[#f59e0b]/40 flex items-center justify-center shrink-0 mt-0.5">
+                  <ShieldAlert className="w-4 h-4 text-[#fbbf24]" />
+                </div>
+                <div className="flex flex-col gap-1 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[10px] font-bold text-[#fbbf24] uppercase tracking-wider">
+                      {isFr ? 'Avis d’Indépendance & Mentions Légales' : 'Independence & Legal Notice'}
+                    </span>
+                    <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-[#f59e0b]/20 text-[#fde047] font-semibold">
+                      {isFr ? 'Aucun lien officiel' : 'No Official Affiliation'}
+                    </span>
+                  </div>
+                  <p className="text-[#d3e4fe] text-[11px] leading-relaxed">
+                    {isFr
+                      ? 'DBMastery Studio est une plateforme pédagogique indépendante. Nous n’avons AUCUN LIEN, aucun partenariat ni aucune affiliation avec Oracle Corporation, Microsoft Azure, PostgreSQL Global Development Group ou MySQL. Les marques et examens sont mentionnés uniquement à des fins d’orientation éducative.'
+                      : 'DBMastery Studio is an independent educational simulator. We have NO affiliation, partnership, or sponsorship with Oracle Corporation, Microsoft Azure, PostgreSQL Global Development Group, or MySQL.'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleOpenLegal}
+                    className="self-start text-[11px] font-mono text-[#38bdf8] hover:text-[#7dd3fc] underline flex items-center gap-1 cursor-pointer font-semibold mt-0.5"
+                  >
+                    <Scale className="w-3 h-3" />
+                    <span>{isFr ? 'Consulter les mentions légales & marques complètes' : 'View full legal notices & trademarks'}</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -533,6 +575,27 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                       : 'Use the "Google Sign-In" button to back up your streak and stats in real time.'}
                   </p>
                 </div>
+
+                <div className="p-3.5 rounded-xl bg-[#061322] border border-[#f59e0b]/40 flex flex-col gap-1.5 sm:col-span-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-xs font-extrabold text-[#fbbf24]">
+                      <Scale className="w-4 h-4 text-[#fbbf24]" />
+                      <span>{isFr ? 'Avis d’Indépendance & Mentions Légales' : 'Independence Notice & Legal'}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleOpenLegal}
+                      className="text-[11px] font-mono text-[#38bdf8] hover:text-[#7dd3fc] underline cursor-pointer"
+                    >
+                      {isFr ? 'Lire le texte intégral →' : 'Read full legal terms →'}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-[#bfc7d2] leading-relaxed">
+                    {isFr
+                      ? 'Rappel : DBMastery Studio est un outil éducatif indépendant sans aucun lien avec Oracle, Microsoft Azure, PostgreSQL ou MySQL.'
+                      : 'Reminder: DBMastery Studio is an independent educational tool with no affiliation to Oracle, Microsoft Azure, PostgreSQL, or MySQL.'}
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -551,8 +614,19 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               <span>{isFr ? 'Précédent' : 'Previous'}</span>
             </button>
 
-            <div className="font-mono text-xs text-[#89929b]">
-              {step + 1} / {totalSteps}
+            <div className="flex items-center gap-3">
+              <div className="font-mono text-xs text-[#89929b]">
+                {step + 1} / {totalSteps}
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenLegal}
+                className="hidden sm:flex items-center gap-1 text-[11px] font-mono text-[#89929b] hover:text-[#38bdf8] underline cursor-pointer"
+                title={isFr ? 'Mentions légales & Indépendance' : 'Legal notices & Independence'}
+              >
+                <Scale className="w-3 h-3" />
+                <span>{isFr ? 'Mentions légales' : 'Legal notice'}</span>
+              </button>
             </div>
 
             {step < totalSteps - 1 ? (
