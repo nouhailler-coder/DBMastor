@@ -20,7 +20,8 @@ import {
   Activity,
   Compass,
   HelpCircle,
-  Scale
+  Scale,
+  RotateCcw
 } from 'lucide-react';
 import { NavigationTab } from '../types';
 import type { User } from '../services/firebaseSyncService';
@@ -66,6 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'skills', labelFr: 'Skill Map (Compétences)', labelEn: 'Skill Map (Skills)', icon: Network },
     { id: 'exams', labelFr: 'Apprentissage & Quiz', labelEn: 'Adaptive Learning & Quiz', icon: Brain },
     { id: 'flashcards', labelFr: 'Flashcards (2400+)', labelEn: 'Flashcards (2400+)', icon: CreditCard },
+    { id: 'spaced_repetition', labelFr: 'Répétition Espacée', labelEn: 'Spaced Repetition', icon: RotateCcw, badge: 'SM-2' },
     { id: 'glossary', labelFr: 'Glossaire SQL', labelEn: 'SQL Glossary', icon: BookMarked },
     { id: 'sandbox', labelFr: 'Lab SQL & Pratique', labelEn: 'SQL Lab & Practice', icon: Terminal },
     { id: 'syllabus', labelFr: 'Fiches & Compétences', labelEn: 'Study Sheets & Skills', icon: BookOpen },

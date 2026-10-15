@@ -38,6 +38,7 @@ import { GeminiPedagogicalTutor } from './GeminiPedagogicalTutor';
 import { ProgressiveExplainPanel } from './ProgressiveExplainPanel';
 import { recordTrapAttempt } from '../services/trapService';
 import { recordQuestionAttemptTelemetry } from '../services/statsService';
+import { recordExternalConceptAttempt } from '../services/spacedRepetitionService';
 
 interface CertificationExamViewProps {
   lang: 'fr' | 'en';
@@ -287,6 +288,21 @@ export const CertificationExamView: React.FC<CertificationExamViewProps> = ({
     if (onFinishExamCallback) {
       onFinishExamCallback(examReport.scorePercent);
     }
+
+    // Inscription automatique des notions en erreur dans l'algorithme de Répétition Espacée (J+1)
+    try {
+      examReport.cognitiveErrors.forEach(({ concept }) => {
+        recordExternalConceptAttempt(concept.id, false, {
+          titleFr: concept.nameFr,
+          titleEn: concept.nameEn,
+          pillar: concept.pillar,
+          explanationFr: concept.diagnosticFr,
+          explanationEn: concept.diagnosticEn,
+        });
+      });
+    } catch {
+      // ignore
+    }
   };
 
   // Prérégler le résultat typique demandé par l'utilisateur (78%, SQL 85%, etc.)
@@ -307,6 +323,22 @@ export const CertificationExamView: React.FC<CertificationExamViewProps> = ({
     setSecondsRemaining(totalDurationSeconds - (54 * 60)); // 54 min comme demandé !
     setIsTimerRunning(false);
     setPhase('results');
+    try {
+      ['sql-join-null-trap', 'tx-isolation-phantom', 'index-sargability-functions', 'admin-undo-snapshot-too-old'].forEach((cId) => {
+        const c = certificationConcepts[cId];
+        if (c) {
+          recordExternalConceptAttempt(c.id, false, {
+            titleFr: c.nameFr,
+            titleEn: c.nameEn,
+            pillar: c.pillar,
+            explanationFr: c.diagnosticFr,
+            explanationEn: c.diagnosticEn,
+          });
+        }
+      });
+    } catch {
+      // ignore
+    }
   };
 
   const handleRestartExam = () => {

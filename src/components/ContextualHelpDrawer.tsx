@@ -503,6 +503,60 @@ const CONTEXTUAL_GUIDES: Record<NavigationTab, TabContextualGuide> = {
       },
     ],
   },
+  spaced_repetition: {
+    titleFr: 'Répétition Espacée & Moteur SM-2 / FSRS',
+    titleEn: 'Spaced Repetition & SM-2 / FSRS Engine',
+    summaryFr:
+      'Algorithme de consolidation mnésique : une notion mal maîtrisée revient à 1 jour, puis 3 jours, puis 7 jours, jusqu\'à ancrage réflexe et maîtrise définitive.',
+    summaryEn:
+      'Memory consolidation algorithm: an unmastered concept returns in 1 day, then 3 days, then 7 days, until reflex fluency and mastery.',
+    stepsFr: [
+      {
+        title: '📈 Courbe de l\'oubli d\'Ebbinghaus & Stabilité',
+        detail:
+          'Chaque notion possède une stabilité (en jours), une difficulté intrinsèque et un score de maîtrise calculé en temps réel.',
+      },
+      {
+        title: '🔁 Cycle Erreur → J+1 → J+3 → J+7 → Maîtrisé',
+        detail:
+          'En cas d\'erreur, la notion est immédiatement reprogrammée le lendemain. Deux réussites consécutives espacent la révision à 3 puis 7 jours.',
+      },
+      {
+        title: '⏩ Simulateur temporel J+1 / J+3 / J+7',
+        detail:
+          'Avancez l\'horloge virtuelle pour tester l\'arrivée à échéance des révisions sans attendre plusieurs jours réels.',
+      },
+    ],
+    stepsEn: [
+      {
+        title: '📈 Ebbinghaus Forgetting Curve & Stability',
+        detail:
+          'Each concept tracks memory stability (in days), intrinsic difficulty, and a real-time mastery score.',
+      },
+      {
+        title: '🔁 Loop: Failure → Day+1 → Day+3 → Day+7 → Mastered',
+        detail:
+          'On error, the concept is rescheduled for tomorrow. Consecutive successes space intervals out to 3, then 7 days.',
+      },
+      {
+        title: '⏩ Virtual Time Simulator (Day+1 / Day+3 / Day+7)',
+        detail:
+          'Advance virtual time to test due dates without waiting for real-world days to elapse.',
+      },
+    ],
+    sqlTipsFr: [
+      {
+        code: 'Erreur → interval=1j | Réussite → interval=3j → 7j → 16j',
+        rule: 'Plus la stabilité augmente, plus l\'intervalle s\'allonge et la mémoire se consolide dans le cortex à long terme.',
+      },
+    ],
+    sqlTipsEn: [
+      {
+        code: 'Error → interval=1d | Success → interval=3d → 7d → 16d',
+        rule: 'Higher memory stability yields longer review intervals, cementing database concepts into long-term reflex retention.',
+      },
+    ],
+  },
 };
 
 export const ContextualHelpDrawer: React.FC<ContextualHelpDrawerProps> = ({

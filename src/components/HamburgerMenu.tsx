@@ -24,7 +24,8 @@ import {
   Brain,
   Network,
   Activity,
-  Scale
+  Scale,
+  RotateCcw
 } from 'lucide-react';
 import { NavigationTab, CertificationTrackId, SystemVersionInfo } from '../types';
 
@@ -155,6 +156,16 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
           descEn: 'Memory cards with T-SQL/PL-SQL/Postgres/MySQL syntax, HA/DR architecture, traps, and justifications.',
           icon: CreditCard,
           badge: '2400+ Cartes',
+        },
+        {
+          id: 'item-spaced-repetition',
+          tab: 'spaced_repetition' as NavigationTab,
+          labelFr: 'Répétition Espacée (SM-2 / FSRS)',
+          labelEn: 'Spaced Repetition (SM-2 / FSRS)',
+          descFr: 'Consolidation mnésique anti-oubli : une notion ratée revient à 1j, puis 3j, 7j jusqu\'à maîtrise réflexe.',
+          descEn: 'Anti-forgetting memory consolidation: failed concepts return at 1d, 3d, 7d until reflex fluency.',
+          icon: RotateCcw,
+          badge: 'Anti-Oubli',
         },
         {
           id: 'item-glossary',

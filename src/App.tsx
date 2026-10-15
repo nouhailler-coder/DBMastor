@@ -21,6 +21,8 @@ import { OnboardingModal, hasCompletedOnboarding } from './components/Onboarding
 import { InitialDiagnosticModal } from './components/InitialDiagnosticModal';
 import { DailySessionRunnerModal } from './components/DailySessionRunnerModal';
 import { LegalMentionsModal } from './components/LegalMentionsModal';
+import { SpacedRepetitionView } from './components/SpacedRepetitionView';
+import { SpacedRepetitionRunnerModal } from './components/SpacedRepetitionRunnerModal';
 import { ContextualHelpDrawer } from './components/ContextualHelpDrawer';
 import { AccessControlView, AccessGatekeeperOverlay } from './components/AccessControlView';
 import {
@@ -93,6 +95,8 @@ export default function App() {
   const [isInitialDiagnosticOpen, setIsInitialDiagnosticOpen] = useState(false);
   const [isDailySessionOpen, setIsDailySessionOpen] = useState(false);
   const [isLegalMentionsOpen, setIsLegalMentionsOpen] = useState(false);
+  const [isSpacedRunnerOpen, setIsSpacedRunnerOpen] = useState(false);
+  const [targetSpacedItemId, setTargetSpacedItemId] = useState<string | undefined>(undefined);
   const [shortSessionMode, setShortSessionMode] = useState<ShortSessionMode | null>(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(() => !hasCompletedOnboarding());
   const [isContextualHelpOpen, setIsContextualHelpOpen] = useState<boolean>(false);
@@ -459,12 +463,25 @@ export default function App() {
     const handleOpenDailySession = () => setIsDailySessionOpen(true);
     const handleOpenLegalMentions = () => setIsLegalMentionsOpen(true);
     const handleOpenOnboarding = () => setIsOnboardingOpen(true);
+    const handleOpenSpacedRunner = (e: Event) => {
+      const customEvent = e as CustomEvent<{ itemId?: string }>;
+      if (customEvent?.detail?.itemId) {
+        setTargetSpacedItemId(customEvent.detail.itemId);
+      } else {
+        setTargetSpacedItemId(undefined);
+      }
+      setIsSpacedRunnerOpen(true);
+    };
+    const handleOpenSpacedView = () => setCurrentTab('spaced_repetition');
+
     window.addEventListener('dbmastery:open_targeted_session', handleOpenTargeted);
     window.addEventListener('dbmastery:start_short_session', handleStartShortSession);
     window.addEventListener('dbmastery:open_initial_diagnostic', handleOpenDiagnostic);
     window.addEventListener('dbmastery:open_daily_session', handleOpenDailySession);
     window.addEventListener('dbmastery:open_legal_mentions', handleOpenLegalMentions);
     window.addEventListener('dbmastery:open_onboarding', handleOpenOnboarding);
+    window.addEventListener('dbmastery:open_spaced_repetition_runner', handleOpenSpacedRunner);
+    window.addEventListener('dbmastery:open_spaced_repetition_view', handleOpenSpacedView);
     return () => {
       window.removeEventListener('dbmastery:open_targeted_session', handleOpenTargeted);
       window.removeEventListener('dbmastery:start_short_session', handleStartShortSession);
@@ -472,6 +489,8 @@ export default function App() {
       window.removeEventListener('dbmastery:open_daily_session', handleOpenDailySession);
       window.removeEventListener('dbmastery:open_legal_mentions', handleOpenLegalMentions);
       window.removeEventListener('dbmastery:open_onboarding', handleOpenOnboarding);
+      window.removeEventListener('dbmastery:open_spaced_repetition_runner', handleOpenSpacedRunner);
+      window.removeEventListener('dbmastery:open_spaced_repetition_view', handleOpenSpacedView);
     };
   }, []);
 
@@ -733,6 +752,10 @@ export default function App() {
               onOpenTargetedSession={() => setIsTargetedSessionOpen(true)}
               onStartShortSession={(mode) => setShortSessionMode(mode)}
               onStartDailySession={() => setIsDailySessionOpen(true)}
+              onOpenSpacedRunner={() => {
+                setTargetSpacedItemId(undefined);
+                setIsSpacedRunnerOpen(true);
+              }}
               currentUser={currentUser}
               cloudSyncedCount={cloudSyncedCount}
               onGoogleSignIn={handleGoogleSignIn}
@@ -845,6 +868,15 @@ export default function App() {
               }}
               onGoogleSignIn={handleGoogleSignIn}
               onSignOut={handleSignOut}
+            />
+          )}
+
+          {currentTab === 'spaced_repetition' && (
+            <SpacedRepetitionView
+              lang={lang}
+              theme={theme}
+              selectedCert={selectedCert}
+              onNavigateToTab={(tab) => setCurrentTab(tab as NavigationTab)}
             />
           )}
         </main>
@@ -1010,6 +1042,18 @@ export default function App() {
           setIsDailySessionOpen(false);
           setCurrentTab('dashboard');
         }}
+      />
+
+      {/* 🔁 Séance de Répétition Espacée (SM-2 / FSRS) */}
+      <SpacedRepetitionRunnerModal
+        isOpen={isSpacedRunnerOpen}
+        onClose={() => {
+          setIsSpacedRunnerOpen(false);
+          setTargetSpacedItemId(undefined);
+        }}
+        lang={lang}
+        selectedCert={selectedCert}
+        targetItemId={targetSpacedItemId}
       />
 
       {/* Aide Contextuelle Dynamique par écran + Contrôle des Infobulles */}

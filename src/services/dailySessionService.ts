@@ -10,6 +10,7 @@ import { loadMasteryTree, applyExamSessionToMastery } from './masteryTreeService
 import { getStoredCompetencies, recalculateCompetenciesAfterSession } from './competencyService';
 import { recordQuestionAttemptTelemetry } from './statsService';
 import { recordTrapAttempt } from './trapService';
+import { recordExternalConceptAttempt } from './spacedRepetitionService';
 
 export interface DailySessionState {
   lastCompletedDate: string | null; // 'YYYY-MM-DD'
@@ -179,6 +180,21 @@ export function recordDailySessionCompletion(
       if (q.trapMetadata) {
         recordTrapAttempt(q.trapMetadata, isCorrect);
       }
+
+      // Synchronisation avec l'algorithme de Répétition Espacée (SM-2 / FSRS)
+      recordExternalConceptAttempt(q.topicId, isCorrect, {
+        titleFr: q.topicName,
+        titleEn: q.topicName,
+        promptFr: q.prompt,
+        promptEn: q.prompt,
+        explanationFr: q.explanation,
+        explanationEn: q.explanation,
+        pillar: q.topicId.includes('tx') || q.topicId.includes('transaction')
+          ? 'transactions'
+          : q.topicId.includes('index')
+          ? 'indexes'
+          : 'sql',
+      });
     } catch {
       // ignore
     }

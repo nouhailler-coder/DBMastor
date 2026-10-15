@@ -9,7 +9,8 @@ export type NavigationTab =
   | 'flashcards'
   | 'analytics'
   | 'glossary'
-  | 'access_control';
+  | 'access_control'
+  | 'spaced_repetition';
 
 export type UserAccessRole = 'admin' | 'student' | 'auditor';
 export type UserAccessStatus = 'pending' | 'approved' | 'revoked';
@@ -615,5 +616,64 @@ export interface TopicResponseTimeStat {
   adaptiveActionEn: string;
 }
 
+/**
+ * Types pour l'algorithme de Répétition Espacée (inspiré SM-2 / FSRS)
+ * Gère l'évolution de la mémoire :
+ * Question -> Erreur -> Révision dans 1j -> Bonne réponse -> Révision dans 3j -> Bonne réponse -> Révision dans 7j -> Maîtrisé
+ */
+export type SpacedReviewRating = 'again' | 'hard' | 'good' | 'easy';
 
+export interface SpacedReviewHistoryEntry {
+  reviewedAt: string;
+  rating: SpacedReviewRating;
+  result: 'success' | 'failure';
+  intervalGranted: number;
+  stabilityAfter: number;
+  difficultyAfter: number;
+}
 
+export interface SpacedRepetitionItem {
+  id: string;               // Identifiant unique
+  conceptId: string;        // Identifiant notion (ex: 'join-on-vs-where', 'tx-isolation-serializable')
+  titleFr: string;
+  titleEn: string;
+  pillar: string;           // 'sql' | 'modelisation' | 'transactions' | 'administration' | 'indexes' | 'security'
+  trackId: CertificationTrackId;
+  promptFr: string;
+  promptEn: string;
+  codeSnippet?: string;
+  correctAnswerFr: string;
+  correctAnswerEn: string;
+  explanationFr: string;
+  explanationEn: string;
+  keyRuleFr?: string;
+  keyRuleEn?: string;
+
+  // Attributs requis par l'algorithme SM-2 / FSRS :
+  mastery: number;          // 0 à 100%
+  stability: number;        // En jours (stabilité mnésique)
+  difficulty: number;       // 1 à 10 (difficulté intrinsèque)
+  lastReviewedAt: string | null; // ISO timestamp
+  nextReviewAt: string;     // ISO timestamp
+  successCount: number;     // Nombre total de réussites
+  failureCount: number;     // Nombre total d'erreurs
+
+  // Métadonnées SM-2 / FSRS
+  interval: number;         // Intervalle actuel en jours (1 -> 3 -> 7 -> 16 -> 35...)
+  reps: number;             // Répétitions consécutives réussies
+  lapses: number;           // Nombre de rechutes après apprentissage
+  status: 'new' | 'learning' | 'review' | 'mastered';
+  history?: SpacedReviewHistoryEntry[];
+}
+
+export interface SpacedRepetitionStats {
+  totalItems: number;
+  dueTodayCount: number;
+  learningCount: number;
+  reviewCount: number;
+  masteredCount: number;
+  averageMastery: number;
+  averageStabilityDays: number;
+  totalReviewsDone: number;
+  retentionRatePercent: number;
+}

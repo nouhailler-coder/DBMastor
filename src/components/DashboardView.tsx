@@ -38,6 +38,7 @@ import { ProgressiveExplainPanel } from './ProgressiveExplainPanel';
 import { ShortSessionsWidget } from './ShortSessionsWidget';
 import { MasteryTreeCard } from './MasteryTreeCard';
 import { DailySessionCard } from './DailySessionCard';
+import { SpacedRepetitionCard } from './SpacedRepetitionCard';
 import { ShortSessionMode } from '../data/shortSessionsData';
 import type { User } from '../services/firebaseSyncService';
 import { LogOut, Brain, Target, Scale, ShieldAlert } from 'lucide-react';
@@ -57,6 +58,7 @@ interface DashboardViewProps {
   onOpenTargetedSession?: () => void;
   onStartShortSession?: (mode: ShortSessionMode) => void;
   onStartDailySession?: () => void;
+  onOpenSpacedRunner?: () => void;
   currentUser?: User | null;
   cloudSyncedCount?: number;
   onGoogleSignIn?: () => void;
@@ -71,6 +73,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenTargetedSession,
   onStartShortSession,
   onStartDailySession,
+  onOpenSpacedRunner,
   currentUser,
   cloudSyncedCount = 0,
   onGoogleSignIn,
@@ -370,6 +373,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             window.dispatchEvent(new CustomEvent('dbmastery:open_daily_session'));
           }
         }}
+      />
+
+      {/* MÉCANISME PÉDAGOGIQUE CLÉ : RÉPÉTITION ESPACÉE (SM-2 / FSRS) */}
+      <SpacedRepetitionCard
+        lang={lang}
+        selectedCert={selectedCert}
+        onOpenRunner={() => {
+          if (onOpenSpacedRunner) {
+            onOpenSpacedRunner();
+          } else {
+            window.dispatchEvent(new CustomEvent('dbmastery:open_spaced_repetition_runner'));
+          }
+        }}
+        onNavigateToSpacedView={() => onNavigate('spaced_repetition')}
       />
 
       {/* CŒUR DE L'APPLICATION : MON NIVEAU — ARBRE HIÉRARCHIQUE DE COMPÉTENCES & DIAGNOSTIC */}

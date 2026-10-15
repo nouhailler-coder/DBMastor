@@ -19,7 +19,8 @@ import {
   Cloud,
   HelpCircle,
   Compass,
-  Scale
+  Scale,
+  RotateCcw
 } from 'lucide-react';
 import { CertificationTrackId, SystemVersionInfo } from '../types';
 import { certificationTracks } from '../data/mockData';
@@ -313,6 +314,28 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Scale className="w-3.5 h-3.5 text-[#38bdf8]" />
             <span className="hidden xl:inline">{isFr ? 'Mentions Légales' : 'Legal'}</span>
+          </button>
+        </SmartTooltip>
+
+        {/* Répétition Espacée SM-2 */}
+        <SmartTooltip
+          title={isFr ? 'Répétition Espacée (SM-2 / FSRS)' : 'Spaced Repetition (SM-2 / FSRS)'}
+          description={
+            isFr
+              ? 'Accédez directement à vos séances de révision mémorisées selon la courbe de l\'oubli (J+1, J+3, J+7).'
+              : 'Direct access to your scheduled spaced reviews along your memory retention curve (Day+1, Day+3, Day+7).'
+          }
+          badge="SM-2"
+          placement="bottom"
+        >
+          <button
+            id="header-spaced-repetition-btn"
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('dbmastery:open_spaced_repetition_runner'))}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/40 hover:border-[#38bdf8] rounded-lg text-xs font-mono font-bold text-[#38bdf8] hover:text-white transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-[#38bdf8]" />
+            <span className="hidden xl:inline">{isFr ? 'Révisions' : 'Reviews'}</span>
           </button>
         </SmartTooltip>
 

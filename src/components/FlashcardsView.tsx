@@ -43,6 +43,7 @@ import {
 } from '../data/flashcardsCatalog';
 import { certificationTracks } from '../data/mockData';
 import { certificationDomainMatrices } from '../data/certificationDomainsData';
+import { recordExternalConceptAttempt } from '../services/spacedRepetitionService';
 
 interface FlashcardsViewProps {
   onNavigate: (tab: NavigationTab) => void;
@@ -233,7 +234,26 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
       ...prev,
       [cardId]: status,
     }));
-  }, []);
+
+    try {
+      const card = rawDomainCards.find((c) => c.id === cardId);
+      if (card && (status === 'learning' || status === 'review' || status === 'mastered')) {
+        const isSuccess = status === 'mastered';
+        recordExternalConceptAttempt(card.subtopic || card.id, isSuccess, {
+          titleFr: `${card.subtopic} (Flashcard #${card.cardNumber})`,
+          titleEn: `${card.subtopic} (Flashcard #${card.cardNumber})`,
+          promptFr: card.front.question,
+          promptEn: card.front.question,
+          explanationFr: card.back.answer,
+          explanationEn: card.back.answer,
+          pillar: 'sql',
+          trackId: selectedCert,
+        });
+      }
+    } catch {
+      // ignore
+    }
+  }, [rawDomainCards, selectedCert]);
 
   // Navigation handlers
   const handlePrev = useCallback(() => {
