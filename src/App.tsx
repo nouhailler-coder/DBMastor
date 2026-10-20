@@ -73,8 +73,10 @@ import {
   upsertLocalEmailRecord,
   removeLocalEmailRecord,
   verifyEmailValidationCode,
+  generateEmailValidationCode,
   emailToDeterministicUid
 } from './services/siteAccessGateService';
+import { sendAccessRequestNotification } from './services/notificationService';
 import { Zap, CheckCircle2, X, RefreshCw, Settings } from 'lucide-react';
 
 export default function App() {
@@ -126,6 +128,37 @@ export default function App() {
     notes: string;
   } | null>(null);
 
+  // Détection des liens d'approbation et raccourcis depuis les notifications Email
+  useEffect(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tabParam = searchParams.get('tab');
+      const approvedEmail = searchParams.get('approved_email');
+      const approvedName = searchParams.get('approved_name') || approvedEmail;
+
+      if (tabParam === 'access_control') {
+        setCurrentTab('access_control');
+      }
+
+      if (approvedEmail) {
+        const clean = approvedEmail.trim().toLowerCase();
+        upsertLocalEmailRecord({
+          email: clean,
+          displayName: approvedName || clean.split('@')[0],
+          role: 'student',
+          status: 'approved',
+          accessReason: 'Validé en 1 clic depuis le lien de l\'email de notification',
+        });
+        setLocalEmailRecords(loadLocalEmailRecords());
+        setCurrentTab('access_control');
+        // Nettoyer l'URL sans recharger
+        window.history.replaceState({}, document.title, window.location.pathname + '?tab=access_control');
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // Firebase Auth & Firestore Real-time Sync + RBAC Access Control
   useEffect(() => {
     let unsubFirestore: (() => void) | null = null;
@@ -171,6 +204,22 @@ export default function App() {
             });
           } else {
             setCloudSyncedCount(0);
+
+            // Si le compte est en attente (pending) et que ce n'est pas l'admin, notifier par email
+            if (accessDoc?.status === 'pending' && user.email && !isUserBootstrappedAdmin(user)) {
+              const sessionKey = `dbmastery_notif_g_${user.uid}`;
+              if (!sessionStorage.getItem(sessionKey)) {
+                sessionStorage.setItem(sessionKey, '1');
+                const validationCode = generateEmailValidationCode(user.email);
+                sendAccessRequestNotification({
+                  email: user.email,
+                  displayName: user.displayName || user.email.split('@')[0],
+                  accessReason: accessDoc.accessReason || 'Nouvelle connexion Google (En attente d\'approbation)',
+                  method: 'google_signin',
+                  validationCode,
+                }).catch((err) => console.warn('[App] Notification Google login échouée :', err));
+              }
+            }
           }
         } catch (err) {
           console.error('Firebase sync initialization error:', err);
@@ -350,6 +399,18 @@ export default function App() {
     };
     handleUpdateStep2Session(sessionObj);
 
+    // Déclencher automatiquement la notification par email vers l'administrateur
+    if (finalStatus === 'pending') {
+      const computedCode = generateEmailValidationCode(cleanEmail);
+      sendAccessRequestNotification({
+        email: cleanEmail,
+        displayName: params.displayName,
+        accessReason: params.accessReason,
+        method: 'gatekeeper_email',
+        validationCode: computedCode,
+      }).catch((err) => console.warn('[App] Notification email d\'accès échouée :', err));
+    }
+
     if (isAlreadyApproved) {
       setIsGatekeeperPreviewOpen(false);
       setPreviewStepOverride(null);
@@ -376,8 +437,8 @@ export default function App() {
       approved: false,
       message:
         lang === 'fr'
-          ? `Votre demande pour "${cleanEmail}" a bien été enregistrée en statut EN ATTENTE (PENDING). Dès que l'administrateur valide votre email dans la console Contrôle d'Accès (ou vous transmet votre code VAL-XXXX-XXXX), votre accès sera déverrouillé.`
-          : `Your request for "${cleanEmail}" has been recorded as PENDING. Once the administrator approves your email in the Access Control console (or sends your VAL-XXXX-XXXX code), your access will unlock.`,
+          ? `Votre demande pour "${cleanEmail}" a bien été enregistrée et transmise par email à l'administrateur (nouhailler@gmail.com). Dès validation de votre email (ou saisie de votre code de validation), votre accès sera déverrouillé.`
+          : `Your request for "${cleanEmail}" has been recorded and sent by email to the administrator (nouhailler@gmail.com). Once approved (or via your validation code), your access will unlock.`,
     };
   };
 

@@ -27,14 +27,29 @@ import {
   Check,
   ArrowRight,
   RotateCcw,
-  Globe
+  Globe,
+  Bell,
+  ExternalLink,
+  Inbox,
+  RefreshCw
 } from 'lucide-react';
 import {
   UserAccessRecord,
   UserAccessRole,
   UserAccessStatus,
-  CertificationTrackId
+  CertificationTrackId,
+  AccessRequestNotification,
+  NotificationServiceStatus
 } from '../types';
+import {
+  ADMIN_NOTIFICATION_EMAIL,
+  sendAccessRequestNotification,
+  fetchNotificationStatus,
+  fetchNotificationHistory,
+  sendTestNotificationEmail,
+  generateAdminMailtoLink,
+  generateCandidateApprovalMailtoLink
+} from '../services/notificationService';
 import {
   User,
   BOOTSTRAPPED_ADMIN_EMAIL,
@@ -130,6 +145,74 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
   const [newRole, setNewRole] = useState<UserAccessRole>('student');
   const [newStatus, setNewStatus] = useState<UserAccessStatus>('approved');
   const [newReason, setNewReason] = useState('');
+
+  // États Notifications Email Administrateur (nouhailler@gmail.com)
+  const [notifStatus, setNotifStatus] = useState<NotificationServiceStatus | null>(null);
+  const [notifHistory, setNotifHistory] = useState<AccessRequestNotification[]>([]);
+  const [isTestingEmail, setIsTestingEmail] = useState(false);
+  const [isRefreshingNotifs, setIsRefreshingNotifs] = useState(false);
+
+  // Charger le statut et l'historique des notifications email
+  React.useEffect(() => {
+    fetchNotificationStatus().then(setNotifStatus).catch(() => {});
+    fetchNotificationHistory().then(setNotifHistory).catch(() => {});
+  }, []);
+
+  const handleRefreshNotifications = async () => {
+    setIsRefreshingNotifs(true);
+    try {
+      const status = await fetchNotificationStatus();
+      setNotifStatus(status);
+      const history = await fetchNotificationHistory();
+      setNotifHistory(history);
+      showMessage('info', isFr ? 'Notifications rafraîchies !' : 'Notifications refreshed!');
+    } finally {
+      setIsRefreshingNotifs(false);
+    }
+  };
+
+  const handleTestEmailNotification = async () => {
+    setIsTestingEmail(true);
+    try {
+      const res = await sendTestNotificationEmail(ADMIN_NOTIFICATION_EMAIL);
+      if (res.success) {
+        showMessage(
+          'success',
+          isFr
+            ? `Email de test envoyé à ${ADMIN_NOTIFICATION_EMAIL} ! (${res.message})`
+            : `Test email dispatched to ${ADMIN_NOTIFICATION_EMAIL}! (${res.message})`
+        );
+      } else {
+        showMessage('error', res.message || 'Erreur lors du test email.');
+      }
+      const updated = await fetchNotificationHistory();
+      setNotifHistory(updated);
+    } finally {
+      setIsTestingEmail(false);
+    }
+  };
+
+  const handleResendAccessEmailAlert = async (rec: UserAccessRecord) => {
+    setIsBusy(true);
+    try {
+      const code = generateEmailValidationCode(rec.email, siteGateConfig.sitePassword);
+      const res = await sendAccessRequestNotification({
+        email: rec.email,
+        displayName: rec.displayName,
+        accessReason: rec.accessReason,
+        method: 'manual_resend',
+        validationCode: code,
+      });
+      showMessage(
+        res.success ? 'success' : 'info',
+        res.message || (isFr ? `Alerte email envoyée à ${ADMIN_NOTIFICATION_EMAIL}` : `Email alert sent to ${ADMIN_NOTIFICATION_EMAIL}`)
+      );
+      const updated = await fetchNotificationHistory();
+      setNotifHistory(updated);
+    } finally {
+      setIsBusy(false);
+    }
+  };
 
   const showMessage = (type: 'success' | 'error' | 'info', message: string) => {
     setFeedbackBanner({ type, message });
@@ -1011,6 +1094,34 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
                           >
                             {isFr ? 'Bloquer' : 'Revoke'}
                           </button>
+
+                          {/* Action Email : Répondre au candidat avec ses codes */}
+                          <a
+                            href={generateCandidateApprovalMailtoLink({
+                              applicantEmail: rec.email,
+                              applicantName: rec.displayName,
+                              validationCode: emailCode,
+                              sitePassword: siteGateConfig.sitePassword,
+                            })}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg bg-[#0b1c30] hover:bg-[#1b2b3f] text-[#38bdf8] hover:text-white border border-[#1b2b3f] transition-colors"
+                            title={isFr ? 'Répondre par email au candidat' : 'Reply by email to candidate'}
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                          </a>
+
+                          {/* Action Email : Renvoyer l'alerte à nouhailler@gmail.com */}
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() => handleResendAccessEmailAlert(rec)}
+                            className="p-1.5 rounded-lg bg-[#0b1c30] hover:bg-[#1b2b3f] text-[#f59e0b] hover:text-[#fbbf24] border border-[#1b2b3f] transition-colors cursor-pointer"
+                            title={isFr ? `Renvoyer notification email à ${ADMIN_NOTIFICATION_EMAIL}` : `Resend notification email to ${ADMIN_NOTIFICATION_EMAIL}`}
+                          >
+                            <Bell className="w-3.5 h-3.5" />
+                          </button>
+
                           {!isSelf && (
                             <button
                               type="button"
@@ -1031,6 +1142,238 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
             </table>
           </div>
         )}
+      </div>
+
+      {/* SECTION : CENTRE DE NOTIFICATIONS EMAIL ADMINISTRATEUR (nouhailler@gmail.com) */}
+      <div className="p-6 rounded-2xl bg-[#102034] border border-[#38bdf8]/40 shadow-xl flex flex-col gap-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#1b2b3f]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#0284c7]/20 border border-[#38bdf8]/40 flex items-center justify-center text-[#38bdf8] shrink-0">
+              <Bell className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-[#d3e4fe]">
+                  {isFr
+                    ? 'Centre de Notifications Email des Demandes de Connexion'
+                    : 'Connection & Access Request Email Notification Center'}
+                </h2>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#0284c7]/20 text-[#38bdf8] border border-[#38bdf8]/30 font-bold">
+                  {isFr ? 'Temps Réel' : 'Live'}
+                </span>
+              </div>
+              <p className="text-xs text-[#89929b] mt-0.5">
+                {isFr
+                  ? `Chaque demande de connexion ou accès vous est transmise par email à votre adresse (${ADMIN_NOTIFICATION_EMAIL}).`
+                  : `Every login or access request is dispatched by email to your admin address (${ADMIN_NOTIFICATION_EMAIL}).`}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              disabled={isRefreshingNotifs}
+              onClick={handleRefreshNotifications}
+              className="px-3 py-2 rounded-xl bg-[#0b1c30] hover:bg-[#1b2b3f] text-[#89ceff] border border-[#1b2b3f] text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all"
+              title={isFr ? 'Rafraîchir les notifications' : 'Refresh notifications'}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingNotifs ? 'animate-spin' : ''}`} />
+              <span>{isFr ? 'Actualiser' : 'Refresh'}</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={isTestingEmail}
+              onClick={handleTestEmailNotification}
+              className="px-3.5 py-2 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-mono font-bold flex items-center gap-2 cursor-pointer shadow-md transition-all disabled:opacity-50"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>
+                {isTestingEmail
+                  ? isFr
+                    ? 'Envoi en cours...'
+                    : 'Sending test...'
+                  : isFr
+                  ? 'Tester l\'envoi d\'un email à nouhailler@gmail.com'
+                  : 'Test email to nouhailler@gmail.com'}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Cartes d'état du service de notification */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+          <div className="p-4 rounded-xl bg-[#0b1c30] border border-[#1b2b3f] flex flex-col gap-1.5">
+            <span className="text-[11px] text-[#89929b] uppercase tracking-wider">
+              {isFr ? 'Destinataire Principal' : 'Primary Recipient'}
+            </span>
+            <div className="text-sm font-bold text-[#38bdf8] flex items-center gap-1.5 truncate">
+              <Mail className="w-4 h-4 shrink-0 text-[#38bdf8]" />
+              <span className="truncate">{ADMIN_NOTIFICATION_EMAIL}</span>
+            </div>
+            <span className="text-[10px] text-[#89929b]">
+              {isFr ? 'Désigné comme administrateur du portail' : 'Designated portal administrator'}
+            </span>
+          </div>
+
+          <div className="p-4 rounded-xl bg-[#0b1c30] border border-[#1b2b3f] flex flex-col gap-1.5">
+            <span className="text-[11px] text-[#89929b] uppercase tracking-wider">
+              {isFr ? 'Mode d\'acheminement' : 'Delivery Pipeline'}
+            </span>
+            <div className="flex items-center gap-1.5">
+              {notifStatus?.smtpConfigured ? (
+                <span className="text-[#4edea3] font-bold text-xs flex items-center gap-1">
+                  <CheckCircle2 className="w-4 h-4 text-[#4edea3]" />
+                  SMTP Actif & Connecté
+                </span>
+              ) : (
+                <span className="text-[#fbbf24] font-bold text-xs flex items-center gap-1">
+                  <Clock className="w-4 h-4 text-[#fbbf24]" />
+                  {isFr ? 'File d\'attente & Relais Mailto' : 'Queue & Mailto Relay'}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] text-[#89929b]">
+              {notifStatus?.smtpConfigured
+                ? isFr ? 'Transmission SMTP directe en boîte de réception' : 'Direct SMTP inbox delivery'
+                : isFr ? 'Prêt (Configurez SMTP_HOST/USER/PASS pour envoi direct)' : 'Ready (Set SMTP_HOST/USER/PASS for direct dispatch)'}
+            </span>
+          </div>
+
+          <div className="p-4 rounded-xl bg-[#0b1c30] border border-[#1b2b3f] flex flex-col gap-1.5">
+            <span className="text-[11px] text-[#89929b] uppercase tracking-wider">
+              {isFr ? 'Demandes enregistrées' : 'Logged Requests'}
+            </span>
+            <div className="text-sm font-bold text-[#d3e4fe] flex items-center gap-1.5">
+              <Inbox className="w-4 h-4 text-[#89ceff]" />
+              <span>{notifHistory.length} {isFr ? 'demande(s)' : 'request(s)'}</span>
+            </div>
+            <span className="text-[10px] text-[#89929b]">
+              {notifHistory[0]?.requestedAt
+                ? `${isFr ? 'Dernière :' : 'Latest:'} ${new Date(notifHistory[0].requestedAt).toLocaleTimeString('fr-FR')}`
+                : isFr ? 'Aucune demande pour l\'instant' : 'No requests yet'}
+            </span>
+          </div>
+        </div>
+
+        {/* Flux des dernières demandes d'accès notifiées */}
+        <div className="flex flex-col gap-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono font-bold text-[#89ceff] flex items-center gap-1.5">
+              <Inbox className="w-3.5 h-3.5" />
+              {isFr ? 'Historique des alertes email transmises :' : 'Dispatched email alerts log:'}
+            </span>
+            <span className="text-[11px] font-mono text-[#89929b]">
+              {isFr ? 'Mis à jour en direct' : 'Live real-time stream'}
+            </span>
+          </div>
+
+          {notifHistory.length === 0 ? (
+            <div className="p-5 rounded-xl bg-[#0b1c30] border border-[#1b2b3f] text-center text-xs text-[#89929b]">
+              {isFr
+                ? 'Aucune demande d\'accès n\'a encore été soumise. Dès qu\'un utilisateur tente de se connecter ou soumet son email, une alerte est enregistrée et envoyée ici.'
+                : 'No access requests logged yet. As soon as a user tries to sign in or submits their email, an alert is recorded and dispatched here.'}
+            </div>
+          ) : (
+            <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+              {notifHistory.map((item) => (
+                <div
+                  key={item.id}
+                  className="p-3 rounded-xl bg-[#0b1c30] border border-[#1b2b3f] hover:border-[#38bdf8]/40 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                >
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-[#102034] border border-[#1b2b3f] flex items-center justify-center shrink-0 mt-0.5">
+                      <Mail className="w-3.5 h-3.5 text-[#38bdf8]" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-[#d3e4fe]">{item.displayName}</span>
+                        <span className="font-mono text-[11px] text-[#38bdf8] font-semibold">
+                          {item.email}
+                        </span>
+                        <span
+                          className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                            item.emailSent
+                              ? 'bg-[#00a572]/20 text-[#4edea3] border border-[#4edea3]/30'
+                              : 'bg-[#f59e0b]/20 text-[#fbbf24] border border-[#f59e0b]/30'
+                          }`}
+                        >
+                          {item.emailSent
+                            ? isFr ? 'Email délivré' : 'Email delivered'
+                            : isFr ? 'En file d\'attente' : 'Queued'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#bfc7d2] mt-0.5 line-clamp-1 italic">
+                        « {item.accessReason} »
+                      </p>
+                      <div className="flex items-center gap-3 text-[10px] font-mono text-[#89929b] mt-1">
+                        <span>{new Date(item.requestedAt).toLocaleString('fr-FR')}</span>
+                        <span>•</span>
+                        <span>
+                          {item.method === 'google_signin'
+                            ? 'Google Sign-In'
+                            : item.method === 'manual_resend'
+                            ? 'Renvoi manuel'
+                            : 'Portail Netlify'}
+                        </span>
+                        {item.validationCode && (
+                          <>
+                            <span>•</span>
+                            <span className="text-[#4edea3]">Code: {item.validationCode}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                    <a
+                      href={generateCandidateApprovalMailtoLink({
+                        applicantEmail: item.email,
+                        applicantName: item.displayName,
+                        validationCode: item.validationCode || generateEmailValidationCode(item.email, siteGateConfig.sitePassword),
+                        sitePassword: siteGateConfig.sitePassword,
+                      })}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1.5 rounded-lg bg-[#1b2b3f] hover:bg-[#26364a] text-[#89ceff] hover:text-white border border-[#38bdf8]/30 font-mono text-[11px] font-bold flex items-center gap-1.5 transition-all"
+                    >
+                      <Mail className="w-3 h-3" />
+                      <span>{isFr ? 'Répondre' : 'Reply'}</span>
+                    </a>
+
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => {
+                        const rec = allAccessRecords.find((r) => r.email.toLowerCase() === item.email.toLowerCase());
+                        if (rec) {
+                          handleUpdateUserRecord(rec, {
+                            status: 'approved',
+                            accessReason: 'Email validé depuis l\'alerte de notification',
+                          });
+                        } else {
+                          onUpsertEmailRecord({
+                            email: item.email,
+                            displayName: item.displayName,
+                            role: 'student',
+                            status: 'approved',
+                            accessReason: 'Email validé depuis l\'alerte de notification',
+                          });
+                        }
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg bg-[#00a572]/20 hover:bg-[#00a572] text-[#4edea3] hover:text-white border border-[#4edea3]/40 font-mono text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>{isFr ? 'Valider l\'accès' : 'Approve'}</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* SECTION 2 : Banc d'essai interactif en temps réel Firestore */}
@@ -1888,7 +2231,7 @@ export const AccessGatekeeperOverlay: React.FC<AccessGatekeeperOverlayProps> = (
 
             {step2Feedback && (
               <div
-                className={`p-3.5 rounded-xl border text-xs font-mono flex items-start gap-2.5 ${
+                className={`p-3.5 rounded-xl border text-xs font-mono flex flex-col gap-2.5 ${
                   step2Feedback.type === 'success'
                     ? 'bg-[#00a572]/15 border-[#4edea3]/50 text-[#4edea3]'
                     : step2Feedback.type === 'warning'
@@ -1896,12 +2239,37 @@ export const AccessGatekeeperOverlay: React.FC<AccessGatekeeperOverlayProps> = (
                     : 'bg-[#ef4444]/15 border-[#ef4444]/50 text-[#ffb4ab]'
                 }`}
               >
-                {step2Feedback.type === 'success' ? (
-                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-                ) : (
-                  <Clock className="w-4 h-4 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2.5">
+                  {step2Feedback.type === 'success' ? (
+                    <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                  ) : (
+                    <Clock className="w-4 h-4 shrink-0 mt-0.5" />
+                  )}
+                  <div className="flex-1 leading-relaxed">{step2Feedback.text}</div>
+                </div>
+
+                {step2Feedback.type !== 'success' && (
+                  <div className="pt-2 border-t border-current/20 flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[11px] opacity-90 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 shrink-0" />
+                      {isFr
+                        ? `Alerte transmise à ${BOOTSTRAPPED_ADMIN_EMAIL}`
+                        : `Alert dispatched to ${BOOTSTRAPPED_ADMIN_EMAIL}`}
+                    </span>
+                    <a
+                      href={generateAdminMailtoLink({
+                        applicantEmail: emailInput.trim(),
+                        applicantName: nameInput.trim(),
+                        accessReason: reasonInput.trim(),
+                        validationCode: validationCodeInput.trim() || undefined,
+                      })}
+                      className="px-2.5 py-1 rounded bg-[#102034] hover:bg-[#1b2b3f] text-[#38bdf8] text-[11px] font-bold border border-[#38bdf8]/40 flex items-center gap-1.5 transition-all"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>{isFr ? 'Envoyer aussi par ma messagerie' : 'Send via email client'}</span>
+                    </a>
+                  </div>
                 )}
-                <div className="flex-1 leading-relaxed">{step2Feedback.text}</div>
               </div>
             )}
 

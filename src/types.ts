@@ -26,6 +26,28 @@ export interface UserAccessRecord {
   updatedAt: string;
 }
 
+export interface AccessRequestNotification {
+  id: string;
+  email: string;
+  displayName: string;
+  accessReason: string;
+  method: 'google_signin' | 'gatekeeper_email' | 'manual_resend';
+  requestedAt: string;
+  emailSent: boolean;
+  emailError?: string;
+  deliveryMethod: 'smtp' | 'webhook' | 'queued' | 'simulated';
+  recipient: string;
+  validationCode?: string;
+}
+
+export interface NotificationServiceStatus {
+  recipient: string;
+  smtpConfigured: boolean;
+  webhookConfigured: boolean;
+  historyCount: number;
+  lastSentAt?: string;
+}
+
 export type ExamPillar = 'sql' | 'modelisation' | 'transactions' | 'administration';
 
 export interface CognitiveConcept {

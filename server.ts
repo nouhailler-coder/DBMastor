@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
+import nodemailer, { Transporter } from 'nodemailer';
 
 dotenv.config();
 
@@ -1010,6 +1011,445 @@ Règles impératives :
       source: 'curated_engine',
       ...fallbackSession,
     });
+  });
+
+  // =========================================================================
+  // NOTIFICATIONS PAR EMAIL DES DEMANDES D'ACCÈS / CONNEXION (ADMIN NOUHAILLER)
+  // =========================================================================
+  interface AccessNotificationRecord {
+    id: string;
+    email: string;
+    displayName: string;
+    accessReason: string;
+    method: 'google_signin' | 'gatekeeper_email' | 'manual_resend';
+    requestedAt: string;
+    emailSent: boolean;
+    emailError?: string;
+    deliveryMethod: 'smtp' | 'webhook' | 'queued' | 'simulated';
+    recipient: string;
+    validationCode?: string;
+  }
+
+  const accessNotificationsHistory: AccessNotificationRecord[] = [];
+
+  const getAdminEmail = (): string => {
+    return (process.env.ADMIN_NOTIFICATION_EMAIL || 'nouhailler@gmail.com').trim();
+  };
+
+  const getAppBaseUrl = (req?: express.Request): string => {
+    if (process.env.APP_URL) {
+      return process.env.APP_URL.replace(/\/+$/, '');
+    }
+    if (req) {
+      const host = req.get('host') || 'localhost:3000';
+      const proto = req.get('x-forwarded-proto') || req.protocol || 'http';
+      return `${proto}://${host}`;
+    }
+    return 'http://localhost:3000';
+  };
+
+  const createTransporter = (): Transporter | null => {
+    const host = process.env.SMTP_HOST;
+    const port = parseInt(process.env.SMTP_PORT || '587', 10);
+    const user = process.env.SMTP_USER;
+    const pass = process.env.SMTP_PASS;
+    const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+
+    if (host && (user || pass)) {
+      try {
+        return nodemailer.createTransport({
+          host,
+          port,
+          secure,
+          auth: user || pass ? { user: user || '', pass: pass || '' } : undefined,
+          tls: {
+            rejectUnauthorized: false,
+          },
+        });
+      } catch (err) {
+        console.error('[SMTP] Erreur création transporteur :', err);
+      }
+    }
+    return null;
+  };
+
+  const buildNotificationEmailHtml = ({
+    email,
+    displayName,
+    accessReason,
+    method,
+    requestedAt,
+    validationCode,
+    appUrl,
+    adminEmail,
+  }: {
+    email: string;
+    displayName: string;
+    accessReason: string;
+    method: string;
+    requestedAt: string;
+    validationCode?: string;
+    appUrl: string;
+    adminEmail: string;
+  }): { html: string; text: string } => {
+    const methodLabel =
+      method === 'google_signin'
+        ? 'Connexion Google (Compte vérifié)'
+        : 'Portail Email / Mot de passe du site (Netlify)';
+    const consoleLink = `${appUrl}/?tab=access_control`;
+    const replyMailto = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent('[DBMastery Studio] Validation de votre accès')}&body=${encodeURIComponent(
+      `Bonjour ${displayName},\n\nVotre accès à DBMastery Studio a été validé !\n\nEmail : ${email}\n${validationCode ? `Code de validation personnel : ${validationCode}\n` : ''}\nBonne préparation aux certifications SQL DBA.\n\nCordialement,\nL'administrateur DBMastery Studio`
+    )}`;
+
+    const dateFormatted = new Date(requestedAt).toLocaleString('fr-FR', {
+      timeZone: 'Europe/Paris',
+      dateStyle: 'full',
+      timeStyle: 'medium',
+    });
+
+    const text = [
+      `🔔 NOUVELLE DEMANDE DE CONNEXION / ACCÈS À DBMASTERY STUDIO`,
+      `-----------------------------------------------------------`,
+      `Statut : En attente d'approbation (PENDING)`,
+      `Demandeur : ${displayName}`,
+      `Email : ${email}`,
+      `Méthode : ${methodLabel}`,
+      `Motif : ${accessReason}`,
+      `Date : ${dateFormatted}`,
+      validationCode ? `Code de validation personnel : ${validationCode}` : '',
+      `-----------------------------------------------------------`,
+      `Pour approuver cette demande dans la console :`,
+      consoleLink,
+      `Pour répondre directement par email à l'apprenant :`,
+      replyMailto,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nouvelle demande d'accès DBMastery Studio</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #031427; color: #d3e4fe; margin: 0; padding: 20px; }
+    .card { max-width: 620px; margin: 0 auto; background: #0c1c2e; border: 1px solid #1e3a5f; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 36px rgba(0,0,0,0.6); }
+    .banner { background: linear-gradient(135deg, #0284c7 0%, #1e40af 100%); padding: 28px 24px; text-align: center; color: #ffffff; }
+    .banner h1 { margin: 0 0 6px 0; font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+    .banner p { margin: 0; font-size: 13px; opacity: 0.92; }
+    .content { padding: 28px 24px; }
+    .pill { display: inline-block; background-color: #f59e0b; color: #000; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; margin-bottom: 20px; letter-spacing: 0.5px; }
+    .table { width: 100%; border-collapse: collapse; margin-bottom: 24px; background: #071322; border-radius: 10px; overflow: hidden; border: 1px solid #162a45; }
+    .table td { padding: 12px 14px; border-bottom: 1px solid #162a45; font-size: 14px; vertical-align: top; }
+    .table tr:last-child td { border-bottom: none; }
+    .label { color: #89ceff; font-weight: 600; width: 140px; }
+    .val { color: #f1f5f9; }
+    .val strong { color: #ffffff; }
+    .code-box { background: #031427; border: 1px dashed #38bdf8; border-radius: 10px; padding: 16px; text-align: center; margin-bottom: 24px; }
+    .code-box .title { font-size: 12px; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .code-box .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 22px; font-weight: 800; color: #4edea3; letter-spacing: 3px; }
+    .code-box .hint { font-size: 11px; color: #64748b; margin-top: 6px; }
+    .actions { text-align: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid #162a45; }
+    .btn { display: inline-block; padding: 12px 22px; border-radius: 8px; font-weight: 700; font-size: 14px; text-decoration: none; margin: 6px 6px; }
+    .btn-primary { background-color: #0284c7; color: #ffffff; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4); }
+    .btn-secondary { background-color: #1e293b; color: #93c5fd; border: 1px solid #334155; }
+    .footer { background: #050f1c; padding: 18px 24px; font-size: 12px; color: #64748b; text-align: center; border-top: 1px solid #162a45; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="banner">
+      <h1>🔔 Nouvelle demande d'accès</h1>
+      <p>DBMastery Studio &bull; Notification Administrateur</p>
+    </div>
+    <div class="content">
+      <span class="pill">En attente d'approbation</span>
+      <p style="margin-top: 0; font-size: 15px; color: #cbd5e1; line-height: 1.5;">
+        Un nouvel apprenant a soumis une demande de connexion sur votre portail DBMastery Studio :
+      </p>
+
+      <table class="table">
+        <tr>
+          <td class="label">Nom complet</td>
+          <td class="val"><strong>${displayName}</strong></td>
+        </tr>
+        <tr>
+          <td class="label">Adresse Email</td>
+          <td class="val"><a href="mailto:${email}" style="color: #38bdf8; text-decoration: underline; font-weight: 600;">${email}</a></td>
+        </tr>
+        <tr>
+          <td class="label">Méthode</td>
+          <td class="val">${methodLabel}</td>
+        </tr>
+        <tr>
+          <td class="label">Date de soumission</td>
+          <td class="val">${dateFormatted}</td>
+        </tr>
+        <tr>
+          <td class="label">Motif formulé</td>
+          <td class="val" style="font-style: italic; color: #e2e8f0;">« ${accessReason} »</td>
+        </tr>
+      </table>
+
+      ${
+        validationCode
+          ? `
+      <div class="code-box">
+        <div class="title">Code de validation calculé pour cet utilisateur :</div>
+        <div class="code">${validationCode}</div>
+        <div class="hint">Vous pouvez transmettre ce code à l'apprenant pour débloquer immédiatement son accès.</div>
+      </div>
+      `
+          : ''
+      }
+
+      <div class="actions">
+        <a href="${consoleLink}" class="btn btn-primary" target="_blank">Ouvrir la Console d'Accès</a>
+        <a href="${replyMailto}" class="btn btn-secondary" target="_blank">✉️ Répondre au candidat par Email</a>
+      </div>
+    </div>
+    <div class="footer">
+      Notification automatique transmise à <strong>${adminEmail}</strong>.<br/>
+      Pour ne rien manquer lorsque vous n'êtes pas connecté à l'application.
+    </div>
+  </div>
+</body>
+</html>`;
+
+    return { html, text };
+  };
+
+  // 1. Endpoint : Réception et dispatch d'une demande de connexion / accès
+  app.post('/api/notifications/access-request', async (req, res) => {
+    try {
+      const { email, displayName, accessReason, method, validationCode, requestedAt } = req.body || {};
+
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({ success: false, message: 'Adresse email requise' });
+      }
+
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanName = typeof displayName === 'string' && displayName.trim() ? displayName.trim() : cleanEmail.split('@')[0];
+      const cleanReason = typeof accessReason === 'string' && accessReason.trim() ? accessReason.trim() : 'Demande d\'accès au simulateur SQL';
+      const cleanMethod = method === 'google_signin' ? 'google_signin' : method === 'manual_resend' ? 'manual_resend' : 'gatekeeper_email';
+      const timestamp = requestedAt || new Date().toISOString();
+      const adminEmail = getAdminEmail();
+      const appUrl = getAppBaseUrl(req);
+
+      const emailPayload = buildNotificationEmailHtml({
+        email: cleanEmail,
+        displayName: cleanName,
+        accessReason: cleanReason,
+        method: cleanMethod,
+        requestedAt: timestamp,
+        validationCode,
+        appUrl,
+        adminEmail,
+      });
+
+      let emailSent = false;
+      let emailError: string | undefined = undefined;
+      let deliveryMethod: 'smtp' | 'webhook' | 'queued' | 'simulated' = 'queued';
+
+      // Tentative SMTP si transporteur configuré
+      const transporter = createTransporter();
+      if (transporter) {
+        try {
+          const fromAddress = process.env.SMTP_FROM || `DBMastery Studio <notifications@dbmastery.app>`;
+          await transporter.sendMail({
+            from: fromAddress,
+            to: adminEmail,
+            replyTo: cleanEmail,
+            subject: `[DBMastery Studio] 🔔 Nouvelle demande d'accès : ${cleanName} (${cleanEmail})`,
+            text: emailPayload.text,
+            html: emailPayload.html,
+          });
+          emailSent = true;
+          deliveryMethod = 'smtp';
+          console.log(`[Notification Email] ✅ Email SMTP envoyé avec succès à ${adminEmail} pour ${cleanEmail}`);
+        } catch (err: any) {
+          console.error('[Notification Email] ⚠️ Erreur SMTP :', err?.message || err);
+          emailError = err?.message || 'Erreur d\'envoi SMTP';
+        }
+      }
+
+      // Tentative Webhook (Slack, Discord, Zapier, Make, n8n) si configuré
+      const webhookUrl = process.env.NOTIFICATION_WEBHOOK_URL;
+      if (webhookUrl) {
+        try {
+          const webhookRes = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: 'access_request',
+              adminEmail,
+              applicant: {
+                email: cleanEmail,
+                name: cleanName,
+                reason: cleanReason,
+                method: cleanMethod,
+                validationCode,
+                requestedAt: timestamp,
+              },
+              appUrl,
+            }),
+          });
+          if (webhookRes.ok) {
+            if (!emailSent) {
+              deliveryMethod = 'webhook';
+              emailSent = true;
+            }
+          }
+        } catch (webhookErr) {
+          console.warn('[Notification Webhook] Erreur webhook :', webhookErr);
+        }
+      }
+
+      // Si aucun transporteur externe n'est encore paramétré dans l'environnement,
+      // on enregistre quand même la notification dans la file d'attente serveur consultable
+      if (!emailSent && !emailError) {
+        deliveryMethod = 'queued';
+        console.log(`[Notification Email] 📥 Notification enregistrée pour ${adminEmail} (Demandeur : ${cleanEmail} - ${cleanName})`);
+      }
+
+      const notifRecord: AccessNotificationRecord = {
+        id: `notif_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        email: cleanEmail,
+        displayName: cleanName,
+        accessReason: cleanReason,
+        method: cleanMethod,
+        requestedAt: timestamp,
+        emailSent,
+        emailError,
+        deliveryMethod,
+        recipient: adminEmail,
+        validationCode,
+      };
+
+      // Conserver les 50 dernières notifications
+      accessNotificationsHistory.unshift(notifRecord);
+      if (accessNotificationsHistory.length > 50) {
+        accessNotificationsHistory.pop();
+      }
+
+      return res.json({
+        success: true,
+        emailSent,
+        deliveryMethod,
+        recipient: adminEmail,
+        message: emailSent
+          ? `Demande envoyée avec succès par email à ${adminEmail}`
+          : `Demande enregistrée pour ${adminEmail} (file d'attente active)`,
+        notification: notifRecord,
+      });
+    } catch (outerErr: any) {
+      console.error('[Notification Endpoint] Erreur :', outerErr);
+      return res.status(500).json({
+        success: false,
+        message: outerErr?.message || 'Erreur interne lors du traitement de la notification',
+      });
+    }
+  });
+
+  // 2. Endpoint : Statut du service de notification email
+  app.get('/api/notifications/status', (req, res) => {
+    const adminEmail = getAdminEmail();
+    const hasSmtp = Boolean(process.env.SMTP_HOST && (process.env.SMTP_USER || process.env.SMTP_PASS));
+    const hasWebhook = Boolean(process.env.NOTIFICATION_WEBHOOK_URL);
+
+    return res.json({
+      recipient: adminEmail,
+      smtpConfigured: hasSmtp,
+      webhookConfigured: hasWebhook,
+      historyCount: accessNotificationsHistory.length,
+      lastSentAt: accessNotificationsHistory[0]?.requestedAt || null,
+      smtpDetails: {
+        host: process.env.SMTP_HOST || 'Non configuré (file locale prête)',
+        port: process.env.SMTP_PORT || '587',
+        from: process.env.SMTP_FROM || 'DBMastery Studio <notifications@dbmastery.app>',
+      },
+    });
+  });
+
+  // 3. Endpoint : Historique des notifications
+  app.get('/api/notifications/history', (req, res) => {
+    return res.json({
+      recipient: getAdminEmail(),
+      history: accessNotificationsHistory,
+    });
+  });
+
+  // 4. Endpoint : Test direct d'envoi d'email à l'admin
+  app.post('/api/notifications/test-email', async (req, res) => {
+    try {
+      const targetEmail = (req.body?.email || getAdminEmail()).trim();
+      const appUrl = getAppBaseUrl(req);
+      const transporter = createTransporter();
+
+      const testPayload = buildNotificationEmailHtml({
+        email: 'candidat.test@example.com',
+        displayName: 'Test Candidat DBA',
+        accessReason: 'Test de réception de notification automatique par email',
+        method: 'manual_resend',
+        requestedAt: new Date().toISOString(),
+        validationCode: 'VAL-TEST-9999',
+        appUrl,
+        adminEmail: targetEmail,
+      });
+
+      if (transporter) {
+        try {
+          const fromAddress = process.env.SMTP_FROM || `DBMastery Studio <notifications@dbmastery.app>`;
+          await transporter.sendMail({
+            from: fromAddress,
+            to: targetEmail,
+            subject: `[DBMastery Studio] [TEST] Vérification de vos notifications d'accès`,
+            text: testPayload.text,
+            html: testPayload.html,
+          });
+          return res.json({
+            success: true,
+            deliveryMethod: 'smtp',
+            message: `Email de test envoyé avec succès via SMTP à ${targetEmail} !`,
+          });
+        } catch (smtpErr: any) {
+          return res.status(500).json({
+            success: false,
+            deliveryMethod: 'failed',
+            message: `Échec d'envoi SMTP : ${smtpErr?.message || smtpErr}`,
+          });
+        }
+      }
+
+      // Si pas de serveur SMTP configuré, on simule et valide le pipeline
+      console.log(`[Notification Test] Simulation de notification test vers ${targetEmail}`);
+      return res.json({
+        success: true,
+        deliveryMethod: 'simulated',
+        message: `Pipeline de notification validé ! Pour activer la délivrance SMTP réelle vers ${targetEmail}, renseignez SMTP_HOST, SMTP_USER et SMTP_PASS dans les variables d'environnement.`,
+        preview: {
+          recipient: targetEmail,
+          subject: `[DBMastery Studio] [TEST] Vérification de vos notifications d'accès`,
+          textSnippet: testPayload.text.slice(0, 200) + '...',
+        },
+      });
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        message: err?.message || 'Erreur lors du test email',
+      });
+    }
+  });
+
+  // 5. Endpoint : Validation d'un clic d'approbation depuis l'email (Redirection sécurisée)
+  app.get('/api/access-requests/one-click-approve', (req, res) => {
+    const email = req.query.email as string;
+    const name = (req.query.name as string) || email;
+    const appUrl = getAppBaseUrl(req);
+
+    const redirectUrl = `${appUrl}/?tab=access_control&approved_email=${encodeURIComponent(email || '')}&approved_name=${encodeURIComponent(name)}`;
+    return res.redirect(redirectUrl);
   });
 
   // Monter Vite middleware en dev ou fichiers statiques en prod
