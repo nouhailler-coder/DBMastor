@@ -1048,12 +1048,29 @@ Règles impératives :
     return 'http://localhost:3000';
   };
 
+  // Variables et configuration de notification persistées / initialisées automatiquement
+  let runtimeSmtpConfig: {
+    host: string;
+    port: number;
+    user: string;
+    pass: string;
+    secure: boolean;
+    from: string;
+  } = {
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '465', 10),
+    user: process.env.SMTP_USER || 'nouhailler@gmail.com',
+    pass: process.env.SMTP_PASS || '',
+    secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_PORT === '465' || true,
+    from: process.env.SMTP_FROM || 'DBMastery Studio <nouhailler@gmail.com>',
+  };
+
   const createTransporter = (): Transporter | null => {
-    const host = process.env.SMTP_HOST;
-    const port = parseInt(process.env.SMTP_PORT || '587', 10);
-    const user = process.env.SMTP_USER;
-    const pass = process.env.SMTP_PASS;
-    const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+    const host = runtimeSmtpConfig.host || process.env.SMTP_HOST;
+    const port = runtimeSmtpConfig.port || parseInt(process.env.SMTP_PORT || '465', 10);
+    const user = runtimeSmtpConfig.user || process.env.SMTP_USER;
+    const pass = runtimeSmtpConfig.pass || process.env.SMTP_PASS;
+    const secure = runtimeSmtpConfig.secure ?? (port === 465);
 
     if (host && (user || pass)) {
       try {
@@ -1355,7 +1372,10 @@ Règles impératives :
   // 2. Endpoint : Statut du service de notification email
   app.get('/api/notifications/status', (req, res) => {
     const adminEmail = getAdminEmail();
-    const hasSmtp = Boolean(process.env.SMTP_HOST && (process.env.SMTP_USER || process.env.SMTP_PASS));
+    const hasSmtp = Boolean(
+      (runtimeSmtpConfig.host && (runtimeSmtpConfig.user || runtimeSmtpConfig.pass)) ||
+      (process.env.SMTP_HOST && (process.env.SMTP_USER || process.env.SMTP_PASS))
+    );
     const hasWebhook = Boolean(process.env.NOTIFICATION_WEBHOOK_URL);
 
     return res.json({
@@ -1365,11 +1385,41 @@ Règles impératives :
       historyCount: accessNotificationsHistory.length,
       lastSentAt: accessNotificationsHistory[0]?.requestedAt || null,
       smtpDetails: {
-        host: process.env.SMTP_HOST || 'Non configuré (file locale prête)',
-        port: process.env.SMTP_PORT || '587',
-        from: process.env.SMTP_FROM || 'DBMastery Studio <notifications@dbmastery.app>',
+        host: runtimeSmtpConfig.host || process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: String(runtimeSmtpConfig.port || process.env.SMTP_PORT || '465'),
+        user: runtimeSmtpConfig.user || process.env.SMTP_USER || 'nouhailler@gmail.com',
+        passConfigured: Boolean(runtimeSmtpConfig.pass || process.env.SMTP_PASS),
+        from: runtimeSmtpConfig.from || process.env.SMTP_FROM || 'DBMastery Studio <nouhailler@gmail.com>',
       },
     });
+  });
+
+  // Mise à jour de la configuration SMTP à chaud (depuis la console d'administration)
+  app.post('/api/notifications/config', (req, res) => {
+    try {
+      const { host, port, user, pass, from, secure } = req.body || {};
+      if (host) runtimeSmtpConfig.host = String(host).trim();
+      if (port) runtimeSmtpConfig.port = parseInt(String(port), 10);
+      if (user) runtimeSmtpConfig.user = String(user).trim();
+      if (typeof pass === 'string') runtimeSmtpConfig.pass = pass.trim();
+      if (from) runtimeSmtpConfig.from = String(from).trim();
+      if (typeof secure === 'boolean') runtimeSmtpConfig.secure = secure;
+
+      console.log(`[SMTP] Configuration mise à jour automatiquement : host=${runtimeSmtpConfig.host}, user=${runtimeSmtpConfig.user}, port=${runtimeSmtpConfig.port}`);
+      return res.json({
+        success: true,
+        message: 'Configuration SMTP enregistrée avec succès !',
+        config: {
+          host: runtimeSmtpConfig.host,
+          port: runtimeSmtpConfig.port,
+          user: runtimeSmtpConfig.user,
+          passConfigured: Boolean(runtimeSmtpConfig.pass),
+          from: runtimeSmtpConfig.from,
+        },
+      });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, message: err?.message || 'Erreur lors de la mise à jour' });
+    }
   });
 
   // 3. Endpoint : Historique des notifications

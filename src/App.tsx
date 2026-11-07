@@ -25,6 +25,7 @@ import { SpacedRepetitionView } from './components/SpacedRepetitionView';
 import { SpacedRepetitionRunnerModal } from './components/SpacedRepetitionRunnerModal';
 import { ContextualHelpDrawer } from './components/ContextualHelpDrawer';
 import { AccessControlView, AccessGatekeeperOverlay } from './components/AccessControlView';
+import { LandingPage } from './pages/LandingPage';
 import {
    NavigationTab,
   CertificationTrackId,
@@ -80,6 +81,21 @@ import { sendAccessRequestNotification } from './services/notificationService';
 import { Zap, CheckCircle2, X, RefreshCw, Settings } from 'lucide-react';
 
 export default function App() {
+  const [viewMode, setViewMode] = useState<'landing' | 'app'>(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const viewParam = searchParams.get('view');
+      const tabParam = searchParams.get('tab');
+      if (viewParam === 'app' || tabParam) return 'app';
+      if (viewParam === 'landing') return 'landing';
+      const stored = sessionStorage.getItem('dbmastery_active_view');
+      if (stored === 'app' || stored === 'landing') return stored;
+      return 'landing';
+    } catch {
+      return 'landing';
+    }
+  });
+
   const [currentTab, setCurrentTab] = useState<NavigationTab>('dashboard');
   const [selectedCert, setSelectedCert] = useState<CertificationTrackId>('oracle-1z0-071');
   const [lang, setLang] = useState<'fr' | 'en'>('fr');
@@ -738,6 +754,67 @@ export default function App() {
     }
   }, [bgUpdateToast]);
 
+  const handleLaunchApp = (targetTab?: string) => {
+    setViewMode('app');
+    sessionStorage.setItem('dbmastery_active_view', 'app');
+
+    if (targetTab) {
+      if (targetTab === 'sql_lab') {
+        setCurrentTab('sandbox');
+      } else if (targetTab === 'short_session_5m') {
+        setCurrentTab('exams');
+        setShortSessionMode('quick_5m');
+      } else if (targetTab === 'short_session_30m') {
+        setCurrentTab('exams');
+        setShortSessionMode('deep_30m');
+      } else if (targetTab === 'skill_map') {
+        setCurrentTab('skills');
+      } else if (targetTab === 'certification_tracks') {
+        setCurrentTab('syllabus');
+      } else if (targetTab === 'questions') {
+        setCurrentTab('exams');
+      } else if (targetTab === 'dashboard') {
+        setCurrentTab('dashboard');
+      }
+    }
+
+    try {
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('view', 'app');
+      if (targetTab) {
+        newUrl.searchParams.set('tab', targetTab);
+      }
+      window.history.pushState({}, '', newUrl.toString());
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleOpenLanding = () => {
+    setViewMode('landing');
+    sessionStorage.setItem('dbmastery_active_view', 'landing');
+    try {
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('view', 'landing');
+      newUrl.searchParams.delete('tab');
+      window.history.pushState({}, '', newUrl.toString());
+    } catch {
+      // ignore
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const handleOpenLandingEvent = () => handleOpenLanding();
+    window.addEventListener('dbmastery:open_landing', handleOpenLandingEvent);
+    return () => window.removeEventListener('dbmastery:open_landing', handleOpenLandingEvent);
+  }, []);
+
+  // Mode Landing Page Vitrine
+  if (viewMode === 'landing') {
+    return <LandingPage onOpenApp={handleLaunchApp} />;
+  }
+
   const isLight = theme === 'light';
 
   return (
@@ -793,6 +870,7 @@ export default function App() {
             cloudSyncedCount={cloudSyncedCount}
             accessStatus={ownAccessRecord?.status || null}
             onOpenAccessControl={() => setCurrentTab('access_control')}
+            onOpenLanding={handleOpenLanding}
             onGoogleSignIn={handleGoogleSignIn}
             onSignOut={handleSignOut}
           />

@@ -201,6 +201,36 @@ export async function sendTestNotificationEmail(targetEmail?: string): Promise<{
 }
 
 /**
+ * Met à jour la configuration SMTP de notification sur le serveur
+ */
+export async function updateNotificationConfig(config: {
+  host?: string;
+  port?: number;
+  user?: string;
+  pass?: string;
+  from?: string;
+  secure?: boolean;
+}): Promise<{ success: boolean; message: string }> {
+  try {
+    const res = await fetch('/api/notifications/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    const data = await res.json();
+    return {
+      success: res.ok && data.success,
+      message: data.message || (res.ok ? 'Configuration enregistrée !' : 'Erreur enregistrement.'),
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err?.message || 'Erreur réseau',
+    };
+  }
+}
+
+/**
  * Génère un lien mailto pour que l'apprenant puisse notifier directement l'admin
  */
 export function generateAdminMailtoLink(params: {

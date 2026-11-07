@@ -31,7 +31,9 @@ import {
   Bell,
   ExternalLink,
   Inbox,
-  RefreshCw
+  RefreshCw,
+  Settings,
+  Sliders
 } from 'lucide-react';
 import {
   UserAccessRecord,
@@ -47,6 +49,7 @@ import {
   fetchNotificationStatus,
   fetchNotificationHistory,
   sendTestNotificationEmail,
+  updateNotificationConfig,
   generateAdminMailtoLink,
   generateCandidateApprovalMailtoLink
 } from '../services/notificationService';
@@ -189,6 +192,53 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
       setNotifHistory(updated);
     } finally {
       setIsTestingEmail(false);
+    }
+  };
+
+  // Modal / Panneau de configuration SMTP avancée
+  const [showSmtpConfig, setShowSmtpConfig] = useState(false);
+  const [smtpHostDraft, setSmtpHostDraft] = useState('smtp.gmail.com');
+  const [smtpPortDraft, setSmtpPortDraft] = useState('465');
+  const [smtpUserDraft, setSmtpUserDraft] = useState('nouhailler@gmail.com');
+  const [smtpPassDraft, setSmtpPassDraft] = useState('');
+  const [smtpFromDraft, setSmtpFromDraft] = useState('DBMastery Studio <nouhailler@gmail.com>');
+  const [isSavingSmtp, setIsSavingSmtp] = useState(false);
+
+  const handleApplyPresetGmail = () => {
+    setSmtpHostDraft('smtp.gmail.com');
+    setSmtpPortDraft('465');
+    setSmtpUserDraft('nouhailler@gmail.com');
+    setSmtpFromDraft('DBMastery Studio <nouhailler@gmail.com>');
+    showMessage(
+      'info',
+      isFr
+        ? 'Préréglage Gmail automatique renseigné ! (Renseignez votre mot de passe d\'application Gmail de 16 caractères)'
+        : 'Gmail preset automatically loaded! (Enter your 16-character Gmail App Password)'
+    );
+  };
+
+  const handleSaveSmtpConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingSmtp(true);
+    try {
+      const res = await updateNotificationConfig({
+        host: smtpHostDraft.trim(),
+        port: parseInt(smtpPortDraft, 10) || 465,
+        user: smtpUserDraft.trim(),
+        pass: smtpPassDraft.trim(),
+        from: smtpFromDraft.trim(),
+        secure: smtpPortDraft === '465',
+      });
+      if (res.success) {
+        showMessage('success', isFr ? 'Configuration SMTP enregistrée !' : 'SMTP configuration saved!');
+        setShowSmtpConfig(false);
+        const status = await fetchNotificationStatus();
+        setNotifStatus(status);
+      } else {
+        showMessage('error', res.message || 'Erreur lors de la configuration SMTP');
+      }
+    } finally {
+      setIsSavingSmtp(false);
     }
   };
 
@@ -1184,6 +1234,15 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
 
             <button
               type="button"
+              onClick={() => setShowSmtpConfig((prev) => !prev)}
+              className="px-3.5 py-2 rounded-xl bg-[#1b2b3f] hover:bg-[#26364a] text-[#d3e4fe] border border-[#1b2b3f] text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all"
+            >
+              <Settings className="w-3.5 h-3.5 text-[#38bdf8]" />
+              <span>{isFr ? 'Paramètres SMTP' : 'SMTP Settings'}</span>
+            </button>
+
+            <button
+              type="button"
               disabled={isTestingEmail}
               onClick={handleTestEmailNotification}
               className="px-3.5 py-2 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-mono font-bold flex items-center gap-2 cursor-pointer shadow-md transition-all disabled:opacity-50"
@@ -1201,6 +1260,130 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Panneau dépliable de Configuration SMTP avec remplissage automatique */}
+        {showSmtpConfig && (
+          <div className="p-5 rounded-xl bg-[#071322] border border-[#38bdf8]/40 flex flex-col gap-4 text-xs animate-in fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#162a45] pb-3">
+              <div>
+                <h3 className="font-bold text-[#d3e4fe] flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-[#38bdf8]" />
+                  {isFr
+                    ? 'Configuration SMTP du Serveur (Envoi direct d\'emails)'
+                    : 'Server SMTP Configuration (Direct email delivery)'}
+                </h3>
+                <p className="text-[11px] text-[#89929b] mt-0.5">
+                  {isFr
+                    ? 'Permet à l\'application d\'expédier directement les emails vers votre boîte sans passer par un client de messagerie.'
+                    : 'Allows the app to deliver emails directly to your inbox without manual email client intervention.'}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleApplyPresetGmail}
+                  className="px-3 py-1.5 rounded-lg bg-[#0284c7]/20 hover:bg-[#0284c7]/40 text-[#38bdf8] border border-[#38bdf8]/30 font-mono text-[11px] font-bold flex items-center gap-1.5 cursor-pointer transition-all"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#fbbf24]" />
+                  <span>{isFr ? 'Remplir auto : Gmail' : 'Auto-fill: Gmail'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSmtpConfig(false)}
+                  className="text-xs text-[#89929b] hover:text-[#d3e4fe] px-2 py-1"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveSmtpConfig} className="grid grid-cols-1 md:grid-cols-12 gap-3.5 font-mono">
+              <div className="md:col-span-4">
+                <label className="block text-[11px] text-[#89ceff] mb-1">
+                  {isFr ? 'Hôte SMTP (ex: smtp.gmail.com)' : 'SMTP Host'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={smtpHostDraft}
+                  onChange={(e) => setSmtpHostDraft(e.target.value)}
+                  className="w-full h-9 px-3 rounded-lg bg-[#0b1c30] border border-[#1b2b3f] text-xs text-[#d3e4fe] outline-none focus:border-[#38bdf8]"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-[11px] text-[#89ceff] mb-1">
+                  {isFr ? 'Port (465 ou 587)' : 'Port'}
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={smtpPortDraft}
+                  onChange={(e) => setSmtpPortDraft(e.target.value)}
+                  className="w-full h-9 px-3 rounded-lg bg-[#0b1c30] border border-[#1b2b3f] text-xs text-[#d3e4fe] outline-none focus:border-[#38bdf8]"
+                />
+              </div>
+
+              <div className="md:col-span-3">
+                <label className="block text-[11px] text-[#89ceff] mb-1">
+                  {isFr ? 'Utilisateur SMTP / Compte' : 'SMTP Username'}
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={smtpUserDraft}
+                  onChange={(e) => setSmtpUserDraft(e.target.value)}
+                  className="w-full h-9 px-3 rounded-lg bg-[#0b1c30] border border-[#1b2b3f] text-xs text-[#d3e4fe] outline-none focus:border-[#38bdf8]"
+                />
+              </div>
+
+              <div className="md:col-span-3">
+                <label className="block text-[11px] text-[#fbbf24] mb-1">
+                  {isFr ? 'Mot de passe d\'application (16 car.)' : 'App Password (16 chars)'}
+                </label>
+                <input
+                  type="password"
+                  placeholder="ex: abcd efgh ijkl mnop"
+                  value={smtpPassDraft}
+                  onChange={(e) => setSmtpPassDraft(e.target.value)}
+                  className="w-full h-9 px-3 rounded-lg bg-[#0b1c30] border border-[#1b2b3f] text-xs text-[#d3e4fe] outline-none focus:border-[#fbbf24]"
+                />
+              </div>
+
+              <div className="md:col-span-8">
+                <label className="block text-[11px] text-[#89ceff] mb-1">
+                  {isFr ? 'Expéditeur From affiché' : 'From header'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={smtpFromDraft}
+                  onChange={(e) => setSmtpFromDraft(e.target.value)}
+                  className="w-full h-9 px-3 rounded-lg bg-[#0b1c30] border border-[#1b2b3f] text-xs text-[#d3e4fe] outline-none focus:border-[#38bdf8]"
+                />
+              </div>
+
+              <div className="md:col-span-4 flex items-end justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSmtpConfig(false)}
+                  className="h-9 px-3.5 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] text-[#89929b] text-xs font-bold cursor-pointer"
+                >
+                  {isFr ? 'Annuler' : 'Cancel'}
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingSmtp}
+                  className="h-9 px-4 rounded-lg bg-[#00a572] hover:bg-[#059669] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-md transition-all disabled:opacity-50"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{isSavingSmtp ? (isFr ? 'Enregistrement...' : 'Saving...') : (isFr ? 'Appliquer & Enregistrer' : 'Apply & Save')}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* Cartes d'état du service de notification */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">

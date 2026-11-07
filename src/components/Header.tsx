@@ -46,6 +46,7 @@ interface HeaderProps {
   cloudSyncedCount?: number;
   accessStatus?: 'pending' | 'approved' | 'revoked' | null;
   onOpenAccessControl?: () => void;
+  onOpenLanding?: () => void;
   onGoogleSignIn?: () => void;
   onSignOut?: () => void;
 }
@@ -69,6 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
   cloudSyncedCount = 0,
   accessStatus,
   onOpenAccessControl,
+  onOpenLanding,
   onGoogleSignIn,
   onSignOut,
 }) => {
@@ -316,6 +318,30 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden xl:inline">{isFr ? 'Mentions Légales' : 'Legal'}</span>
           </button>
         </SmartTooltip>
+
+        {/* Site Vitrine & Présentation Landing */}
+        {onOpenLanding && (
+          <SmartTooltip
+            title={isFr ? 'Site Présentation (Landing Page)' : 'Landing Page & Platform Overview'}
+            description={
+              isFr
+                ? 'Consultez la page de présentation complète de DBMastery Studio (fonctionnalités, SQL Lab, certifications et FAQ).'
+                : 'View the standalone marketing and pedagogical presentation page of DBMastery Studio.'
+            }
+            badge="Vitrine"
+            placement="bottom"
+          >
+            <button
+              id="header-landing-btn"
+              type="button"
+              onClick={onOpenLanding}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/40 hover:border-[#38bdf8] rounded-lg text-xs font-mono font-bold text-[#38bdf8] hover:text-white transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
+            >
+              <Globe className="w-3.5 h-3.5 text-[#38bdf8]" />
+              <span className="hidden xl:inline">{isFr ? 'Site Vitrine' : 'Landing'}</span>
+            </button>
+          </SmartTooltip>
+        )}
 
         {/* Répétition Espacée SM-2 */}
         <SmartTooltip
