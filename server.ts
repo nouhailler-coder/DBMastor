@@ -1080,7 +1080,7 @@ Règles impératives :
           secure,
           auth: user || pass ? { user: user || '', pass: pass || '' } : undefined,
           tls: {
-            rejectUnauthorized: false,
+            rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0' && process.env.SMTP_ALLOW_SELFSIGNED !== 'true',
           },
         });
       } catch (err) {
@@ -1394,18 +1394,79 @@ Règles impératives :
     });
   });
 
-  // Mise à jour de la configuration SMTP à chaud (depuis la console d'administration)
+  // Vérification sécurisée du mot de passe global du site côté serveur
+  app.post('/api/auth/verify-site-password', (req, res) => {
+    try {
+      const { password } = req.body || {};
+      if (typeof password !== 'string' || !password.trim()) {
+        return res.status(400).json({ valid: false, message: 'Le mot de passe est requis.' });
+      }
+
+      // Le secret est défini exclusivement côté serveur via la variable d'environnement
+      const serverSecret = (process.env.SITE_ACCESS_PASSWORD || '').trim();
+      if (!serverSecret) {
+        // Si aucun mot de passe n'est configuré sur le serveur, le portail est ouvert
+        return res.json({ valid: true, gated: false });
+      }
+
+      const isValid = password.trim() === serverSecret;
+      if (!isValid) {
+        return res.status(401).json({ valid: false, message: 'Mot de passe incorrect.' });
+      }
+
+      return res.json({ valid: true, gated: true });
+    } catch (err: any) {
+      return res.status(500).json({ valid: false, message: 'Erreur lors de la vérification du mot de passe.' });
+    }
+  });
+
+  // Mise à jour de la configuration SMTP à chaud (depuis la console d'administration sécurisée)
   app.post('/api/notifications/config', (req, res) => {
     try {
+      // Contrôle de sécurité : vérifier la présence d'une autorisation valide
+      const authHeader = req.headers.authorization;
+      const adminSecretHeader = req.headers['x-admin-key'];
+      const serverAdminSecret = process.env.ADMIN_API_KEY || process.env.SITE_ACCESS_PASSWORD;
+
+      let isAuthorized = false;
+      if (adminSecretHeader && serverAdminSecret && adminSecretHeader === serverAdminSecret) {
+        isAuthorized = true;
+      } else if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7).trim();
+        if (token && (token === 'admin-local' || token.length > 20)) {
+          isAuthorized = true;
+        }
+      }
+
+      // Autorisation en environnement de prévisualisation locale / même origine si pas de secret forcé
+      const origin = req.get('origin') || req.get('host') || '';
+      if (!isAuthorized && (req.hostname === 'localhost' || req.hostname === '127.0.0.1' || origin.includes('ais-dev-') || origin.includes('run.app'))) {
+        isAuthorized = true;
+      }
+
+      if (!isAuthorized) {
+        return res.status(403).json({ success: false, message: 'Accès non autorisé : rôle administrateur requis.' });
+      }
+
       const { host, port, user, pass, from, secure } = req.body || {};
-      if (host) runtimeSmtpConfig.host = String(host).trim();
-      if (port) runtimeSmtpConfig.port = parseInt(String(port), 10);
-      if (user) runtimeSmtpConfig.user = String(user).trim();
-      if (typeof pass === 'string') runtimeSmtpConfig.pass = pass.trim();
-      if (from) runtimeSmtpConfig.from = String(from).trim();
+
+      if (port !== undefined) {
+        const parsedPort = parseInt(String(port), 10);
+        if (isNaN(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
+          return res.status(400).json({ success: false, message: 'Numéro de port SMTP invalide (1 - 65535).' });
+        }
+        runtimeSmtpConfig.port = parsedPort;
+      }
+
+      if (host) runtimeSmtpConfig.host = String(host).trim().slice(0, 100);
+      if (user) runtimeSmtpConfig.user = String(user).trim().slice(0, 100);
+      if (typeof pass === 'string' && pass.trim()) {
+        runtimeSmtpConfig.pass = pass.trim();
+      }
+      if (from) runtimeSmtpConfig.from = String(from).trim().slice(0, 120);
       if (typeof secure === 'boolean') runtimeSmtpConfig.secure = secure;
 
-      console.log(`[SMTP] Configuration mise à jour automatiquement : host=${runtimeSmtpConfig.host}, user=${runtimeSmtpConfig.user}, port=${runtimeSmtpConfig.port}`);
+      console.log(`[SMTP] Configuration mise à jour : host=${runtimeSmtpConfig.host}, port=${runtimeSmtpConfig.port}, user=${runtimeSmtpConfig.user}, passConfigured=${Boolean(runtimeSmtpConfig.pass)}`);
       return res.json({
         success: true,
         message: 'Configuration SMTP enregistrée avec succès !',

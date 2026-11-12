@@ -26,6 +26,7 @@ import { SpacedRepetitionRunnerModal } from './components/SpacedRepetitionRunner
 import { ContextualHelpDrawer } from './components/ContextualHelpDrawer';
 import { AccessControlView, AccessGatekeeperOverlay } from './components/AccessControlView';
 import { LandingPage } from './pages/LandingPage';
+import { resolveLandingDestination } from './navigation/landingDestinations';
 import {
    NavigationTab,
   CertificationTrackId,
@@ -96,7 +97,19 @@ export default function App() {
     }
   });
 
-  const [currentTab, setCurrentTab] = useState<NavigationTab>('dashboard');
+  const [currentTab, setCurrentTab] = useState<NavigationTab>(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tabParam = searchParams.get('tab');
+      if (tabParam) {
+        return resolveLandingDestination(tabParam).tab;
+      }
+    } catch {
+      // ignore
+    }
+    return 'dashboard';
+  });
+
   const [selectedCert, setSelectedCert] = useState<CertificationTrackId>('oracle-1z0-071');
   const [lang, setLang] = useState<'fr' | 'en'>('fr');
   const [searchQuery, setSearchQuery] = useState('');
@@ -105,6 +118,11 @@ export default function App() {
     const saved = localStorage.getItem('dbmastery_theme');
     return (saved === 'dark' || saved === 'light') ? saved : 'light';
   });
+
+  // Synchroniser la balise <html lang="..."> avec la langue courante
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   // États pour le Menu Hamburger et les Paramètres Système
   const [isHamburgerOpen, setIsHamburgerOpen] = useState(false);
@@ -115,8 +133,28 @@ export default function App() {
   const [isLegalMentionsOpen, setIsLegalMentionsOpen] = useState(false);
   const [isSpacedRunnerOpen, setIsSpacedRunnerOpen] = useState(false);
   const [targetSpacedItemId, setTargetSpacedItemId] = useState<string | undefined>(undefined);
-  const [shortSessionMode, setShortSessionMode] = useState<ShortSessionMode | null>(null);
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(() => !hasCompletedOnboarding());
+  const [shortSessionMode, setShortSessionMode] = useState<ShortSessionMode | null>(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tabParam = searchParams.get('tab');
+      if (tabParam) {
+        return resolveLandingDestination(tabParam).shortSessionMode || null;
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  });
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(() => {
+    try {
+      if (new URLSearchParams(window.location.search).get('no_onboarding') === 'true') {
+        return false;
+      }
+    } catch {
+      // ignore
+    }
+    return !hasCompletedOnboarding();
+  });
   const [isContextualHelpOpen, setIsContextualHelpOpen] = useState<boolean>(false);
   const [systemInfo, setSystemInfo] = useState<SystemVersionInfo>(() => getInitialSystemVersionInfo());
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -758,24 +796,10 @@ export default function App() {
     setViewMode('app');
     sessionStorage.setItem('dbmastery_active_view', 'app');
 
-    if (targetTab) {
-      if (targetTab === 'sql_lab') {
-        setCurrentTab('sandbox');
-      } else if (targetTab === 'short_session_5m') {
-        setCurrentTab('exams');
-        setShortSessionMode('quick_5m');
-      } else if (targetTab === 'short_session_30m') {
-        setCurrentTab('exams');
-        setShortSessionMode('deep_30m');
-      } else if (targetTab === 'skill_map') {
-        setCurrentTab('skills');
-      } else if (targetTab === 'certification_tracks') {
-        setCurrentTab('syllabus');
-      } else if (targetTab === 'questions') {
-        setCurrentTab('exams');
-      } else if (targetTab === 'dashboard') {
-        setCurrentTab('dashboard');
-      }
+    const resolved = resolveLandingDestination(targetTab);
+    setCurrentTab(resolved.tab);
+    if (resolved.shortSessionMode) {
+      setShortSessionMode(resolved.shortSessionMode);
     }
 
     try {
@@ -783,6 +807,8 @@ export default function App() {
       newUrl.searchParams.set('view', 'app');
       if (targetTab) {
         newUrl.searchParams.set('tab', targetTab);
+      } else {
+        newUrl.searchParams.delete('tab');
       }
       window.history.pushState({}, '', newUrl.toString());
     } catch {
@@ -803,6 +829,51 @@ export default function App() {
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Synchronisation avec l'historique du navigateur (Prise en charge des boutons Précédent / Suivant)
+  useEffect(() => {
+    const handlePopState = () => {
+      try {
+        const searchParams = new URLSearchParams(window.location.search);
+        const viewParam = searchParams.get('view');
+        const tabParam = searchParams.get('tab');
+
+        if (viewParam === 'landing') {
+          setViewMode('landing');
+        } else if (viewParam === 'app' || tabParam) {
+          setViewMode('app');
+          if (tabParam) {
+            const resolved = resolveLandingDestination(tabParam);
+            setCurrentTab(resolved.tab);
+            if (resolved.shortSessionMode) {
+              setShortSessionMode(resolved.shortSessionMode);
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Synchronisation continue de l'URL avec l'onglet actif en mode application
+  useEffect(() => {
+    if (viewMode === 'app') {
+      try {
+        const currentUrl = new URL(window.location.href);
+        if (currentUrl.searchParams.get('tab') !== currentTab) {
+          currentUrl.searchParams.set('tab', currentTab);
+          currentUrl.searchParams.set('view', 'app');
+          window.history.replaceState({}, '', currentUrl.toString());
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }, [currentTab, viewMode]);
 
   useEffect(() => {
     const handleOpenLandingEvent = () => handleOpenLanding();
@@ -1139,7 +1210,7 @@ export default function App() {
 
       {/* Guide d'Onboarding Interactif (6 étapes) */}
       <OnboardingModal
-        isOpen={isOnboardingOpen}
+        isOpen={isOnboardingOpen && (typeof window === 'undefined' || new URLSearchParams(window.location.search).get('no_onboarding') !== 'true')}
         onClose={() => setIsOnboardingOpen(false)}
         lang={lang}
         selectedCert={selectedCert}

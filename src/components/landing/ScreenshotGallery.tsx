@@ -54,12 +54,14 @@ export const ScreenshotGallery: React.FC<ScreenshotGalleryProps> = ({ t, onOpenA
         {/* Gallery Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           {galleryImages.slice(0, 2).map((img, idx) => (
-            <div
+            <button
               key={idx}
+              type="button"
               onClick={() => handleOpenLightbox(idx)}
-              className="group cursor-pointer bg-[#0b1728]/80 border border-[#1b2b3f] rounded-3xl overflow-hidden hover:border-[#38bdf8]/50 transition-all hover:-translate-y-1 shadow-xl flex flex-col justify-between"
+              aria-label={`Agrandir la capture d'écran : ${img.title}`}
+              className="text-left group cursor-pointer bg-[#0b1728]/80 border border-[#1b2b3f] rounded-3xl overflow-hidden hover:border-[#38bdf8]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38bdf8] transition-all hover:-translate-y-1 shadow-xl flex flex-col justify-between"
             >
-              <div className="relative aspect-[16/10] overflow-hidden bg-[#020710]">
+              <div className="relative aspect-[16/10] overflow-hidden bg-[#020710] w-full">
                 <img
                   src={img.src}
                   alt={img.alt}
@@ -82,7 +84,7 @@ export const ScreenshotGallery: React.FC<ScreenshotGalleryProps> = ({ t, onOpenA
                 </div>
               </div>
 
-              <div className="p-6">
+              <div className="p-6 w-full">
                 <h3 className="text-lg font-bold text-white mb-2 group-hover:text-[#38bdf8] transition-colors">
                   {img.title}
                 </h3>
@@ -90,7 +92,7 @@ export const ScreenshotGallery: React.FC<ScreenshotGalleryProps> = ({ t, onOpenA
                   {img.description}
                 </p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
 

@@ -66,7 +66,6 @@ import {
 import {
   SiteGateConfig,
   Step2EmailSession,
-  ENV_DEFAULT_SITE_PASSWORD,
   generateEmailValidationCode,
   verifyEmailValidationCode,
   emailToDeterministicUid
@@ -283,7 +282,11 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
   // Sauvegarder le nouveau mot de passe du site (Étape 1)
   const handleSaveSitePassword = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleaned = passwordDraft.trim() || ENV_DEFAULT_SITE_PASSWORD;
+    const cleaned = passwordDraft.trim();
+    if (!cleaned) {
+      showMessage('error', isFr ? 'Le mot de passe ne peut pas être vide.' : 'Password cannot be empty.');
+      return;
+    }
     setPasswordDraft(cleaned);
     onUpdateSiteGateConfig({
       ...siteGateConfig,
@@ -292,8 +295,8 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
     showMessage(
       'success',
       isFr
-        ? `Mot de passe d'accès au site (Étape 1) mis à jour : "${cleaned}".`
-        : `Site access password (Step 1) updated: "${cleaned}".`
+        ? `Mot de passe d'accès au site (Étape 1) mis à jour avec succès.`
+        : `Site access password (Step 1) successfully updated.`
     );
   };
 
@@ -667,7 +670,7 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
                   value={passwordDraft}
                   onChange={(e) => setPasswordDraft(e.target.value)}
                   className="w-full h-10 pl-3.5 pr-20 rounded-xl bg-[#0b1c30] border border-[#1b2b3f] font-mono text-xs text-[#d3e4fe] outline-none focus:border-[#38bdf8]"
-                  placeholder="DBMASTERY-2026"
+                  placeholder={isFr ? "Entrez un mot de passe sécurisé" : "Enter a secure password"}
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                   <button

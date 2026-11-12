@@ -5,12 +5,6 @@ const SITE_STEP1_UNLOCKED_KEY = 'dbmastery_site_step1_unlocked_v1';
 const SITE_STEP2_EMAIL_SESSION_KEY = 'dbmastery_site_step2_email_session_v1';
 const SITE_LOCAL_EMAIL_RECORDS_KEY = 'dbmastery_site_local_email_records_v1';
 
-export const ENV_DEFAULT_SITE_PASSWORD: string =
-  (typeof import.meta !== 'undefined' &&
-    (import.meta as any).env &&
-    (import.meta as any).env.VITE_SITE_ACCESS_PASSWORD) ||
-  'DBMASTERY-2026';
-
 export interface SiteGateConfig {
   /** Active le verrouillage à l'ouverture du site (Idéal pour déploiement public Netlify) */
   gateEnabled: boolean;
@@ -34,13 +28,13 @@ export interface Step2EmailSession {
   submittedAt: string;
 }
 
-const DEFAULT_GATE_CONFIG: SiteGateConfig = {
-  gateEnabled: true,
-  requireSitePassword: true,
-  requireEmailValidation: true,
-  sitePassword: ENV_DEFAULT_SITE_PASSWORD,
-  passwordHintFr: 'Portail privé DBMastery Studio (Hébergement Netlify)',
-  passwordHintEn: 'DBMastery Studio Private Gate (Netlify Hosting)',
+export const DEFAULT_GATE_CONFIG: SiteGateConfig = {
+  gateEnabled: false,
+  requireSitePassword: false,
+  requireEmailValidation: false,
+  sitePassword: '',
+  passwordHintFr: 'Portail privé DBMastery Studio',
+  passwordHintEn: 'DBMastery Studio Private Gate',
   updatedAt: new Date().toISOString(),
 };
 
@@ -84,7 +78,7 @@ export function loadSiteGateConfig(): SiteGateConfig {
 export function saveSiteGateConfig(config: SiteGateConfig): SiteGateConfig {
   const next: SiteGateConfig = {
     ...config,
-    sitePassword: config.sitePassword.trim() || ENV_DEFAULT_SITE_PASSWORD,
+    sitePassword: config.sitePassword.trim(),
     updatedAt: new Date().toISOString(),
   };
   try {
@@ -98,22 +92,47 @@ export function saveSiteGateConfig(config: SiteGateConfig): SiteGateConfig {
 export function isStep1SitePasswordUnlocked(): boolean {
   try {
     const config = loadSiteGateConfig();
-    if (!config.requireSitePassword) return true;
-    const saved = localStorage.getItem(SITE_STEP1_UNLOCKED_KEY);
-    return saved === config.sitePassword;
+    if (!config.gateEnabled || !config.requireSitePassword) return true;
+    const sessionToken = sessionStorage.getItem(SITE_STEP1_UNLOCKED_KEY);
+    const localToken = localStorage.getItem(SITE_STEP1_UNLOCKED_KEY);
+    return Boolean(sessionToken || (config.sitePassword && localToken === config.sitePassword));
   } catch {
     return false;
   }
 }
 
+/**
+ * Valide le mot de passe du site auprès du serveur backend sans exposer de secret côté client.
+ */
+export async function verifySitePasswordServer(inputPassword: string): Promise<boolean> {
+  const normalized = inputPassword.trim();
+  if (!normalized) return false;
+  try {
+    const res = await fetch('/api/auth/verify-site-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: normalized }),
+    });
+    const data = await res.json();
+    if (res.ok && data.valid) {
+      sessionStorage.setItem(SITE_STEP1_UNLOCKED_KEY, 'unlocked_' + Date.now());
+      return true;
+    }
+  } catch {
+    // ignore network errors
+  }
+  return false;
+}
+
 export function unlockStep1WithPassword(inputPassword: string): boolean {
   const config = loadSiteGateConfig();
   const normalizedInput = inputPassword.trim();
-  if (
-    normalizedInput === config.sitePassword ||
-    normalizedInput === ENV_DEFAULT_SITE_PASSWORD
-  ) {
+  if (!normalizedInput) return false;
+
+  // Si un mot de passe local personnalisé est configuré
+  if (config.sitePassword && normalizedInput === config.sitePassword) {
     try {
+      sessionStorage.setItem(SITE_STEP1_UNLOCKED_KEY, 'unlocked_' + Date.now());
       localStorage.setItem(SITE_STEP1_UNLOCKED_KEY, config.sitePassword);
     } catch {
       // ignore
@@ -125,6 +144,7 @@ export function unlockStep1WithPassword(inputPassword: string): boolean {
 
 export function lockStep1SitePassword(): void {
   try {
+    sessionStorage.removeItem(SITE_STEP1_UNLOCKED_KEY);
     localStorage.removeItem(SITE_STEP1_UNLOCKED_KEY);
   } catch {
     // ignore
@@ -133,12 +153,12 @@ export function lockStep1SitePassword(): void {
 
 /**
  * Génère un code de validation déterministe lié à une adresse email et au mot de passe du site.
- * Permet à l'administrateur de valider un email et, si l'utilisateur sur Netlify n'utilise pas Google Sign-In,
+ * Permet à l'administrateur de valider un email et, si l'utilisateur n'utilise pas Google Sign-In,
  * de lui transmettre ce code personnel qui déverrouille uniquement son adresse email.
  */
 export function generateEmailValidationCode(email: string, customSitePassword?: string): string {
   const cleanEmail = (email || '').trim().toLowerCase();
-  const secret = (customSitePassword || loadSiteGateConfig().sitePassword || ENV_DEFAULT_SITE_PASSWORD).trim();
+  const secret = (customSitePassword || loadSiteGateConfig().sitePassword || 'dbmastery_secure_hash').trim();
   const payload = `${cleanEmail}::dbmastery_gate_v1::${secret}`;
 
   let h1 = 0xdeadbeef ^ payload.length;

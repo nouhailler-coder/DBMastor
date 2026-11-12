@@ -27,9 +27,13 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ t, onOpenApp
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-4">
             {t.headline}
           </h2>
-          <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
+          <p className="text-base sm:text-lg text-slate-300 leading-relaxed mb-4">
             {t.subtitle}
           </p>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0b1728] border border-[#1b2b3f] text-xs font-mono text-slate-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+            <span>Données de démonstration • Simulation indicative du tableau de bord d'entraînement</span>
+          </div>
         </div>
 
         {/* 4 Big KPI Metric Cards */}

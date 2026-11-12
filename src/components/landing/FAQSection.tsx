@@ -47,7 +47,8 @@ export const FAQSection: React.FC<FAQSectionProps> = ({ t }) => {
                   type="button"
                   onClick={() => toggleItem(idx)}
                   aria-expanded={isOpen}
-                  className="w-full text-left p-5 sm:p-6 flex items-center justify-between gap-4 focus:outline-none cursor-pointer"
+                  aria-controls={`faq-answer-${idx}`}
+                  className="w-full text-left p-5 sm:p-6 flex items-center justify-between gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#38bdf8] focus-visible:ring-inset rounded-2xl cursor-pointer"
                 >
                   <span className="text-base sm:text-lg font-bold text-white leading-snug">
                     {faqItem.q}
@@ -62,7 +63,12 @@ export const FAQSection: React.FC<FAQSectionProps> = ({ t }) => {
                 </button>
 
                 {isOpen && (
-                  <div className="px-5 sm:px-6 pb-6 pt-1 text-sm sm:text-base text-slate-300 leading-relaxed border-t border-[#1b2b3f]/60 animate-fadeIn">
+                  <div
+                    id={`faq-answer-${idx}`}
+                    role="region"
+                    aria-label={faqItem.q}
+                    className="px-5 sm:px-6 pb-6 pt-1 text-sm sm:text-base text-slate-300 leading-relaxed border-t border-[#1b2b3f]/60 animate-fadeIn"
+                  >
                     {faqItem.a}
                   </div>
                 )}
