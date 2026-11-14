@@ -98,32 +98,32 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header 
       id="main-app-header" 
-      className="fixed top-0 left-64 right-0 h-16 bg-[#031427]/95 backdrop-blur-xl z-40 px-4 flex items-center justify-between gap-3 border-b border-[#1b2b3f] shadow-[0_1px_8px_rgba(0,0,0,0.2)]"
+      className="fixed top-0 left-64 right-0 h-16 bg-[#031427]/95 backdrop-blur-xl z-40 px-3 sm:px-4 flex items-center justify-between gap-2 sm:gap-3 border-b border-[#1b2b3f] shadow-[0_1px_8px_rgba(0,0,0,0.2)]"
     >
       {/* Left: Hamburger Button, Cert dropdown & Search */}
-      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+      <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
         {/* Hamburger Menu Button */}
         <button
           id="header-hamburger-btn"
           onClick={onOpenHamburger}
           title={isFr ? 'Ouvrir le menu des fonctionnalités' : 'Open features menu'}
           aria-label={isFr ? 'Menu des fonctionnalités' : 'Features Menu'}
-          className="flex items-center gap-1.5 p-2 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] hover:border-[#3198dc]/50 text-[#89ceff] hover:text-[#d3e4fe] transition-all shadow-sm active:scale-95 shrink-0 group"
+          className="flex items-center gap-1.5 p-2 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] hover:border-[#3198dc]/50 text-[#89ceff] hover:text-[#d3e4fe] transition-all shadow-sm active:scale-95 shrink-0 group cursor-pointer"
         >
-          <Menu className="w-5 h-5 text-[#89ceff] group-hover:text-white transition-colors" />
-          <span className="hidden 2xl:inline text-xs font-mono font-semibold text-[#d3e4fe]">
+          <Menu className="w-4 h-4 sm:w-5 sm:h-5 text-[#89ceff] group-hover:text-white transition-colors" />
+          <span className="hidden min-[2080px]:inline text-xs font-mono font-semibold text-[#d3e4fe]">
             {isFr ? 'Menu' : 'Menu'}
           </span>
         </button>
 
         {/* Certification Selector */}
-        <div className="relative flex items-center bg-[#1b2b3f] border border-[#26364a] rounded-lg px-2 py-1.5 shadow-sm shrink-0">
+        <div className="relative flex items-center bg-[#1b2b3f] border border-[#26364a] rounded-lg px-2 py-1.5 shadow-sm min-w-0 shrink">
           <ShieldCheck className="w-4 h-4 text-[#89ceff] mr-1.5 shrink-0" />
           <select
             id="cert-dropdown-select"
             value={selectedCert}
             onChange={(e) => onCertChange(e.target.value as CertificationTrackId)}
-            className="bg-transparent text-[#d3e4fe] font-mono text-xs outline-none cursor-pointer pr-2 font-semibold appearance-none max-w-[135px] lg:max-w-[190px] 2xl:max-w-none truncate"
+            className="bg-transparent text-[#d3e4fe] font-mono text-xs outline-none cursor-pointer pr-2 font-semibold appearance-none w-full min-w-[90px] max-w-[140px] md:max-w-[170px] xl:max-w-[205px] 2xl:max-w-[230px] truncate"
           >
             {certOptions.map((opt) => (
               <option key={opt.id} value={opt.id} className="bg-[#102034] text-[#d3e4fe]">
@@ -131,7 +131,7 @@ export const Header: React.FC<HeaderProps> = ({
               </option>
             ))}
           </select>
-          <SlidersHorizontal className="w-3 h-3 text-[#89929b] pointer-events-none" />
+          <SlidersHorizontal className="w-3 h-3 text-[#89929b] pointer-events-none shrink-0" />
         </div>
 
         {/* Official Syllabus External Link */}
@@ -139,7 +139,7 @@ export const Header: React.FC<HeaderProps> = ({
           href={currentSyllabusUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] text-[#89ceff] hover:text-[#d3e4fe] border border-[#1b2b3f] hover:border-[#26364a] text-xs font-semibold transition-all shadow-sm group shrink-0"
+          className="hidden min-[1680px]:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] text-[#89ceff] hover:text-[#d3e4fe] border border-[#1b2b3f] hover:border-[#26364a] text-xs font-semibold transition-all shadow-sm group shrink-0"
           title={isFr ? `Consulter le programme officiel ${currentTrack?.name || ''} (${currentTrack?.provider || ''})` : `Open official curriculum for ${currentTrack?.name || ''}`}
         >
           <BookOpen className="w-3.5 h-3.5 text-[#93ccff]" />
@@ -148,7 +148,7 @@ export const Header: React.FC<HeaderProps> = ({
         </a>
 
         {/* Global Search Input */}
-        <div className="relative flex-1 min-w-[110px] max-w-xs 2xl:max-w-md hidden xl:block">
+        <div className="relative flex-1 min-w-[120px] max-w-[240px] 2xl:max-w-xs hidden xl:block">
           <Search className="w-4 h-4 text-[#89929b] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             id="global-search-input"
@@ -172,29 +172,29 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Right: Firebase Google Sign-In (First & Always Visible!), System Settings, Lang Switch, Theme, Notifications */}
-      <div className="flex items-center gap-2 shrink-0">
+      {/* Right: Firebase Google Sign-In, Quick Icon Shortcuts (with Tooltips), System Settings, Lang Switch, Theme, Notifications */}
+      <div className="flex items-center gap-1.5 shrink-0">
         {/* BOUTON PRINCIPAL : CONNEXION GOOGLE / STATUT FIRESTORE */}
-        <div className="flex items-center pr-2 border-r border-[#1b2b3f] shrink-0">
+        <div className="flex items-center pr-1.5 border-r border-[#1b2b3f] shrink-0">
           {currentUser ? (
-            <div className="flex items-center gap-2 bg-[#102034] px-2.5 py-1 rounded-xl border border-[#4edea3]/50 shadow-sm">
+            <div className="flex items-center gap-1.5 bg-[#102034] px-2 py-1 rounded-xl border border-[#4edea3]/50 shadow-sm">
               <div className="relative shrink-0">
                 {currentUser.photoURL ? (
                   <img
                     src={currentUser.photoURL}
                     alt={currentUser.displayName || 'User'}
                     referrerPolicy="no-referrer"
-                    className="w-7 h-7 rounded-full ring-1 ring-[#4edea3] object-cover"
+                    className="w-6 h-6 rounded-full ring-1 ring-[#4edea3] object-cover"
                   />
                 ) : (
-                  <div className="w-7 h-7 rounded-full bg-[#0284c7] flex items-center justify-center font-bold text-xs text-white">
+                  <div className="w-6 h-6 rounded-full bg-[#0284c7] flex items-center justify-center font-bold text-[10px] text-white">
                     {(currentUser.displayName || currentUser.email || 'DB').slice(0, 2).toUpperCase()}
                   </div>
                 )}
                 <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#4edea3] ring-1 ring-[#031427]"></span>
               </div>
-              <div className="flex flex-col text-left">
-                <span className="text-xs font-bold text-[#d3e4fe] leading-tight truncate max-w-[120px]">
+              <div className="hidden sm:flex flex-col text-left">
+                <span className="text-[11px] font-bold text-[#d3e4fe] leading-tight truncate max-w-[95px] 2xl:max-w-[120px]">
                   {currentUser.displayName || currentUser.email?.split('@')[0] || 'DBA'}
                 </span>
                 <span className="font-mono text-[9px] text-[#4edea3] leading-tight flex items-center gap-1">
@@ -207,7 +207,7 @@ export const Header: React.FC<HeaderProps> = ({
                   type="button"
                   onClick={onSignOut}
                   title={isFr ? 'Se déconnecter de Firebase' : 'Sign out from Firebase'}
-                  className="p-1.5 rounded-lg bg-[#0b1c30] hover:bg-[#1b2b3f] text-[#ffb4ab] border border-[#1b2b3f] transition-colors ml-1 cursor-pointer"
+                  className="p-1 rounded-lg bg-[#0b1c30] hover:bg-[#1b2b3f] text-[#ffb4ab] border border-[#1b2b3f] transition-colors cursor-pointer"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
@@ -218,7 +218,8 @@ export const Header: React.FC<HeaderProps> = ({
               id="header-google-signin-btn"
               type="button"
               onClick={onGoogleSignIn}
-              className="px-3.5 py-2 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs flex items-center gap-2 border border-[#38bdf8]/50 shadow-md transition-all active:scale-95 shrink-0 cursor-pointer"
+              title={isFr ? 'Connexion Google & Synchronisation Firestore' : 'Google Sign-In & Firestore Sync'}
+              className="px-2.5 min-[1360px]:px-3 py-1.5 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs flex items-center gap-1.5 border border-[#38bdf8]/50 shadow-md transition-all active:scale-95 shrink-0 cursor-pointer"
             >
               <span className="w-4 h-4 rounded-full bg-white flex items-center justify-center shrink-0">
                 <svg className="w-3 h-3" viewBox="0 0 24 24">
@@ -228,8 +229,11 @@ export const Header: React.FC<HeaderProps> = ({
                   <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z" />
                 </svg>
               </span>
-              <span className="text-white font-bold tracking-tight whitespace-nowrap">
+              <span className="hidden min-[1360px]:inline text-white font-bold tracking-tight whitespace-nowrap">
                 {isFr ? 'Connexion Google' : 'Google Sign-In'}
+              </span>
+              <span className="inline min-[1360px]:hidden text-white font-bold tracking-tight whitespace-nowrap">
+                Google
               </span>
             </button>
           )}
@@ -251,7 +255,8 @@ export const Header: React.FC<HeaderProps> = ({
               id="header-access-control-btn"
               type="button"
               onClick={onOpenAccessControl}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer border ${
+              aria-label={isFr ? 'Contrôle d\'Accès' : 'Access Control'}
+              className={`flex items-center gap-1.5 p-2 min-[2080px]:px-2.5 min-[2080px]:py-1.5 rounded-lg text-xs font-mono font-bold transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer border ${
                 accessStatus === 'revoked'
                   ? 'bg-[#ef4444]/20 border-[#ef4444] text-[#ffb4ab]'
                   : accessStatus === 'pending'
@@ -259,8 +264,8 @@ export const Header: React.FC<HeaderProps> = ({
                   : 'bg-[#102034] hover:bg-[#1b2b3f] border-[#38bdf8]/40 hover:border-[#38bdf8] text-[#89ceff]'
               }`}
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-[#4edea3]" />
-              <span className="hidden lg:inline">
+              <ShieldCheck className="w-4 h-4 text-[#4edea3]" />
+              <span className="hidden min-[2080px]:inline">
                 {isFr ? 'Contrôle d\'Accès' : 'Access Control'}
               </span>
             </button>
@@ -278,15 +283,17 @@ export const Header: React.FC<HeaderProps> = ({
             }
             badge="Guide"
             placement="bottom"
+            className="hidden lg:inline-flex"
           >
             <button
               id="header-onboarding-btn"
               type="button"
               onClick={onOpenOnboarding}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#4edea3]/40 hover:border-[#4edea3] rounded-lg text-xs font-mono font-bold text-[#4edea3] transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
+              aria-label={isFr ? 'Onboarding' : 'Tour'}
+              className="flex items-center gap-1.5 p-2 min-[2080px]:px-2.5 min-[2080px]:py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#4edea3]/40 hover:border-[#4edea3] rounded-lg text-xs font-mono font-bold text-[#4edea3] transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
             >
-              <Compass className="w-3.5 h-3.5 text-[#4edea3]" />
-              <span className="hidden lg:inline">{isFr ? 'Onboarding' : 'Tour'}</span>
+              <Compass className="w-4 h-4 text-[#4edea3]" />
+              <span className="hidden min-[2080px]:inline">{isFr ? 'Onboarding' : 'Tour'}</span>
             </button>
           </SmartTooltip>
         )}
@@ -301,6 +308,7 @@ export const Header: React.FC<HeaderProps> = ({
           }
           badge="Légal"
           placement="bottom"
+          className="hidden lg:inline-flex"
         >
           <button
             id="header-legal-mentions-btn"
@@ -312,10 +320,11 @@ export const Header: React.FC<HeaderProps> = ({
                 window.dispatchEvent(new CustomEvent('dbmastery:open_legal_mentions'));
               }
             }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/40 hover:border-[#38bdf8] rounded-lg text-xs font-mono font-bold text-[#89ceff] hover:text-white transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
+            aria-label={isFr ? 'Mentions Légales' : 'Legal'}
+            className="flex items-center gap-1.5 p-2 min-[2080px]:px-2.5 min-[2080px]:py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/40 hover:border-[#38bdf8] rounded-lg text-xs font-mono font-bold text-[#89ceff] hover:text-white transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
           >
-            <Scale className="w-3.5 h-3.5 text-[#38bdf8]" />
-            <span className="hidden xl:inline">{isFr ? 'Mentions Légales' : 'Legal'}</span>
+            <Scale className="w-4 h-4 text-[#38bdf8]" />
+            <span className="hidden min-[2080px]:inline">{isFr ? 'Mentions Légales' : 'Legal'}</span>
           </button>
         </SmartTooltip>
 
@@ -330,15 +339,17 @@ export const Header: React.FC<HeaderProps> = ({
             }
             badge="Vitrine"
             placement="bottom"
+            className="hidden lg:inline-flex"
           >
             <button
               id="header-landing-btn"
               type="button"
               onClick={onOpenLanding}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/40 hover:border-[#38bdf8] rounded-lg text-xs font-mono font-bold text-[#38bdf8] hover:text-white transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
+              aria-label={isFr ? 'Site Vitrine' : 'Landing'}
+              className="flex items-center gap-1.5 p-2 min-[2080px]:px-2.5 min-[2080px]:py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/40 hover:border-[#38bdf8] rounded-lg text-xs font-mono font-bold text-[#38bdf8] hover:text-white transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
             >
-              <Globe className="w-3.5 h-3.5 text-[#38bdf8]" />
-              <span className="hidden xl:inline">{isFr ? 'Site Vitrine' : 'Landing'}</span>
+              <Globe className="w-4 h-4 text-[#38bdf8]" />
+              <span className="hidden min-[2080px]:inline">{isFr ? 'Site Vitrine' : 'Landing'}</span>
             </button>
           </SmartTooltip>
         )}
@@ -353,15 +364,17 @@ export const Header: React.FC<HeaderProps> = ({
           }
           badge="SM-2"
           placement="bottom"
+          className="hidden lg:inline-flex"
         >
           <button
             id="header-spaced-repetition-btn"
             type="button"
             onClick={() => window.dispatchEvent(new CustomEvent('dbmastery:open_spaced_repetition_runner'))}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/40 hover:border-[#38bdf8] rounded-lg text-xs font-mono font-bold text-[#38bdf8] hover:text-white transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
+            aria-label={isFr ? 'Révisions' : 'Reviews'}
+            className="flex items-center gap-1.5 p-2 min-[2080px]:px-2.5 min-[2080px]:py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/40 hover:border-[#38bdf8] rounded-lg text-xs font-mono font-bold text-[#38bdf8] hover:text-white transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-[#38bdf8]" />
-            <span className="hidden xl:inline">{isFr ? 'Révisions' : 'Reviews'}</span>
+            <RotateCcw className="w-4 h-4 text-[#38bdf8]" />
+            <span className="hidden min-[2080px]:inline">{isFr ? 'Révisions' : 'Reviews'}</span>
           </button>
         </SmartTooltip>
 
@@ -381,10 +394,11 @@ export const Header: React.FC<HeaderProps> = ({
               id="header-contextual-help-btn"
               type="button"
               onClick={onOpenContextualHelp}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/40 hover:border-[#38bdf8] rounded-lg text-xs font-mono font-bold text-[#93ccff] hover:text-white transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
+              aria-label={isFr ? 'Aide' : 'Help'}
+              className="flex items-center gap-1.5 p-2 min-[2080px]:px-2.5 min-[2080px]:py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/40 hover:border-[#38bdf8] rounded-lg text-xs font-mono font-bold text-[#93ccff] hover:text-white transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
             >
-              <HelpCircle className="w-3.5 h-3.5 text-[#38bdf8]" />
-              <span className="hidden lg:inline">{isFr ? 'Aide' : 'Help'}</span>
+              <HelpCircle className="w-4 h-4 text-[#38bdf8]" />
+              <span className="hidden min-[2080px]:inline">{isFr ? 'Aide' : 'Help'}</span>
             </button>
           </SmartTooltip>
         )}
@@ -394,12 +408,12 @@ export const Header: React.FC<HeaderProps> = ({
           id="header-system-settings-btn"
           onClick={onOpenSystemSettings}
           title={isFr ? `Paramètres système & Mises à jour (${systemInfo.currentVersion})` : `System Settings & Updates (${systemInfo.currentVersion})`}
-          className="flex items-center gap-1.5 px-2.5 py-1 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] hover:border-[#3198dc]/40 rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-all shadow-sm active:scale-95 group shrink-0"
+          className="flex items-center gap-1.5 p-2 min-[1100px]:px-2.5 min-[1100px]:py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] hover:border-[#3198dc]/40 rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-all shadow-sm active:scale-95 group shrink-0 cursor-pointer"
         >
-          <Settings className={`w-3.5 h-3.5 text-[#89ceff] group-hover:rotate-45 transition-transform duration-300 ${systemInfo.isUpdating ? 'animate-spin' : ''}`} />
-          <span className="text-[11px] font-semibold text-[#89ceff] hidden sm:inline">{systemInfo.currentVersion}</span>
+          <Settings className={`w-4 h-4 text-[#89ceff] group-hover:rotate-45 transition-transform duration-300 ${systemInfo.isUpdating ? 'animate-spin' : ''}`} />
+          <span className="text-[11px] font-semibold text-[#89ceff] hidden min-[1100px]:inline">{systemInfo.currentVersion}</span>
           {systemInfo.autoUpdateEnabled && (
-            <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse" title={isFr ? 'Mises à jour auto actives' : 'Auto updates enabled'}></span>
+            <span className="hidden min-[1100px]:inline-block w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse" title={isFr ? 'Mises à jour auto actives' : 'Auto updates enabled'}></span>
           )}
         </button>
 
@@ -408,7 +422,7 @@ export const Header: React.FC<HeaderProps> = ({
           id="lang-toggle-btn"
           onClick={onLangToggle}
           title={isFr ? 'Basculer en anglais' : 'Switch to French'}
-          className="flex items-center gap-1 px-2 py-1 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-colors shrink-0"
+          className="flex items-center gap-1 px-2 py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-colors shrink-0 cursor-pointer"
         >
           <Globe className="w-3.5 h-3.5 text-[#93ccff]" />
           <span>{lang.toUpperCase()}</span>
@@ -423,17 +437,17 @@ export const Header: React.FC<HeaderProps> = ({
               ? (isFr ? 'Basculer vers le thème sombre' : 'Switch to dark theme')
               : (isFr ? 'Basculer vers le thème clair' : 'Switch to light theme')
           }
-          className="flex items-center gap-1.5 px-2 py-1 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-colors shrink-0"
+          className="flex items-center gap-1.5 p-2 min-[2080px]:px-2.5 min-[2080px]:py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-colors shrink-0 cursor-pointer"
         >
           {theme === 'light' ? (
             <>
-              <Sun className="w-3.5 h-3.5 text-[#f59e0b]" />
-              <span className="hidden xl:inline text-[11px] font-medium">{isFr ? 'Clair' : 'Light'}</span>
+              <Sun className="w-4 h-4 text-[#f59e0b]" />
+              <span className="hidden min-[2080px]:inline text-[11px] font-medium">{isFr ? 'Clair' : 'Light'}</span>
             </>
           ) : (
             <>
-              <Moon className="w-3.5 h-3.5 text-[#89ceff]" />
-              <span className="hidden xl:inline text-[11px] font-medium">{isFr ? 'Sombre' : 'Dark'}</span>
+              <Moon className="w-4 h-4 text-[#89ceff]" />
+              <span className="hidden min-[2080px]:inline text-[11px] font-medium">{isFr ? 'Sombre' : 'Dark'}</span>
             </>
           )}
         </button>
@@ -443,7 +457,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="notifications-btn"
             onClick={() => setShowNotifications(!showNotifications)}
-            className="relative p-2 rounded-lg text-[#bfc7d2] hover:bg-[#102034] hover:text-[#d3e4fe] transition-colors border border-transparent hover:border-[#1b2b3f]"
+            className="relative p-2 rounded-lg text-[#bfc7d2] hover:bg-[#102034] hover:text-[#d3e4fe] transition-colors border border-transparent hover:border-[#1b2b3f] cursor-pointer"
             aria-label="Notifications"
           >
             <Bell className="w-4 h-4" />
