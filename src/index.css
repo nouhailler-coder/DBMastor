@@ -1,4 +1,28 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --dbm-bg: #f8fafc;
+  --dbm-surface: #ffffff;
+  --dbm-surface-elevated: #f1f5f9;
+  --dbm-border: #e2e8f0;
+  --dbm-text: #0f172a;
+  --dbm-text-muted: #475569;
+  --dbm-primary: #0284c7;
+  --dbm-accent: #059669;
+}
+
+.dark,
+.theme-dark {
+  --dbm-bg: #031427;
+  --dbm-surface: #0b1c30;
+  --dbm-surface-elevated: #102034;
+  --dbm-border: #1b2b3f;
+  --dbm-text: #d3e4fe;
+  --dbm-text-muted: #bfc7d2;
+  --dbm-primary: #38bdf8;
+  --dbm-accent: #4edea3;
+}
 
 @theme {
   --color-surface: #031427;
@@ -639,4 +663,28 @@
 .animate-scaleUp {
   animation: scaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Mobile bottom bar safe-area padding */
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* WCAG 2.2 AA Focus Visibility */
+:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+/* Respect reduced-motion system preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 

@@ -1,31 +1,21 @@
 import React, { useState } from 'react';
-import { 
-  Search, 
-  Flame, 
-  Bell, 
-  ShieldCheck, 
-  Check, 
-  Globe, 
-  SlidersHorizontal, 
-  ExternalLink, 
-  BookOpen, 
-  Sun, 
+import {
+  Search,
+  Bell,
+  ShieldCheck,
+  Globe,
+  SlidersHorizontal,
+  Sun,
   Moon,
   Menu,
   Settings,
-  RefreshCw,
-  LogIn,
   LogOut,
   Cloud,
   HelpCircle,
-  Compass,
-  Scale,
-  RotateCcw
 } from 'lucide-react';
 import { CertificationTrackId, SystemVersionInfo } from '../types';
-import { certificationTracks } from '../data/mockData';
 import type { User } from '../services/firebaseSyncService';
-import { SmartTooltip } from './SmartTooltip';
+import { AppLogo } from './AppLogo';
 
 interface HeaderProps {
   selectedCert: CertificationTrackId;
@@ -35,6 +25,8 @@ interface HeaderProps {
   onSearchQuery?: (q: string) => void;
   theme?: 'light' | 'dark';
   onThemeToggle?: () => void;
+  isSidebarCollapsed?: boolean;
+  isAdmin?: boolean;
   onOpenHamburger: () => void;
   onOpenSystemSettings: () => void;
   onOpenOnboarding?: () => void;
@@ -59,18 +51,16 @@ export const Header: React.FC<HeaderProps> = ({
   onSearchQuery,
   theme = 'light',
   onThemeToggle,
+  isSidebarCollapsed = false,
+  isAdmin = false,
   onOpenHamburger,
   onOpenSystemSettings,
-  onOpenOnboarding,
   onOpenContextualHelp,
-  onOpenLegalMentions,
   systemInfo,
   currentUser,
-  isAuthReady = true,
   cloudSyncedCount = 0,
   accessStatus,
   onOpenAccessControl,
-  onOpenLanding,
   onGoogleSignIn,
   onSignOut,
 }) => {
@@ -79,51 +69,48 @@ export const Header: React.FC<HeaderProps> = ({
   const isFr = lang === 'fr';
 
   const certOptions: { id: CertificationTrackId; label: string }[] = [
-    { id: 'oracle-1z0-071', label: 'Oracle Database SQL 1Z0-071' },
-    { id: 'azure-dp-900', label: 'Azure Data Fundamentals DP-900' },
-    { id: 'azure-dp-800', label: 'Azure Data Engineer DP-800' },
-    { id: 'postgres-edb', label: 'PostgreSQL EDB Certified Associate' },
-    { id: 'mysql-80-dba', label: 'MySQL 8.0 Database Administrator' },
+    { id: 'oracle-1z0-071', label: 'Oracle SQL 1Z0-071' },
+    { id: 'azure-dp-900', label: 'Azure Data DP-900' },
+    { id: 'azure-dp-800', label: 'Azure Data DP-800' },
+    { id: 'postgres-edb', label: 'PostgreSQL EDB' },
+    { id: 'mysql-80-dba', label: 'MySQL 8.0 DBA' },
   ];
-
-  const notifications = [
-    { id: 1, titleFr: 'Nouveau sprint de révision', titleEn: 'New revision sprint', timeFr: 'Il y a 10 min', timeEn: '10m ago', unread: true },
-    { id: 2, titleFr: 'Score d\'évaluation validé (91%)', titleEn: 'Exam score verified (91%)', timeFr: 'Hier', timeEn: 'Yesterday', unread: false },
-    { id: 3, titleFr: 'Mise à jour syllabus 1Z0-071', titleEn: '1Z0-071 syllabus updated', timeFr: 'Il y a 2 jours', timeEn: '2d ago', unread: false },
-  ];
-
-  const currentTrack = certificationTracks.find((t) => t.id === selectedCert);
-  const currentSyllabusUrl = currentTrack?.syllabusUrl || 'https://education.oracle.com/oracle-database-sql/pexam_1Z0-071';
 
   return (
-    <header 
-      id="main-app-header" 
-      className="fixed top-0 left-64 right-0 h-16 bg-[#031427]/95 backdrop-blur-xl z-40 px-3 sm:px-4 flex items-center justify-between gap-2 sm:gap-3 border-b border-[#1b2b3f] shadow-[0_1px_8px_rgba(0,0,0,0.2)]"
+    <header
+      id="main-app-header"
+      className={`fixed top-0 left-0 ${
+        isSidebarCollapsed ? 'md:left-20' : 'md:left-64'
+      } right-0 h-16 bg-[#031427]/95 backdrop-blur-xl z-40 px-3 sm:px-4 flex items-center justify-between gap-2 border-b border-[#1b2b3f] shadow-[0_1px_8px_rgba(0,0,0,0.2)] transition-all duration-200`}
     >
-      {/* Left: Hamburger Button, Cert dropdown & Search */}
-      <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-        {/* Hamburger Menu Button */}
+      {/* Left: Mobile Logo / Hamburger + Certification Selector + Search */}
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="md:hidden shrink-0">
+          <AppLogo size="sm" showText={false} />
+        </div>
+
         <button
           id="header-hamburger-btn"
+          type="button"
           onClick={onOpenHamburger}
-          title={isFr ? 'Ouvrir le menu des fonctionnalités' : 'Open features menu'}
+          title={isFr ? 'Menu complet des outils' : 'All tools menu'}
           aria-label={isFr ? 'Menu des fonctionnalités' : 'Features Menu'}
-          className="flex items-center gap-1.5 p-2 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] hover:border-[#3198dc]/50 text-[#89ceff] hover:text-[#d3e4fe] transition-all shadow-sm active:scale-95 shrink-0 group cursor-pointer"
+          className="hidden sm:flex items-center justify-center p-2 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] text-[#89ceff] hover:text-white transition-colors shrink-0 cursor-pointer"
         >
-          <Menu className="w-4 h-4 sm:w-5 sm:h-5 text-[#89ceff] group-hover:text-white transition-colors" />
-          <span className="hidden min-[2080px]:inline text-xs font-mono font-semibold text-[#d3e4fe]">
-            {isFr ? 'Menu' : 'Menu'}
-          </span>
+          <Menu className="w-4 h-4" />
         </button>
 
         {/* Certification Selector */}
-        <div className="relative flex items-center bg-[#1b2b3f] border border-[#26364a] rounded-lg px-2 py-1.5 shadow-sm min-w-0 shrink">
-          <ShieldCheck className="w-4 h-4 text-[#89ceff] mr-1.5 shrink-0" />
+        <div className="relative flex items-center bg-[#1b2b3f] border border-[#26364a] rounded-lg px-2 py-1.5 shadow-sm min-w-0 max-w-[165px] sm:max-w-[210px] md:max-w-[230px]">
+          <ShieldCheck className="w-3.5 h-3.5 text-[#89ceff] mr-1.5 shrink-0" />
+          <label htmlFor="cert-dropdown-select" className="sr-only">
+            {isFr ? 'Filière de certification' : 'Certification track'}
+          </label>
           <select
             id="cert-dropdown-select"
             value={selectedCert}
             onChange={(e) => onCertChange(e.target.value as CertificationTrackId)}
-            className="bg-transparent text-[#d3e4fe] font-mono text-xs outline-none cursor-pointer pr-2 font-semibold appearance-none w-full min-w-[90px] max-w-[140px] md:max-w-[170px] xl:max-w-[205px] 2xl:max-w-[230px] truncate"
+            className="bg-transparent text-[#d3e4fe] font-mono text-xs outline-none cursor-pointer pr-1.5 font-semibold appearance-none w-full truncate"
           >
             {certOptions.map((opt) => (
               <option key={opt.id} value={opt.id} className="bg-[#102034] text-[#d3e4fe]">
@@ -134,21 +121,8 @@ export const Header: React.FC<HeaderProps> = ({
           <SlidersHorizontal className="w-3 h-3 text-[#89929b] pointer-events-none shrink-0" />
         </div>
 
-        {/* Official Syllabus External Link */}
-        <a
-          href={currentSyllabusUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hidden min-[1680px]:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] text-[#89ceff] hover:text-[#d3e4fe] border border-[#1b2b3f] hover:border-[#26364a] text-xs font-semibold transition-all shadow-sm group shrink-0"
-          title={isFr ? `Consulter le programme officiel ${currentTrack?.name || ''} (${currentTrack?.provider || ''})` : `Open official curriculum for ${currentTrack?.name || ''}`}
-        >
-          <BookOpen className="w-3.5 h-3.5 text-[#93ccff]" />
-          <span className="font-mono text-[11px]">{isFr ? 'Programme officiel' : 'Official Syllabus'}</span>
-          <ExternalLink className="w-3 h-3 text-[#89929b] group-hover:text-[#93ccff]" />
-        </a>
-
-        {/* Global Search Input */}
-        <div className="relative flex-1 min-w-[120px] max-w-[240px] 2xl:max-w-xs hidden xl:block">
+        {/* Global Search Input (lg+) */}
+        <div className="relative flex-1 min-w-[140px] max-w-xs hidden lg:block">
           <Search className="w-4 h-4 text-[#89929b] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             id="global-search-input"
@@ -158,13 +132,19 @@ export const Header: React.FC<HeaderProps> = ({
               setSearchValue(e.target.value);
               onSearchQuery?.(e.target.value);
             }}
-            placeholder={isFr ? "Rechercher clauses SQL, pièges..." : "Search SQL clauses, traps..."}
+            placeholder={isFr ? 'Rechercher clauses SQL...' : 'Search SQL clauses...'}
+            aria-label={isFr ? 'Rechercher dans le glossaire et les fiches' : 'Search glossary and sheets'}
             className="w-full h-9 pl-9 pr-7 bg-[#0b1c30] border border-[#1b2b3f] text-[#d3e4fe] placeholder-[#89929b] text-xs rounded-lg outline-none focus:border-[#3198dc] focus:bg-[#102034] transition-all"
           />
           {searchValue && (
-            <button 
-              onClick={() => { setSearchValue(''); onSearchQuery?.(''); }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#89929b] hover:text-[#d3e4fe]"
+            <button
+              type="button"
+              onClick={() => {
+                setSearchValue('');
+                onSearchQuery?.('');
+              }}
+              aria-label={isFr ? 'Effacer la recherche' : 'Clear search'}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#89929b] hover:text-[#d3e4fe] cursor-pointer"
             >
               ×
             </button>
@@ -172,296 +152,150 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Right: Firebase Google Sign-In, Quick Icon Shortcuts (with Tooltips), System Settings, Lang Switch, Theme, Notifications */}
+      {/* Right: Auth status + Compact controls (zero overlap at all widths) */}
       <div className="flex items-center gap-1.5 shrink-0">
-        {/* BOUTON PRINCIPAL : CONNEXION GOOGLE / STATUT FIRESTORE */}
-        <div className="flex items-center pr-1.5 border-r border-[#1b2b3f] shrink-0">
-          {currentUser ? (
-            <div className="flex items-center gap-1.5 bg-[#102034] px-2 py-1 rounded-xl border border-[#4edea3]/50 shadow-sm">
-              <div className="relative shrink-0">
-                {currentUser.photoURL ? (
-                  <img
-                    src={currentUser.photoURL}
-                    alt={currentUser.displayName || 'User'}
-                    referrerPolicy="no-referrer"
-                    className="w-6 h-6 rounded-full ring-1 ring-[#4edea3] object-cover"
-                  />
-                ) : (
-                  <div className="w-6 h-6 rounded-full bg-[#0284c7] flex items-center justify-center font-bold text-[10px] text-white">
-                    {(currentUser.displayName || currentUser.email || 'DB').slice(0, 2).toUpperCase()}
-                  </div>
-                )}
-                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#4edea3] ring-1 ring-[#031427]"></span>
-              </div>
-              <div className="hidden sm:flex flex-col text-left">
-                <span className="text-[11px] font-bold text-[#d3e4fe] leading-tight truncate max-w-[95px] 2xl:max-w-[120px]">
-                  {currentUser.displayName || currentUser.email?.split('@')[0] || 'DBA'}
-                </span>
-                <span className="font-mono text-[9px] text-[#4edea3] leading-tight flex items-center gap-1">
-                  <Cloud className="w-2.5 h-2.5" />
-                  Firestore ({cloudSyncedCount})
-                </span>
-              </div>
-              {onSignOut && (
-                <button
-                  type="button"
-                  onClick={onSignOut}
-                  title={isFr ? 'Se déconnecter de Firebase' : 'Sign out from Firebase'}
-                  className="p-1 rounded-lg bg-[#0b1c30] hover:bg-[#1b2b3f] text-[#ffb4ab] border border-[#1b2b3f] transition-colors cursor-pointer"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              )}
+        {/* User Auth Chip */}
+        {currentUser ? (
+          <div className="flex items-center gap-1.5 bg-[#102034] px-2 py-1 rounded-xl border border-[#4edea3]/40">
+            <div className="w-6 h-6 rounded-full bg-[#0284c7] flex items-center justify-center font-bold text-[10px] text-white shrink-0">
+              {(currentUser.displayName || currentUser.email || 'DB').slice(0, 2).toUpperCase()}
             </div>
-          ) : (
-            <button
-              id="header-google-signin-btn"
-              type="button"
-              onClick={onGoogleSignIn}
-              title={isFr ? 'Connexion Google & Synchronisation Firestore' : 'Google Sign-In & Firestore Sync'}
-              className="px-2.5 min-[1360px]:px-3 py-1.5 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs flex items-center gap-1.5 border border-[#38bdf8]/50 shadow-md transition-all active:scale-95 shrink-0 cursor-pointer"
-            >
-              <span className="w-4 h-4 rounded-full bg-white flex items-center justify-center shrink-0">
-                <svg className="w-3 h-3" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
-                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z" />
-                  <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z" />
-                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z" />
-                </svg>
+            <div className="hidden sm:flex flex-col text-left">
+              <span className="text-[11px] font-bold text-[#d3e4fe] leading-tight truncate max-w-[100px]">
+                {currentUser.displayName || currentUser.email?.split('@')[0] || 'DBA'}
               </span>
-              <span className="hidden min-[1360px]:inline text-white font-bold tracking-tight whitespace-nowrap">
-                {isFr ? 'Connexion Google' : 'Google Sign-In'}
+              <span className="font-mono text-[9px] text-[#4edea3] leading-tight flex items-center gap-1">
+                <Cloud className="w-2.5 h-2.5" />
+                {cloudSyncedCount > 0 ? `${cloudSyncedCount} sync` : isFr ? 'Actif' : 'Synced'}
               </span>
-              <span className="inline min-[1360px]:hidden text-white font-bold tracking-tight whitespace-nowrap">
-                Google
-              </span>
-            </button>
-          )}
-        </div>
-
-        {/* Contrôle d'Accès Firestore (RBAC Gatekeeper) */}
-        {onOpenAccessControl && (
-          <SmartTooltip
-            title={isFr ? 'Contrôle d\'Accès & Sécurité Firestore' : 'Firestore Access Control & RBAC'}
-            description={
-              isFr
-                ? 'Gérez la liste des utilisateurs autorisés (/user_access), testez le blocage serveur Firestore et l\'écran Gatekeeper.'
-                : 'Manage authorized users (/user_access), test server-side Firestore blocking and the Gatekeeper lock screen.'
-            }
-            badge="RBAC"
-            placement="bottom"
-          >
-            <button
-              id="header-access-control-btn"
-              type="button"
-              onClick={onOpenAccessControl}
-              aria-label={isFr ? 'Contrôle d\'Accès' : 'Access Control'}
-              className={`flex items-center gap-1.5 p-2 min-[2080px]:px-2.5 min-[2080px]:py-1.5 rounded-lg text-xs font-mono font-bold transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer border ${
-                accessStatus === 'revoked'
-                  ? 'bg-[#ef4444]/20 border-[#ef4444] text-[#ffb4ab]'
-                  : accessStatus === 'pending'
-                  ? 'bg-[#f59e0b]/20 border-[#fbbf24] text-[#fbbf24]'
-                  : 'bg-[#102034] hover:bg-[#1b2b3f] border-[#38bdf8]/40 hover:border-[#38bdf8] text-[#89ceff]'
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4 text-[#4edea3]" />
-              <span className="hidden min-[2080px]:inline">
-                {isFr ? 'Contrôle d\'Accès' : 'Access Control'}
-              </span>
-            </button>
-          </SmartTooltip>
-        )}
-
-        {/* Guide Onboarding Interactif */}
-        {onOpenOnboarding && (
-          <SmartTooltip
-            title={isFr ? 'Guide d\'Onboarding (6 étapes)' : 'Onboarding Tour (6 steps)'}
-            description={
-              isFr
-                ? 'Découvrez le fonctionnement des sessions courtes (5 et 30 min), de l\'aide « Explique-moi » et du suivi « Mon activité ».'
-                : 'Explore how short sessions (5 & 30 min), "Explain to Me" hints, and "My Activity" tracking work.'
-            }
-            badge="Guide"
-            placement="bottom"
-            className="hidden lg:inline-flex"
-          >
-            <button
-              id="header-onboarding-btn"
-              type="button"
-              onClick={onOpenOnboarding}
-              aria-label={isFr ? 'Onboarding' : 'Tour'}
-              className="flex items-center gap-1.5 p-2 min-[2080px]:px-2.5 min-[2080px]:py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#4edea3]/40 hover:border-[#4edea3] rounded-lg text-xs font-mono font-bold text-[#4edea3] transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
-            >
-              <Compass className="w-4 h-4 text-[#4edea3]" />
-              <span className="hidden min-[2080px]:inline">{isFr ? 'Onboarding' : 'Tour'}</span>
-            </button>
-          </SmartTooltip>
-        )}
-
-        {/* Mentions Légales & Avis d'Indépendance */}
-        <SmartTooltip
-          title={isFr ? 'Mentions Légales & Avis d’Indépendance' : 'Legal Notices & Trademark Disclaimer'}
-          description={
-            isFr
-              ? 'Précision formelle : DBMastery Studio n’a aucun lien avec Oracle, Azure, PostgreSQL ou MySQL. Consultez les mentions légales complètes.'
-              : 'Formal notice: DBMastery Studio has no affiliation with Oracle, Azure, PostgreSQL, or MySQL. View full legal terms.'
-          }
-          badge="Légal"
-          placement="bottom"
-          className="hidden lg:inline-flex"
-        >
+            </div>
+            {onSignOut && (
+              <button
+                type="button"
+                onClick={onSignOut}
+                title={isFr ? 'Se déconnecter' : 'Sign out'}
+                aria-label={isFr ? 'Se déconnecter' : 'Sign out'}
+                className="p-1 rounded-lg bg-[#0b1c30] hover:bg-[#1b2b3f] text-[#ffb4ab] border border-[#1b2b3f] cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        ) : (
           <button
-            id="header-legal-mentions-btn"
+            id="header-google-signin-btn"
             type="button"
-            onClick={() => {
-              if (onOpenLegalMentions) {
-                onOpenLegalMentions();
-              } else {
-                window.dispatchEvent(new CustomEvent('dbmastery:open_legal_mentions'));
-              }
-            }}
-            aria-label={isFr ? 'Mentions Légales' : 'Legal'}
-            className="flex items-center gap-1.5 p-2 min-[2080px]:px-2.5 min-[2080px]:py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/40 hover:border-[#38bdf8] rounded-lg text-xs font-mono font-bold text-[#89ceff] hover:text-white transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
+            onClick={onGoogleSignIn}
+            aria-label={isFr ? 'Connexion Google' : 'Google Sign-In'}
+            className="px-2.5 py-1.5 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs flex items-center gap-1.5 border border-[#38bdf8]/40 shadow-sm transition-colors shrink-0 cursor-pointer"
           >
-            <Scale className="w-4 h-4 text-[#38bdf8]" />
-            <span className="hidden min-[2080px]:inline">{isFr ? 'Mentions Légales' : 'Legal'}</span>
+            <span className="w-4 h-4 rounded-full bg-white flex items-center justify-center shrink-0">
+              <svg className="w-3 h-3" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z" />
+                <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z" />
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z" />
+              </svg>
+            </span>
+            <span className="hidden sm:inline">{isFr ? 'Connexion' : 'Sign In'}</span>
           </button>
-        </SmartTooltip>
-
-        {/* Site Vitrine & Présentation Landing */}
-        {onOpenLanding && (
-          <SmartTooltip
-            title={isFr ? 'Site Présentation (Landing Page)' : 'Landing Page & Platform Overview'}
-            description={
-              isFr
-                ? 'Consultez la page de présentation complète de DBMastery Studio (fonctionnalités, SQL Lab, certifications et FAQ).'
-                : 'View the standalone marketing and pedagogical presentation page of DBMastery Studio.'
-            }
-            badge="Vitrine"
-            placement="bottom"
-            className="hidden lg:inline-flex"
-          >
-            <button
-              id="header-landing-btn"
-              type="button"
-              onClick={onOpenLanding}
-              aria-label={isFr ? 'Site Vitrine' : 'Landing'}
-              className="flex items-center gap-1.5 p-2 min-[2080px]:px-2.5 min-[2080px]:py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/40 hover:border-[#38bdf8] rounded-lg text-xs font-mono font-bold text-[#38bdf8] hover:text-white transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
-            >
-              <Globe className="w-4 h-4 text-[#38bdf8]" />
-              <span className="hidden min-[2080px]:inline">{isFr ? 'Site Vitrine' : 'Landing'}</span>
-            </button>
-          </SmartTooltip>
         )}
 
-        {/* Répétition Espacée SM-2 */}
-        <SmartTooltip
-          title={isFr ? 'Répétition Espacée (SM-2 / FSRS)' : 'Spaced Repetition (SM-2 / FSRS)'}
-          description={
-            isFr
-              ? 'Accédez directement à vos séances de révision mémorisées selon la courbe de l\'oubli (J+1, J+3, J+7).'
-              : 'Direct access to your scheduled spaced reviews along your memory retention curve (Day+1, Day+3, Day+7).'
-          }
-          badge="SM-2"
-          placement="bottom"
-          className="hidden lg:inline-flex"
-        >
+        {/* Admin RBAC shortcut (shown only for admins or if access status requires attention) */}
+        {onOpenAccessControl && (isAdmin || accessStatus === 'pending' || accessStatus === 'revoked') && (
           <button
-            id="header-spaced-repetition-btn"
+            id="header-access-control-btn"
             type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent('dbmastery:open_spaced_repetition_runner'))}
-            aria-label={isFr ? 'Révisions' : 'Reviews'}
-            className="flex items-center gap-1.5 p-2 min-[2080px]:px-2.5 min-[2080px]:py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/40 hover:border-[#38bdf8] rounded-lg text-xs font-mono font-bold text-[#38bdf8] hover:text-white transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
+            onClick={onOpenAccessControl}
+            aria-label={isFr ? 'Contrôle d\'accès' : 'Access Control'}
+            title={isFr ? 'Contrôle d\'accès' : 'Access Control'}
+            className={`hidden sm:flex items-center gap-1 p-2 rounded-lg text-xs font-mono font-bold border shrink-0 cursor-pointer ${
+              accessStatus === 'revoked'
+                ? 'bg-[#ef4444]/20 border-[#ef4444] text-[#ffb4ab]'
+                : accessStatus === 'pending'
+                ? 'bg-[#f59e0b]/20 border-[#fbbf24] text-[#fbbf24]'
+                : 'bg-[#102034] hover:bg-[#1b2b3f] border-[#4edea3]/40 text-[#4edea3]'
+            }`}
           >
-            <RotateCcw className="w-4 h-4 text-[#38bdf8]" />
-            <span className="hidden min-[2080px]:inline">{isFr ? 'Révisions' : 'Reviews'}</span>
+            <ShieldCheck className="w-4 h-4" />
           </button>
-        </SmartTooltip>
+        )}
 
-        {/* Aide Contextuelle de l'écran actif */}
+        {/* Contextual Help */}
         {onOpenContextualHelp && (
-          <SmartTooltip
-            title={isFr ? 'Aide Contextuelle (?)' : 'Contextual Help (?)'}
-            description={
-              isFr
-                ? 'Affiche les instructions, raccourcis et astuces SQL spécifiques à la page que vous consultez actuellement.'
-                : 'Displays instructions, shortcuts, and SQL exam tips tailored to your current screen.'
-            }
-            badge="Aide"
-            placement="bottom"
+          <button
+            id="header-contextual-help-btn"
+            type="button"
+            onClick={onOpenContextualHelp}
+            aria-label={isFr ? 'Aide contextuelle' : 'Contextual help'}
+            title={isFr ? 'Aide contextuelle' : 'Contextual help'}
+            className="hidden sm:flex p-2 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] text-[#93ccff] hover:text-white transition-colors shrink-0 cursor-pointer"
           >
-            <button
-              id="header-contextual-help-btn"
-              type="button"
-              onClick={onOpenContextualHelp}
-              aria-label={isFr ? 'Aide' : 'Help'}
-              className="flex items-center gap-1.5 p-2 min-[2080px]:px-2.5 min-[2080px]:py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#38bdf8]/40 hover:border-[#38bdf8] rounded-lg text-xs font-mono font-bold text-[#93ccff] hover:text-white transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
-            >
-              <HelpCircle className="w-4 h-4 text-[#38bdf8]" />
-              <span className="hidden min-[2080px]:inline">{isFr ? 'Aide' : 'Help'}</span>
-            </button>
-          </SmartTooltip>
+            <HelpCircle className="w-4 h-4" />
+          </button>
         )}
-
-        {/* System Settings & Update Trigger */}
-        <button
-          id="header-system-settings-btn"
-          onClick={onOpenSystemSettings}
-          title={isFr ? `Paramètres système & Mises à jour (${systemInfo.currentVersion})` : `System Settings & Updates (${systemInfo.currentVersion})`}
-          className="flex items-center gap-1.5 p-2 min-[1100px]:px-2.5 min-[1100px]:py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] hover:border-[#3198dc]/40 rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-all shadow-sm active:scale-95 group shrink-0 cursor-pointer"
-        >
-          <Settings className={`w-4 h-4 text-[#89ceff] group-hover:rotate-45 transition-transform duration-300 ${systemInfo.isUpdating ? 'animate-spin' : ''}`} />
-          <span className="text-[11px] font-semibold text-[#89ceff] hidden min-[1100px]:inline">{systemInfo.currentVersion}</span>
-          {systemInfo.autoUpdateEnabled && (
-            <span className="hidden min-[1100px]:inline-block w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse" title={isFr ? 'Mises à jour auto actives' : 'Auto updates enabled'}></span>
-          )}
-        </button>
 
         {/* Language Toggle FR / EN */}
         <button
           id="lang-toggle-btn"
+          type="button"
           onClick={onLangToggle}
           title={isFr ? 'Basculer en anglais' : 'Switch to French'}
-          className="flex items-center gap-1 px-2 py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-colors shrink-0 cursor-pointer"
+          aria-label={isFr ? 'Changer de langue (FR)' : 'Change language (EN)'}
+          className="flex items-center gap-1 px-2 py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] rounded-lg text-xs font-mono font-semibold text-[#d3e4fe] transition-colors shrink-0 cursor-pointer"
         >
           <Globe className="w-3.5 h-3.5 text-[#93ccff]" />
           <span>{lang.toUpperCase()}</span>
         </button>
 
-        {/* Theme Toggle (Light / Dark) */}
-        <button
-          id="theme-toggle-btn"
-          onClick={onThemeToggle}
-          title={
-            theme === 'light'
-              ? (isFr ? 'Basculer vers le thème sombre' : 'Switch to dark theme')
-              : (isFr ? 'Basculer vers le thème clair' : 'Switch to light theme')
-          }
-          className="flex items-center gap-1.5 p-2 min-[2080px]:px-2.5 min-[2080px]:py-1.5 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] rounded-lg text-xs font-mono font-medium text-[#bfc7d2] hover:text-[#d3e4fe] transition-colors shrink-0 cursor-pointer"
-        >
-          {theme === 'light' ? (
-            <>
+        {/* Theme Toggle */}
+        {onThemeToggle && (
+          <button
+            id="theme-toggle-btn"
+            type="button"
+            onClick={onThemeToggle}
+            title={
+              theme === 'light'
+                ? isFr
+                  ? 'Activer le thème sombre'
+                  : 'Switch to dark theme'
+                : isFr
+                ? 'Activer le thème clair'
+                : 'Switch to light theme'
+            }
+            aria-label={theme === 'light' ? (isFr ? 'Thème sombre' : 'Dark theme') : isFr ? 'Thème clair' : 'Light theme'}
+            className="p-2 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] rounded-lg text-[#d3e4fe] transition-colors shrink-0 cursor-pointer"
+          >
+            {theme === 'light' ? (
               <Sun className="w-4 h-4 text-[#f59e0b]" />
-              <span className="hidden min-[2080px]:inline text-[11px] font-medium">{isFr ? 'Clair' : 'Light'}</span>
-            </>
-          ) : (
-            <>
+            ) : (
               <Moon className="w-4 h-4 text-[#89ceff]" />
-              <span className="hidden min-[2080px]:inline text-[11px] font-medium">{isFr ? 'Sombre' : 'Dark'}</span>
-            </>
-          )}
+            )}
+          </button>
+        )}
+
+        {/* System Settings */}
+        <button
+          id="header-system-settings-btn"
+          type="button"
+          onClick={onOpenSystemSettings}
+          aria-label={isFr ? 'Paramètres système' : 'System settings'}
+          title={isFr ? `Paramètres (${systemInfo.currentVersion})` : `Settings (${systemInfo.currentVersion})`}
+          className="hidden sm:flex items-center gap-1.5 p-2 bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] rounded-lg text-xs font-mono text-[#bfc7d2] hover:text-[#d3e4fe] transition-colors shrink-0 cursor-pointer"
+        >
+          <Settings className="w-4 h-4 text-[#89ceff]" />
         </button>
 
-        {/* Notification Bell */}
+        {/* Notifications Bell (real/clean empty state without fabricated 91% score) */}
         <div className="relative shrink-0">
           <button
             id="notifications-btn"
-            onClick={() => setShowNotifications(!showNotifications)}
-            className="relative p-2 rounded-lg text-[#bfc7d2] hover:bg-[#102034] hover:text-[#d3e4fe] transition-colors border border-transparent hover:border-[#1b2b3f] cursor-pointer"
-            aria-label="Notifications"
+            type="button"
+            onClick={() => setShowNotifications((prev) => !prev)}
+            className="p-2 rounded-lg text-[#bfc7d2] hover:bg-[#102034] hover:text-[#d3e4fe] transition-colors border border-transparent hover:border-[#1b2b3f] cursor-pointer"
+            aria-label={isFr ? 'Notifications' : 'Notifications'}
           >
             <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#ffb4ab]"></span>
           </button>
 
           {showNotifications && (
@@ -470,23 +304,15 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="font-semibold text-xs text-[#d3e4fe]">
                   {isFr ? 'Notifications' : 'Notifications'}
                 </span>
-                <span className="text-[10px] font-mono text-[#4edea3] bg-[#00a572]/20 px-1.5 py-0.5 rounded">
-                  {isFr ? '1 nouvelle' : '1 new'}
+                <span className="text-[10px] font-mono text-[#9fb0c4]">
+                  {systemInfo.currentVersion}
                 </span>
               </div>
-              <div className="flex flex-col gap-1.5">
-                {notifications.map((n) => (
-                  <div 
-                    key={n.id} 
-                    className={`p-2 rounded-lg text-xs flex flex-col gap-0.5 ${
-                      n.unread ? 'bg-[#1b2b3f]/70 border border-[#3198dc]/30' : 'bg-[#0b1c30]'
-                    }`}
-                  >
-                    <span className="text-[#d3e4fe] font-medium">{isFr ? n.titleFr : n.titleEn}</span>
-                    <span className="text-[10px] text-[#89929b] font-mono">{isFr ? n.timeFr : n.timeEn}</span>
-                  </div>
-                ))}
-              </div>
+              <p className="text-xs text-[#9fb0c4] py-2">
+                {isFr
+                  ? 'Aucune alerte en attente. Vos révisions planifiées apparaissent dans votre tableau de bord.'
+                  : 'No pending alerts. Scheduled reviews appear directly on your dashboard.'}
+              </p>
             </div>
           )}
         </div>
@@ -494,4 +320,3 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
-

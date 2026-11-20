@@ -1,7 +1,23 @@
 import { AccessRequestNotification, NotificationServiceStatus } from '../types';
+import { auth } from '../firebase';
 
 export const ADMIN_NOTIFICATION_EMAIL = 'nouhailler@gmail.com';
 const LOCAL_NOTIFICATION_HISTORY_KEY = 'dbmastery_access_request_notifications_v1';
+
+async function getFirebaseAuthHeaders(extraHeaders: Record<string, string> = {}): Promise<Record<string, string> | null> {
+  try {
+    const user = auth?.currentUser;
+    if (!user) return null;
+    const idToken = await user.getIdToken();
+    if (!idToken) return null;
+    return {
+      ...extraHeaders,
+      Authorization: `Bearer ${idToken}`,
+    };
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Charge l'historique local des notifications envoyées
@@ -121,13 +137,16 @@ export async function sendAccessRequestNotification(params: {
 }
 
 /**
- * Récupère le statut du service de notification (SMTP, webhook, etc.)
+ * Récupère le statut du service de notification (Admin Firebase requis)
  */
 export async function fetchNotificationStatus(): Promise<NotificationServiceStatus> {
   try {
-    const res = await fetch('/api/notifications/status');
-    if (res.ok) {
-      return await res.json();
+    const headers = await getFirebaseAuthHeaders();
+    if (headers) {
+      const res = await fetch('/api/notifications/status', { headers });
+      if (res.ok) {
+        return await res.json();
+      }
     }
   } catch {
     // fallback
@@ -142,26 +161,28 @@ export async function fetchNotificationStatus(): Promise<NotificationServiceStat
 }
 
 /**
- * Récupère l'historique combiné (serveur + local) des notifications
+ * Récupère l'historique combiné (serveur + local) des notifications (Admin Firebase requis)
  */
 export async function fetchNotificationHistory(): Promise<AccessRequestNotification[]> {
   try {
-    const res = await fetch('/api/notifications/history');
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data.history)) {
-        // Fusionner avec le local
-        const local = getLocalNotificationHistory();
-        const map = new Map<string, AccessRequestNotification>();
-        data.history.forEach((n: AccessRequestNotification) => map.set(n.id, n));
-        local.forEach((n) => {
-          if (!map.has(n.id)) map.set(n.id, n);
-        });
-        const merged = Array.from(map.values()).sort(
-          (a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime()
-        );
-        saveLocalNotificationHistory(merged);
-        return merged;
+    const headers = await getFirebaseAuthHeaders();
+    if (headers) {
+      const res = await fetch('/api/notifications/history', { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.history)) {
+          const local = getLocalNotificationHistory();
+          const map = new Map<string, AccessRequestNotification>();
+          data.history.forEach((n: AccessRequestNotification) => map.set(n.id, n));
+          local.forEach((n) => {
+            if (!map.has(n.id)) map.set(n.id, n);
+          });
+          const merged = Array.from(map.values()).sort(
+            (a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime()
+          );
+          saveLocalNotificationHistory(merged);
+          return merged;
+        }
       }
     }
   } catch {
@@ -172,7 +193,7 @@ export async function fetchNotificationHistory(): Promise<AccessRequestNotificat
 }
 
 /**
- * Teste l'envoi d'un email de notification à l'administrateur
+ * Teste l'envoi d'un email de notification à l'administrateur (Admin Firebase requis)
  */
 export async function sendTestNotificationEmail(targetEmail?: string): Promise<{
   success: boolean;
@@ -180,16 +201,30 @@ export async function sendTestNotificationEmail(targetEmail?: string): Promise<{
   details?: any;
 }> {
   try {
+    const headers = await getFirebaseAuthHeaders({ 'Content-Type': 'application/json' });
+    if (!headers) {
+      return {
+        success: false,
+        message: 'Authentification administrateur Firebase requise pour effectuer ce test.',
+      };
+    }
+
     const res = await fetch('/api/notifications/test-email', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ email: targetEmail || ADMIN_NOTIFICATION_EMAIL }),
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     return {
-      success: res.ok && data.success,
-      message: data.message || (res.ok ? 'Email test envoyé !' : 'Échec du test email.'),
+      success: res.ok && Boolean(data.success),
+      message:
+        data.message ||
+        (res.ok
+          ? 'Email test envoyé !'
+          : res.status === 401 || res.status === 403
+          ? 'Accès refusé : compte administrateur requis.'
+          : 'Échec du test email.'),
       details: data,
     };
   } catch (err: any) {
@@ -201,7 +236,7 @@ export async function sendTestNotificationEmail(targetEmail?: string): Promise<{
 }
 
 /**
- * Met à jour la configuration SMTP de notification sur le serveur
+ * Met à jour la configuration SMTP de notification sur le serveur (Admin Firebase requis)
  */
 export async function updateNotificationConfig(config: {
   host?: string;
@@ -212,15 +247,29 @@ export async function updateNotificationConfig(config: {
   secure?: boolean;
 }): Promise<{ success: boolean; message: string }> {
   try {
+    const headers = await getFirebaseAuthHeaders({ 'Content-Type': 'application/json' });
+    if (!headers) {
+      return {
+        success: false,
+        message: 'Authentification administrateur Firebase requise pour modifier la configuration SMTP.',
+      };
+    }
+
     const res = await fetch('/api/notifications/config', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(config),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     return {
-      success: res.ok && data.success,
-      message: data.message || (res.ok ? 'Configuration enregistrée !' : 'Erreur enregistrement.'),
+      success: res.ok && Boolean(data.success),
+      message:
+        data.message ||
+        (res.ok
+          ? 'Configuration enregistrée !'
+          : res.status === 401 || res.status === 403
+          ? 'Accès refusé : rôle administrateur requis.'
+          : 'Erreur enregistrement.'),
     };
   } catch (err: any) {
     return {

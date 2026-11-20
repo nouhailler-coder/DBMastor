@@ -1,0 +1,978 @@
+# MASTER V2 — DBMASTOR
+## Correctifs ciblés de sécurité, UX/UI, navigation, onboarding et qualité
+
+**Dépôt :** https://github.com/nouhailler-coder/DBMastor 
+**Application :** https://dbmastor.pages.dev/ 
+**Branche de travail :** `fix/ux-redesign-v2` 
+**Objectif :** terminer et corriger la refonte UX/UI à partir de l'état réel du dépôt, sans réécrire les fonctionnalités déjà opérationnelles.
+
+---
+
+# 1. RÈGLE FONDAMENTALE : AUDITER AVANT DE MODIFIER
+
+Tu interviens sur une application existante qui possède déjà de nombreuses fonctionnalités opérationnelles.
+
+**Il est strictement interdit de recommencer intégralement le développement ou de remplacer arbitrairement les composants existants.**
+
+Avant toute modification :
+
+1. Récupérer la dernière version de la branche `main`.
+2. Examiner l'intégralité de l'architecture existante.
+3. Identifier les composants, services, modèles et fonctionnalités déjà opérationnels.
+4. Examiner les modifications récentes apportées après l'intégration de la landing page.
+5. Comparer les fonctionnalités existantes avec les exigences de ce document.
+6. Établir une liste des corrections nécessaires.
+7. Identifier les dépendances et les éventuelles régressions que chaque modification pourrait entraîner.
+
+Créer ensuite la branche :
+
+`fix/ux-redesign-v2`
+
+Ne jamais travailler directement sur `main`.
+
+## 1.1 Fonctionnalités à préserver impérativement
+
+Les éléments suivants doivent être conservés, sauf correction technique indispensable :
+
+- Authentification Firebase.
+- Connexion Google.
+- Gestion des rôles `admin`, `student` et `auditor`.
+- Statuts d'accès `pending`, `approved` et `revoked`.
+- Contrôle des autorisations et accès à l'application.
+- Synchronisation Firestore.
+- Mode SQL Lab avec AlaSQL.
+- Parcours pédagogiques et exercices.
+- Quiz adaptatifs.
+- Flashcards.
+- Répétition espacée.
+- Glossaire.
+- Fiches de compétences.
+- Skill Map à quatre dimensions : connaissances, précision, vitesse et régularité.
+- Examens blancs.
+- Parcours de certification.
+- Sessions courtes de 5 et 30 minutes.
+- Système d'indices progressifs « Explique-moi ».
+- Aide contextuelle.
+- Analyses d'activité et statistiques.
+- Internationalisation française et anglaise.
+- Thèmes clair et sombre.
+- Landing page existante.
+- Navigation par URL et paramètres `view` et `tab`.
+
+Ne pas supprimer de contenu pédagogique, d'exercices, de données utilisateur ou de fonctionnalités existantes.
+
+Les migrations de données doivent être rétrocompatibles.
+
+---
+
+# 2. PRIORITÉ CRITIQUE — SÉCURISATION DES API D'ADMINISTRATION
+
+## 2.1 Problème identifié
+
+L'audit a identifié une vulnérabilité dans `server.ts`, notamment dans le traitement de :
+
+`POST /api/notifications/config`
+
+Le code existant comporte une logique comparable à :
+
+```ts
+if (token && (token === 'admin-local' || token.length > 20)) {
+  isAuthorized = true;
+}
+```
+
+Cette logique est dangereuse.
+
+N'importe quel client capable de transmettre une chaîne suffisamment longue peut potentiellement contourner le contrôle d'accès.
+
+L'origine HTTP (`Origin` ou `Referer`) ne constitue pas une preuve d'identité ou d'autorisation.
+
+Le service frontend `src/services/notificationService.ts` doit également être vérifié : l'appel de mise à jour de configuration ne transmet actuellement pas de véritable preuve d'authentification.
+
+## 2.2 Objectif
+
+Mettre en place une authentification serveur réelle basée sur Firebase Admin SDK.
+
+### Étape A — Vérification du token Firebase
+
+Pour chaque endpoint d'administration :
+
+1. Récupérer le token Firebase ID transmis dans l'en-tête :
+
+   `Authorization: Bearer <firebase-id-token>`
+
+2. Vérifier le token avec Firebase Admin SDK :
+
+   `admin.auth().verifyIdToken(token)`
+
+3. Refuser les tokens absents, invalides, expirés ou révoqués lorsque la vérification de révocation est activée.
+4. Récupérer l'identité réelle de l'utilisateur.
+5. Vérifier son rôle administrateur côté serveur.
+6. Refuser systématiquement les utilisateurs non autorisés.
+
+### Étape B — Vérification du rôle
+
+Le contrôle d'administration ne doit jamais dépendre d'une variable JavaScript du frontend.
+
+Vérifier le rôle administrateur côté serveur à partir d'une source fiable :
+
+- Custom Claims Firebase, si cette stratégie est déjà utilisée ;
+- ou document Firestore de l'utilisateur, lu côté serveur avec Firebase Admin SDK.
+
+Si le rôle est conservé dans Firestore, vérifier également que le compte est actif et que son statut permet l'accès.
+
+Ne jamais accepter un rôle transmis directement par le navigateur sans vérification serveur.
+
+### Étape C — Supprimer les contournements
+
+Supprimer définitivement, en production :
+
+- `admin-local` ;
+- les validations basées sur la longueur du token ;
+- les autorisations basées uniquement sur `Origin` ;
+- les autorisations basées uniquement sur `Referer` ;
+- tout mécanisme de secours permettant un accès administrateur sans vérification Firebase.
+
+Le mode développement ne doit pas introduire de faille exploitable en production.
+
+### Étape D — Middleware réutilisable
+
+Créer un middleware réutilisable, par exemple :
+
+- `authenticateFirebaseUser`
+- `requireAdmin`
+
+Adapter les noms à l'architecture existante.
+
+Tous les endpoints réservés à l'administration doivent utiliser ces contrôles.
+
+Auditer notamment :
+
+- configuration des notifications ;
+- consultation de la configuration ;
+- modification des paramètres ;
+- envoi de notifications ;
+- gestion des utilisateurs ;
+- gestion des accès ;
+- toute autre route identifiée comme administrative.
+
+### Étape E — Frontend
+
+Modifier `src/services/notificationService.ts` et les autres services concernés.
+
+Les appels aux API protégées doivent :
+
+1. récupérer le token Firebase courant ;
+2. transmettre le token dans l'en-tête `Authorization` ;
+3. gérer proprement les erreurs `401` et `403` ;
+4. ne jamais stocker durablement un token dans `localStorage` ;
+5. ne jamais transmettre de secrets serveur au frontend.
+
+### Étape F — Configuration Firebase Admin
+
+Vérifier l'initialisation de Firebase Admin SDK.
+
+Les identifiants de service doivent être fournis uniquement côté serveur par des variables d'environnement sécurisées ou par le mécanisme de gestion des secrets de l'environnement de déploiement.
+
+Ne jamais committer de clé privée ou de fichier de service account.
+
+Documenter les variables nécessaires dans `.env.example`, sans valeur sensible.
+
+### Étape G — Tests de sécurité obligatoires
+
+Créer des tests serveur couvrant au minimum :
+
+| Situation | Résultat attendu |
+|---|---|
+| Aucun token | HTTP 401 |
+| Token invalide | HTTP 401 |
+| Token expiré | HTTP 401 |
+| Token valide d'un étudiant | HTTP 403 |
+| Token valide d'un auditeur | HTTP 403 |
+| Token valide d'un administrateur | Autorisé |
+| Token arbitraire de plus de 20 caractères | HTTP 401 |
+| Ancien token `admin-local` | HTTP 401 |
+| Origin autorisé mais sans token | HTTP 401 |
+| Rôle modifié ou compte révoqué | Accès refusé |
+
+Les tests doivent vérifier le comportement réel du middleware et des endpoints Express, et pas seulement une fonction isolée.
+
+**Critère d'acceptation : aucun endpoint administratif ne doit pouvoir être appelé avec une simple chaîne arbitraire ou une origine HTTP autorisée.**
+
+---
+
+# 3. NAVIGATION — PASSER À CINQ ESPACES PRINCIPAUX
+
+## 3.1 Problème identifié
+
+`src/components/Sidebar.tsx` expose encore environ douze entrées principales.
+
+Cette organisation est trop complexe pour un utilisateur qui souhaite simplement reprendre son apprentissage.
+
+Le menu hamburger reproduit également une partie de cette complexité.
+
+## 3.2 Nouvelle architecture
+
+Mettre en place cinq espaces principaux :
+
+1. Accueil
+2. Mon parcours
+3. Entraînement
+4. Certifications
+5. Ma progression
+
+### Accueil
+
+Contient :
+
+- tableau de bord ;
+- reprise de la dernière activité ;
+- recommandation de session ;
+- prochain objectif ;
+- résumé de progression.
+
+### Mon parcours
+
+Contient :
+
+- parcours pédagogique ;
+- modules ;
+- chapitres ;
+- cours ;
+- fiches de compétences ;
+- glossaire ;
+- aide contextuelle.
+
+### Entraînement
+
+Contient :
+
+- exercices SQL ;
+- quiz ;
+- flashcards ;
+- répétition espacée ;
+- SQL Lab ;
+- entraînement chronométré ;
+- examens blancs.
+
+### Certifications
+
+Contient :
+
+- Oracle SQL ;
+- PostgreSQL / EDB ;
+- MySQL ;
+- Azure ;
+- parcours de préparation ;
+- examens blancs ;
+- suivi des objectifs.
+
+**Attention :** vérifier les appellations et les programmes officiels des certifications avant de modifier les libellés. Ne pas inventer de certification ou de partenariat officiel.
+
+### Ma progression
+
+Contient :
+
+- Skill Map ;
+- statistiques ;
+- historique d'activité ;
+- compétences acquises ;
+- badges ;
+- résultats ;
+- recommandations personnalisées.
+
+### Administration
+
+Le contrôle d'accès et les outils d'administration ne doivent pas être affichés comme un espace pédagogique ordinaire.
+
+Ils doivent rester accessibles uniquement aux administrateurs, dans une zone distincte.
+
+## 3.3 Comportement desktop
+
+- Sidebar compacte et repliable.
+- Cinq entrées principales clairement identifiables.
+- Sous-menus accessibles à la demande.
+- Indication claire de la section active.
+- Éviter les menus trop profonds.
+- Ne pas afficher toutes les fonctionnalités simultanément.
+- Conserver les URL et les paramètres de navigation existants.
+
+## 3.4 Comportement mobile
+
+Créer une navigation inférieure fixe avec cinq entrées :
+
+- Accueil
+- Parcours
+- Entraîner
+- Certifications
+- Progression
+
+Les fonctionnalités secondaires doivent être accessibles depuis leurs espaces respectifs ou via un menu « Plus ».
+
+Contraintes :
+
+- Compatible avec les écrans de 320 px et plus.
+- Respect des zones de sécurité des appareils mobiles.
+- Boutons suffisamment grands pour être manipulés au doigt.
+- Navigation utilisable sans menu hamburger complexe.
+- Ne pas masquer le contenu principal derrière la barre inférieure.
+
+## 3.5 Compatibilité des anciennes URL
+
+Préserver les mécanismes existants dans `src/App.tsx` :
+
+- `?view=app`
+- `?tab=...`
+- `popstate`
+- navigation arrière et avant du navigateur.
+
+Créer des correspondances entre les anciens identifiants de vues et les nouveaux espaces.
+
+Un ancien lien partagé doit continuer à ouvrir la bonne fonctionnalité.
+
+Ajouter des tests de non-régression pour ces correspondances.
+
+---
+
+# 4. TABLEAU DE BORD — SIMPLIFICATION
+
+## 4.1 Problème identifié
+
+`src/components/DashboardView.tsx` contient encore trop de blocs, de bannières et de raccourcis.
+
+Il ne guide pas suffisamment l'utilisateur vers une action unique.
+
+## 4.2 Nouvelle structure
+
+Le tableau de bord doit répondre immédiatement à trois questions :
+
+- Où en suis-je ?
+- Que dois-je faire maintenant ?
+- Comment reprendre mon apprentissage ?
+
+### Bloc 1 — Accueil personnalisé
+
+Afficher :
+
+- message de bienvenue ;
+- certification ou objectif principal ;
+- niveau actuel ;
+- dernière activité.
+
+### Bloc 2 — Action principale
+
+Un seul bouton dominant :
+
+**« Continuer mon apprentissage »**
+
+Il doit reprendre la dernière activité pertinente lorsque cela est possible.
+
+Si aucune activité n'existe :
+
+**« Commencer mon parcours »**
+
+### Bloc 3 — Session recommandée
+
+Afficher une seule recommandation contextualisée :
+
+- session de 5 minutes ;
+- session de 30 minutes ;
+- révision espacée ;
+- quiz ;
+- exercice SQL ;
+- préparation à l'examen.
+
+La recommandation doit tenir compte des données réelles de progression.
+
+### Bloc 4 — Progression synthétique
+
+Afficher au maximum quatre indicateurs :
+
+- progression globale ;
+- compétences maîtrisées ;
+- activités réalisées ;
+- régularité.
+
+Les indicateurs doivent provenir des données réelles de l'utilisateur.
+
+### Bloc 5 — Objectif suivant
+
+Afficher le prochain objectif pédagogique.
+
+Éviter les panneaux secondaires redondants.
+
+## 4.3 Supprimer les fausses statistiques
+
+L'audit a relevé des valeurs codées en dur, notamment :
+
+- `127` questions ;
+- `81 %` ;
+- `+12 %` ;
+- date d'examen `15 Mars 2025` ;
+- `D-22`.
+
+Ces valeurs doivent être supprimées des données de production.
+
+Règles :
+
+1. Utiliser les données réelles du compte.
+2. Calculer les indicateurs à partir des données disponibles.
+3. Afficher un état vide si aucune donnée n'existe.
+4. Ne jamais présenter une valeur fictive comme une statistique réelle.
+5. Si un exemple de démonstration est nécessaire, l'identifier explicitement comme « Exemple de démonstration ».
+
+Supprimer les dates périmées.
+
+Si une date d'examen est renseignée par l'utilisateur, calculer dynamiquement le nombre de jours restants.
+
+Ne pas afficher de compte à rebours lorsqu'aucune date n'est définie.
+
+## 4.4 États à prévoir
+
+- Nouvel utilisateur.
+- Utilisateur sans parcours.
+- Utilisateur ayant commencé un parcours.
+- Utilisateur ayant terminé un module.
+- Utilisateur ayant une révision en attente.
+- Utilisateur ayant terminé son objectif.
+- Utilisateur hors connexion.
+- Utilisateur dont les données Firestore sont en cours de synchronisation.
+
+Prévoir des états de chargement, d'erreur et de données indisponibles.
+
+---
+
+# 5. ONBOARDING — PARCOURS PERSONNALISÉ
+
+## 5.1 Problème identifié
+
+L'onboarding existant conserve son ancien fonctionnement et ne correspond pas encore au parcours simplifié prévu.
+
+## 5.2 Nouveau parcours
+
+Créer ou adapter l'onboarding selon cette séquence :
+
+1. Bienvenue.
+2. Objectif d'apprentissage.
+3. Certification visée.
+4. Niveau actuel.
+5. Diagnostic initial.
+6. Présentation du parcours personnalisé.
+7. Démarrage.
+
+### Objectif d'apprentissage
+
+Proposer notamment :
+
+- apprendre SQL ;
+- progresser en administration de bases de données ;
+- préparer une certification ;
+- améliorer ses compétences professionnelles ;
+- réviser et consolider ses acquis.
+
+### Certification
+
+Proposer uniquement les parcours réellement disponibles dans l'application.
+
+### Niveau
+
+Prévoir :
+
+- Débutant ;
+- Intermédiaire ;
+- Avancé ;
+- Je ne sais pas.
+
+### Diagnostic
+
+Réutiliser le système de diagnostic existant si possible.
+
+Ne pas créer un second moteur de diagnostic indépendant.
+
+### Parcours personnalisé
+
+Présenter :
+
+- objectif ;
+- niveau de départ ;
+- modules recommandés ;
+- première session conseillée.
+
+## 5.3 Règles métier
+
+- L'onboarding doit être facultatif lorsque cela ne compromet pas le fonctionnement.
+- Les étapes doivent pouvoir être ignorées lorsque c'est pertinent.
+- L'utilisateur doit pouvoir revenir modifier ses choix.
+- Les utilisateurs existants ne doivent pas être obligés de recommencer l'onboarding.
+- Ne pas écraser les préférences et la progression déjà enregistrées.
+- Synchroniser les données selon les mécanismes Firestore existants.
+- Prévoir un fonctionnement cohérent hors connexion si l'application le permet déjà.
+
+---
+
+# 6. DESIGN SYSTEM — HARMONISATION
+
+## 6.1 Problème identifié
+
+`src/index.css` contient déjà des variables de thème, mais plusieurs composants utilisent encore des couleurs et des styles Tailwind codés directement.
+
+L'objectif n'est pas de refaire tout le graphisme, mais d'harmoniser les composants réellement concernés.
+
+## 6.2 Principes visuels
+
+- Interface claire et professionnelle.
+- Hiérarchie visuelle évidente.
+- Bleu comme couleur principale.
+- Turquoise comme accent secondaire.
+- Fond clair discret.
+- Thème sombre cohérent.
+- Cartes utilisées avec modération.
+- Peu de dégradés.
+- Ombres discrètes.
+- Badges réservés aux informations utiles.
+- Espacement régulier.
+- Typographie lisible.
+
+## 6.3 Composants à harmoniser
+
+Créer ou réutiliser les composants partagés nécessaires :
+
+- Button
+- Card
+- Badge
+- ProgressBar
+- SectionHeader
+- EmptyState
+- LoadingState
+- ErrorState
+- Modal
+- Tooltip
+- NavigationItem
+- StatCard
+
+Ne pas créer de doublons si des composants équivalents existent déjà.
+
+## 6.4 Thèmes
+
+Vérifier :
+
+- thème clair ;
+- thème sombre ;
+- contraste ;
+- lisibilité ;
+- couleurs des graphiques ;
+- états désactivés ;
+- champs de formulaire ;
+- boutons ;
+- menus ;
+- modales.
+
+La préférence de thème de l'utilisateur doit être conservée.
+
+---
+
+# 7. RESPONSIVE DESIGN ET ACCESSIBILITÉ
+
+Auditer et corriger les composants concernés sur les résolutions suivantes :
+
+- 320 px ;
+- 375 px ;
+- 768 px ;
+- 1024 px ;
+- 1440 px ;
+- 1920 px.
+
+Vérifier en particulier :
+
+- Sidebar ;
+- navigation mobile ;
+- dashboard ;
+- tableaux ;
+- SQL Lab ;
+- éditeurs de code ;
+- graphiques ;
+- formulaires ;
+- modales ;
+- examens blancs.
+
+Objectif : conformité WCAG 2.2 AA dans la mesure applicable.
+
+Points obligatoires :
+
+- navigation clavier ;
+- focus visible ;
+- contrastes suffisants ;
+- labels accessibles ;
+- alternatives textuelles ;
+- messages d'erreur compréhensibles ;
+- zones interactives suffisamment grandes ;
+- structure correcte des titres ;
+- prise en charge de `prefers-reduced-motion` ;
+- absence de dépendance exclusive à la couleur pour communiquer une information.
+
+Ne pas dégrader l'expérience desktop en corrigeant le mobile.
+
+---
+
+# 8. LANDING PAGE ET SEO
+
+La landing page existante est déjà intégrée.
+
+Ne pas la reconstruire.
+
+Vérifier uniquement les points suivants :
+
+1. Le titre et les descriptions sont cohérents avec DBMastery Studio.
+2. Les CTA conduisent aux bonnes destinations.
+3. La version française et anglaise sont cohérentes.
+4. Les liens vers l'application fonctionnent.
+5. Les métadonnées sont correctes.
+6. Les balises Open Graph sont présentes.
+7. Le canonical pointe vers le domaine public réellement retenu.
+
+L'audit a identifié une possible incohérence entre les anciennes URL Cloud Run et le domaine public :
+
+`https://dbmastor.pages.dev/`
+
+Vérifier le domaine canonique réellement utilisé avant de modifier `index.html`.
+
+Ne pas ajouter de fausses mentions de certification, d'accréditation ou de partenariat avec Oracle, Microsoft, EDB, MySQL ou un autre éditeur.
+
+DBMastor doit se présenter comme un outil indépendant de formation et de préparation.
+
+---
+
+# 9. INTERNATIONALISATION FRANÇAIS / ANGLAIS
+
+Conserver le système de traduction existant.
+
+Vérifier :
+
+- navigation ;
+- dashboard ;
+- onboarding ;
+- états vides ;
+- messages d'erreur ;
+- notifications ;
+- formulaires ;
+- modales ;
+- textes d'accessibilité.
+
+Aucune nouvelle chaîne visible ne doit être codée uniquement en français ou uniquement en anglais.
+
+Utiliser les fichiers et mécanismes i18n existants.
+
+Compléter les tests de parité des clés FR/EN.
+
+Ne pas traduire automatiquement les noms officiels des certifications lorsque cela pourrait créer une appellation erronée.
+
+---
+
+# 10. TESTS ET NON-RÉGRESSION
+
+## 10.1 Tests unitaires
+
+Étendre les tests existants :
+
+- `src/tests/navigation.test.ts`
+- `src/tests/i18n.test.ts`
+- `src/tests/security.test.ts`
+
+Ajouter des tests pour :
+
+- correspondance des anciennes routes ;
+- navigation entre les cinq espaces ;
+- permissions des rôles ;
+- statistiques du dashboard ;
+- calcul des dates d'examen ;
+- onboarding ;
+- états vides ;
+- gestion des erreurs.
+
+## 10.2 Tests serveur
+
+Tester réellement les endpoints Express protégés.
+
+Les tests de sécurité décrits à la section 2 sont obligatoires.
+
+## 10.3 Playwright
+
+L'audit a identifié une dépendance Playwright, mais pas de configuration E2E complète.
+
+Vérifier l'existant avant de créer de nouveaux fichiers.
+
+Si nécessaire, mettre en place :
+
+- `playwright.config.ts`
+- un script `test:e2e`
+- des fixtures de test
+- des scénarios reproductibles.
+
+Scénarios E2E minimaux :
+
+1. Chargement de la landing page.
+2. Navigation vers l'application.
+3. Connexion et gestion des états d'authentification.
+4. Accès refusé à un utilisateur non approuvé.
+5. Navigation desktop.
+6. Navigation mobile.
+7. Ouverture du dashboard.
+8. Reprise d'un apprentissage.
+9. Accès à un exercice.
+10. Accès au SQL Lab.
+11. Ouverture d'un examen blanc.
+12. Vérification du thème clair et sombre.
+13. Vérification des traductions FR/EN.
+14. Refus d'accès aux fonctions administratives pour un étudiant.
+15. Accès administrateur avec un compte de test autorisé.
+
+Ne jamais utiliser de véritables comptes ou secrets de production dans les tests automatisés.
+
+---
+
+# 11. PERFORMANCE ET QUALITÉ DU CODE
+
+Dans le cadre des modifications :
+
+- éviter les rendus inutiles ;
+- limiter les chargements superflus ;
+- conserver le lazy loading existant ;
+- éviter les dépendances supplémentaires non nécessaires ;
+- éviter les composants gigantesques ;
+- extraire les composants partagés lorsque cela améliore réellement la maintenance ;
+- respecter TypeScript ;
+- éviter les `any` injustifiés ;
+- supprimer uniquement les imports et fonctions réellement inutilisés ;
+- ne pas réécrire les services Firebase sans nécessité démontrée.
+
+Ne pas introduire de nouvelle architecture backend.
+
+Conserver Express, Firebase et Firestore dans leur rôle actuel.
+
+---
+
+# 12. DOCUMENTATION ET TRAÇABILITÉ
+
+Créer :
+
+`docs/UX_REDESIGN_V2.md`
+
+Ce document doit contenir :
+
+1. État initial constaté.
+2. Problèmes identifiés.
+3. Modifications réalisées.
+4. Fichiers modifiés.
+5. Nouvelle architecture de navigation.
+6. Fonctionnement du dashboard.
+7. Évolution de l'onboarding.
+8. Mesures de sécurité mises en place.
+9. Routes API protégées.
+10. Tests ajoutés.
+11. Résultats des tests exécutés.
+12. Points restant à traiter.
+
+Créer également une documentation de configuration de Firebase Admin si elle n'existe pas.
+
+Mettre à jour `.env.example` sans y inclure de secret.
+
+---
+
+# 13. ORDRE D'EXÉCUTION OBLIGATOIRE
+
+Ne pas traiter toutes les modifications simultanément.
+
+Procéder par étapes.
+
+## Phase 1 — Sécurité
+
+- Audit des endpoints.
+- Firebase Admin SDK.
+- Middleware d'authentification.
+- Vérification du rôle.
+- Suppression des contournements.
+- Adaptation du frontend.
+- Tests serveur.
+
+**Cette phase est bloquante pour la mise en production.**
+
+## Phase 2 — Navigation
+
+- Cinq espaces principaux.
+- Sidebar desktop.
+- Navigation mobile.
+- Conservation des anciennes routes.
+- Tests de navigation.
+
+## Phase 3 — Dashboard
+
+- Simplification.
+- CTA principal.
+- Recommandation personnalisée.
+- Statistiques réelles.
+- Suppression des valeurs fictives.
+- Gestion des états.
+
+## Phase 4 — Onboarding
+
+- Parcours simplifié.
+- Personnalisation.
+- Compatibilité avec les anciens utilisateurs.
+- Conservation des données.
+
+## Phase 5 — Design system
+
+- Harmonisation des composants.
+- Thèmes.
+- Responsive.
+- Accessibilité.
+
+## Phase 6 — SEO et internationalisation
+
+- Canonical.
+- Open Graph.
+- Vérification FR/EN.
+- Cohérence des libellés.
+
+## Phase 7 — Tests et documentation
+
+- Tests unitaires.
+- Tests serveur.
+- Playwright.
+- Build.
+- Documentation.
+- Rapport final.
+
+---
+
+# 14. CRITÈRES D'ACCEPTATION FINAUX
+
+Le travail ne peut être considéré comme terminé que si les conditions suivantes sont remplies.
+
+| Domaine | Critère |
+|---|---|
+| Sécurité | Aucun accès administratif sans token Firebase valide et rôle autorisé |
+| API | Tous les endpoints administratifs protégés |
+| Navigation | Cinq espaces principaux |
+| Desktop | Sidebar compacte et fonctionnelle |
+| Mobile | Navigation inférieure à cinq entrées |
+| Dashboard | Une action principale clairement identifiable |
+| Données | Aucune fausse statistique présentée comme réelle |
+| Dates | Aucune date d'examen obsolète codée en dur |
+| Onboarding | Parcours simplifié et non destructif |
+| Design | Composants visuellement cohérents |
+| Responsive | Fonctionnement sur mobile, tablette et desktop |
+| Accessibilité | Corrections WCAG 2.2 AA applicables |
+| i18n | Français et anglais complets |
+| URL | Anciennes routes compatibles |
+| Tests | Tests unitaires et serveur exécutés |
+| E2E | Parcours principaux couverts par Playwright |
+| Documentation | Rapport technique complet |
+
+---
+
+# 15. VALIDATION TECHNIQUE AVANT LIVRAISON
+
+Exécuter réellement les commandes disponibles dans le projet :
+
+```bash
+npm ci
+npm run build
+npm run lint
+npm run test
+npm run test:e2e
+```
+
+Adapter les commandes aux scripts réellement présents dans `package.json`.
+
+Ne pas inventer de script et ne pas déclarer un test réussi s'il n'a pas été exécuté.
+
+En cas d'échec :
+
+- identifier la cause ;
+- corriger si elle est liée aux modifications ;
+- relancer le test ;
+- documenter les éventuels blocages externes.
+
+Vérifier également :
+
+- absence de secrets dans Git ;
+- absence d'erreurs TypeScript ;
+- absence d'erreurs de console critiques ;
+- absence de régression des fonctionnalités existantes ;
+- absence de route administrative non protégée.
+
+---
+
+# 16. RAPPORT FINAL ATTENDU
+
+À la fin du travail, fournir un rapport structuré comprenant :
+
+### A. Modifications réalisées
+
+Pour chaque modification :
+- problème initial ;
+- solution appliquée ;
+- fichiers concernés ;
+- résultat obtenu.
+
+### B. Sécurité
+
+- endpoints protégés ;
+- méthode de vérification Firebase ;
+- méthode de contrôle du rôle ;
+- suppression des anciens contournements ;
+- résultats des tests de sécurité.
+
+### C. UX/UI
+
+- navigation avant/après ;
+- nouvelles entrées ;
+- fonctionnement mobile ;
+- dashboard ;
+- onboarding ;
+- harmonisation visuelle.
+
+### D. Tests
+
+Présenter un tableau :
+
+| Test | Résultat | Commentaire |
+|---|---|---|
+| Build | Réussi / Échec / Non exécuté | |
+| TypeScript | Réussi / Échec / Non exécuté | |
+| Lint | Réussi / Échec / Non exécuté | |
+| Tests unitaires | Réussi / Échec / Non exécuté | |
+| Tests serveur | Réussi / Échec / Non exécuté | |
+| Playwright | Réussi / Échec / Non exécuté | |
+
+### E. Éléments non terminés
+
+Lister explicitement les points non réalisés et les raisons.
+
+### F. Livraison
+
+- branche utilisée ;
+- commits créés ;
+- fichiers importants modifiés ;
+- variables d'environnement à configurer ;
+- éventuelles migrations nécessaires ;
+- étapes de déploiement.
+
+Ne pas fusionner automatiquement dans `main`.
+
+Ne pas déployer en production sans validation explicite.
+
+---
+
+# CONSIGNE FINALE
+
+Tu dois agir comme un ingénieur logiciel senior chargé de terminer une refonte sur une application déjà en production.
+
+**La priorité est de corriger précisément les lacunes identifiées, pas de réinventer DBMastor.**
+
+Respecte les fonctionnalités existantes, protège les données utilisateurs, conserve la compatibilité, limite les modifications inutiles et fournis des preuves techniques de chaque amélioration.
+
+Commence par la sécurité, puis traite les corrections UX/UI dans l'ordre défini.
+
+Ne considère pas le travail comme terminé sur la seule base de modifications visuelles : les fonctionnalités, les autorisations, les tests et la compatibilité doivent être vérifiés.

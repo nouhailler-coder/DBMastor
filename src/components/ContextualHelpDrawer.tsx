@@ -60,14 +60,14 @@ const CONTEXTUAL_GUIDES: Record<NavigationTab, TabContextualGuide> = {
           'Choisissez « J\'ai 5 minutes » (5 questions sur vos notions faibles) ou « J\'ai 30 minutes » (20 questions à difficulté progressive).',
       },
       {
-        title: '📊 Encart « Mon activité — Cette semaine »',
+        title: '📊 Encart « Mon activité »',
         detail:
-          'Consultez votre volume hebdomadaire (127 questions, 81 % de réussite, 32 s/question, série de 6 jours) et cliquez pour ouvrir l\'historique complet.',
+          'Consultez votre volume hebdomadaire, votre taux de réussite réel, votre vitesse moyenne et votre série active.',
       },
       {
         title: '🧠 Diagnostic & Pièges SQL récurrents',
         detail:
-          'Survolez les cartes de compétences pour afficher les infobulles détaillées et lancer un entraînement ciblé.',
+          'Identifiez vos points de consolidation et lancez une session de révision ciblée en un clic.',
       },
     ],
     stepsEn: [
@@ -77,14 +77,14 @@ const CONTEXTUAL_GUIDES: Record<NavigationTab, TabContextualGuide> = {
           'Pick "I have 5 minutes" (5 questions on weak concepts) or "I have 30 minutes" (20 progressive questions).',
       },
       {
-        title: '📊 "My Activity — This Week" Card',
+        title: '📊 "My Activity" Summary',
         detail:
-          'Review your weekly volume (127 questions, 81% accuracy, 32s avg time, 6-day streak) and click to inspect full logs.',
+          'Review your real weekly question volume, accuracy rate, average response speed, and active streak.',
       },
       {
         title: '🧠 SQL Trap Diagnostics',
         detail:
-          'Hover over skill indicators to reveal smart tooltips and launch targeted remediation drills.',
+          'Spot your weak concepts and launch targeted remediation drills in one click.',
       },
     ],
     sqlTipsFr: [
@@ -112,24 +112,24 @@ const CONTEXTUAL_GUIDES: Record<NavigationTab, TabContextualGuide> = {
     titleFr: 'Mon activité — Historique Personnel',
     titleEn: 'My Activity — Personal History',
     summaryFr:
-      'Visualisez votre régularité quotidienne du Lundi au Vendredi, votre progression hebdomadaire (+12 % sur SQL) et inspectez chaque question répondue.',
+      'Visualisez votre régularité quotidienne du Lundi au Vendredi, votre progression réelle sur SQL et inspectez chaque tentative enregistrée.',
     summaryEn:
-      'Visualize your Monday-to-Friday consistency, weekly SQL delta (+12% on SQL), and inspect every answered question.',
+      'Visualize your Monday-to-Friday consistency, real SQL progression, and inspect every recorded attempt.',
     stepsFr: [
       {
         title: '📅 Filtrage par jour (Lun → Ven)',
         detail:
-          'Cliquez sur n\'importe quelle barre de progression (Lun, Mar, Mer, Jeu, Ven) pour isoler les métriques et tentatives de cette journée.',
+          'Cliquez sur n\'importe quelle barre de progression (Lun, Mar, Mer, Jeu, Ven) pour isoler les tentatives de cette journée.',
       },
       {
-        title: '📈 Delta hebdomadaire (+12 % sur SQL)',
+        title: '📈 Précision par domaine SQL',
         detail:
-          'Comparez vos progrès par sous-domaine SQL (SELECT, JOIN, GROUP BY, Subqueries, CTE) par rapport à la semaine précédente.',
+          'Suivez votre évolution réelle sur SELECT, JOIN, GROUP BY, Subqueries et CTE à partir de vos exercices.',
       },
       {
         title: '☁️ Synchronisation Cloud Firestore',
         detail:
-          'Connectez votre compte Google pour sauvegarder automatiquement votre série de 6 jours et vos statistiques sur le Cloud.',
+          'Connectez votre compte Google pour sauvegarder automatiquement votre progression et vos statistiques sur le Cloud.',
       },
     ],
     stepsEn: [
@@ -139,14 +139,14 @@ const CONTEXTUAL_GUIDES: Record<NavigationTab, TabContextualGuide> = {
           'Click any progress bar (Mon to Fri) to isolate that day\'s accuracy, speed, and question log.',
       },
       {
-        title: '📈 Weekly Delta (+12% on SQL)',
+        title: '📈 Topic-Level SQL Accuracy',
         detail:
-          'Compare your week-over-week gains across SELECT, JOIN, GROUP BY, Subqueries, and CTEs.',
+          'Track your measured gains across SELECT, JOIN, GROUP BY, Subqueries, and CTEs from real practice.',
       },
       {
         title: '☁️ Cloud Firestore Sync',
         detail:
-          'Sign in with Google to persist your 6-day streak and telemetry across all your devices.',
+          'Sign in with Google to persist your streak and telemetry across all your devices.',
       },
     ],
     sqlTipsFr: [
@@ -593,8 +593,8 @@ export const ContextualHelpDrawer: React.FC<ContextualHelpDrawerProps> = ({
 
   return (
     <>
-      {/* BOUTON FLOTTANT D'AIDE CONTEXTUELLE (Toujours accessible en bas à droite) */}
-      <div className="fixed bottom-5 right-5 z-40 flex items-center gap-2">
+      {/* BOUTON FLOTTANT D'AIDE CONTEXTUELLE (Desktop md+, accessible sur mobile via le tiroir « Plus ») */}
+      <div className="hidden md:flex fixed bottom-5 right-5 z-40 items-center gap-2">
         <button
           id="floating-contextual-help-btn"
           type="button"
@@ -709,8 +709,8 @@ export const ContextualHelpDrawer: React.FC<ContextualHelpDrawerProps> = ({
                     <BookOpen className="w-4 h-4 text-[#38bdf8]" />
                     <span>
                       {isFr
-                        ? 'Relancer le Guide d\'Onboarding (6 étapes)'
-                        : 'Relaunch Interactive Onboarding Tour (6 steps)'}
+                        ? 'Relancer le Guide d\'Onboarding (7 étapes)'
+                        : 'Relaunch Interactive Onboarding Tour (7 steps)'}
                     </span>
                   </span>
                   <ArrowRight className="w-4 h-4" />

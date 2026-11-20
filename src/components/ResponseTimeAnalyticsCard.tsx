@@ -212,6 +212,13 @@ export const ResponseTimeAnalyticsCard: React.FC<ResponseTimeAnalyticsCardProps>
 
               {/* Lignes de données */}
               <div className="divide-y divide-[#1b2b3f]/60 font-mono text-xs">
+                {displayedTopics.length === 0 && (
+                  <div className="px-4 py-6 text-center text-[#89929b]">
+                    {isFr
+                      ? 'Aucune tentative SQL enregistrée pour le moment.'
+                      : 'No SQL attempts recorded yet.'}
+                  </div>
+                )}
                 {displayedTopics.map((row) => {
                   const isSelected = row.topic.toUpperCase() === selectedTopic.toUpperCase();
                   const accuracyColor =

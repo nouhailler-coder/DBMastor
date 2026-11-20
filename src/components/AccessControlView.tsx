@@ -126,7 +126,9 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
   onGoogleSignIn,
 }) => {
   const isFr = lang === 'fr';
-  const isAdmin = isUserBootstrappedAdmin(currentUser);
+  const isAdmin =
+    (isUserBootstrappedAdmin(currentUser) && ownAccessRecord?.status !== 'revoked') ||
+    (ownAccessRecord?.role === 'admin' && ownAccessRecord?.status === 'approved');
 
   const [statusFilter, setStatusFilter] = useState<'all' | UserAccessStatus>('all');
   const [isBusy, setIsBusy] = useState(false);
@@ -154,11 +156,12 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
   const [isTestingEmail, setIsTestingEmail] = useState(false);
   const [isRefreshingNotifs, setIsRefreshingNotifs] = useState(false);
 
-  // Charger le statut et l'historique des notifications email
+  // Charger le statut et l'historique des notifications email uniquement pour un administrateur connecté
   React.useEffect(() => {
+    if (!currentUser || !isAdmin) return;
     fetchNotificationStatus().then(setNotifStatus).catch(() => {});
     fetchNotificationHistory().then(setNotifHistory).catch(() => {});
-  }, []);
+  }, [currentUser, isAdmin]);
 
   const handleRefreshNotifications = async () => {
     setIsRefreshingNotifs(true);
@@ -720,7 +723,7 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
             <div className="text-[11px] font-mono text-[#89929b] flex items-center gap-1.5">
               <Globe className="w-3.5 h-3.5 text-[#38bdf8]" />
               <span>
-                Netlify Env Var : <code className="text-[#89ceff]">VITE_SITE_ACCESS_PASSWORD</code>
+                Server Env Var : <code className="text-[#89ceff]">SITE_ACCESS_PASSWORD</code>
               </span>
             </div>
 

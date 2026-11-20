@@ -1,31 +1,25 @@
 import React, { useEffect } from 'react';
-import { 
-  X, 
-  FileCheck2, 
-  CreditCard, 
-  Terminal, 
-  BookOpen, 
-  LayoutDashboard, 
-  BarChart3, 
-  Settings, 
-  RefreshCw, 
-  ShieldCheck, 
-  Database, 
-  CheckCircle2, 
-  Globe, 
-  Sun, 
-  Moon, 
+import {
+  X,
+  CreditCard,
+  Terminal,
+  BookOpen,
+  LayoutDashboard,
+  BarChart3,
+  Settings,
+  ShieldCheck,
+  Database,
+  CheckCircle2,
+  Globe,
+  Sun,
+  Moon,
   ChevronRight,
-  Radio,
-  Cpu,
-  Sparkles,
-  Layers,
   BookMarked,
   Brain,
   Network,
   Activity,
   Scale,
-  RotateCcw
+  RotateCcw,
 } from 'lucide-react';
 import { NavigationTab, CertificationTrackId, SystemVersionInfo } from '../types';
 
@@ -36,6 +30,7 @@ interface HamburgerMenuProps {
   onTabChange: (tab: NavigationTab) => void;
   selectedCert: CertificationTrackId;
   onCertChange: (cert: CertificationTrackId) => void;
+  isAdmin?: boolean;
   onOpenSystemSettings: () => void;
   onOpenLegalMentions?: () => void;
   systemInfo: SystemVersionInfo;
@@ -52,6 +47,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   onTabChange,
   selectedCert,
   onCertChange,
+  isAdmin = false,
   onOpenSystemSettings,
   onOpenLegalMentions,
   systemInfo,
@@ -62,7 +58,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 }) => {
   const isFr = lang === 'fr';
 
-  // Fermeture par la touche Échap
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -73,7 +68,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Empêcher le scroll du body quand le tiroir est ouvert
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -94,173 +88,171 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
   const categories = [
     {
-      id: 'cat-evaluations',
-      titleFr: 'Évaluations & Certifications',
-      titleEn: 'Exams & Certifications',
+      id: 'space-home',
+      titleFr: '1. Accueil',
+      titleEn: '1. Home',
+      color: '#38bdf8',
+      items: [
+        {
+          id: 'item-dashboard',
+          tab: 'dashboard' as NavigationTab,
+          labelFr: 'Tableau de bord',
+          labelEn: 'Dashboard',
+          descFr: 'Reprendre votre apprentissage et suivre vos objectifs réels.',
+          descEn: 'Resume learning and track real progress.',
+          icon: LayoutDashboard,
+        },
+      ],
+    },
+    {
+      id: 'space-learning-path',
+      titleFr: '2. Mon parcours',
+      titleEn: '2. Learning Path',
+      color: '#4edea3',
+      items: [
+        {
+          id: 'item-syllabus',
+          tab: 'syllabus' as NavigationTab,
+          labelFr: 'Fiches & syllabus',
+          labelEn: 'Study Sheets & Syllabus',
+          descFr: 'Fiches synthétiques et programme détaillé.',
+          descEn: 'Focused study sheets and structured curriculum.',
+          icon: BookOpen,
+        },
+        {
+          id: 'item-glossary',
+          tab: 'glossary' as NavigationTab,
+          labelFr: 'Glossaire SQL',
+          labelEn: 'SQL Glossary',
+          descFr: 'Référentiel des clauses, contraintes et dialectes SQL.',
+          descEn: 'Structured index of SQL clauses, constraints, and dialects.',
+          icon: BookMarked,
+        },
+      ],
+    },
+    {
+      id: 'space-training',
+      titleFr: '3. Entraînement',
+      titleEn: '3. Training',
+      color: '#f59e0b',
+      items: [
+        {
+          id: 'item-exams',
+          tab: 'exams' as NavigationTab,
+          labelFr: 'Apprentissage adaptatif & quiz',
+          labelEn: 'Adaptive Learning & Quiz',
+          descFr: 'Questions progressives et explications pas à pas.',
+          descEn: 'Progressive practice questions with detailed explanations.',
+          icon: Brain,
+        },
+        {
+          id: 'item-sandbox',
+          tab: 'sandbox' as NavigationTab,
+          labelFr: 'Lab SQL interactif',
+          labelEn: 'Interactive SQL Lab',
+          descFr: 'Exécution SQL réelle dans le navigateur.',
+          descEn: 'Live SQL query execution in the browser.',
+          icon: Terminal,
+        },
+        {
+          id: 'item-flashcards',
+          tab: 'flashcards' as NavigationTab,
+          labelFr: 'Flashcards actives',
+          labelEn: 'Active Flashcards',
+          descFr: 'Cartes mémoire par thème et dialecte SQL.',
+          descEn: 'Memory cards by topic and SQL dialect.',
+          icon: CreditCard,
+        },
+        {
+          id: 'item-spaced-repetition',
+          tab: 'spaced_repetition' as NavigationTab,
+          labelFr: 'Répétition espacée (SM-2)',
+          labelEn: 'Spaced Repetition (SM-2)',
+          descFr: 'Révisions planifiées selon votre courbe de rétention.',
+          descEn: 'Scheduled reviews optimized for long-term retention.',
+          icon: RotateCcw,
+        },
+      ],
+    },
+    {
+      id: 'space-certifications',
+      titleFr: '4. Certifications',
+      titleEn: '4. Certifications',
       color: '#3198dc',
       items: [
         {
           id: 'item-cert-exam',
           tab: 'cert_exam' as NavigationTab,
-          labelFr: 'Examen Blanc Officiel (60Q — 90 min)',
+          labelFr: 'Examen blanc (60Q — 90 min)',
           labelEn: 'Official Practice Exam (60Q — 90 min)',
-          descFr: 'Simulation en conditions réelles : 60 questions, chronomètre 90 min, diagnostic cognitif des erreurs et répartition par piliers.',
-          descEn: 'Real exam conditions: 60 questions, 90-minute countdown, cognitive error diagnostics and pillar performance breakdown.',
+          descFr: 'Simulation chronométrée et bilan détaillé par pilier.',
+          descEn: 'Timed simulation and pillar-by-pillar breakdown.',
           icon: ShieldCheck,
-          badge: isFr ? 'Mode Examen Blanc' : 'Proctored Exam',
-        },
-        {
-          id: 'item-skills',
-          tab: 'skills' as NavigationTab,
-          labelFr: 'Skill Map (Compétences & Arborescence)',
-          labelEn: 'Skill Map (Competencies & Tree)',
-          descFr: 'Arborescence des notions SQL évaluées sur 4 dimensions : Connaissance, Exactitude, Rapidité, Régularité.',
-          descEn: 'Hierarchical SQL concepts tree evaluated on 4 dimensions: Knowledge, Accuracy, Speed, Consistency.',
-          icon: Network,
-          badge: isFr ? 'Arborescence 4D' : '4D Tree',
-        },
-        {
-          id: 'item-exams',
-          tab: 'exams' as NavigationTab,
-          labelFr: 'Apprentissage Adaptatif & Quiz',
-          labelEn: 'Adaptive Learning & Quiz',
-          descFr: 'Cycle complet : Apprendre → S\'entraîner → Se tromper → Comprendre → Rejouer → Valider.',
-          descEn: 'Full cognitive loop: Learn → Train → Make Mistakes → Understand → Replay → Validate.',
-          icon: Brain,
-          badge: isFr ? 'Cycle Pédagogique' : 'Learning Cycle',
-        },
-        {
-          id: 'item-dashboard',
-          tab: 'dashboard' as NavigationTab,
-          labelFr: 'Tableau de bord de certification',
-          labelEn: 'Certification Dashboard',
-          descFr: 'Vue d\'ensemble de votre préparation et sprints recommandés.',
-          descEn: 'Preparation overview and recommended study sprints.',
-          icon: LayoutDashboard,
-          badge: isFr ? 'Pilotage' : 'Overview',
         },
       ],
     },
     {
-      id: 'cat-revision',
-      titleFr: 'Apprentissage & Mémorisation',
-      titleEn: 'Learning & Memorization',
-      color: '#4edea3',
-      items: [
-        {
-          id: 'item-flashcards',
-          tab: 'flashcards' as NavigationTab,
-          labelFr: 'Flashcards interactives (2400+)',
-          labelEn: 'Interactive Flashcards (2400+)',
-          descFr: 'Cartes mémoires avec syntaxe T-SQL/PL-SQL/Postgres/MySQL, architecture HA/DR, pièges et justifications.',
-          descEn: 'Memory cards with T-SQL/PL-SQL/Postgres/MySQL syntax, HA/DR architecture, traps, and justifications.',
-          icon: CreditCard,
-          badge: '2400+ Cartes',
-        },
-        {
-          id: 'item-spaced-repetition',
-          tab: 'spaced_repetition' as NavigationTab,
-          labelFr: 'Répétition Espacée (SM-2 / FSRS)',
-          labelEn: 'Spaced Repetition (SM-2 / FSRS)',
-          descFr: 'Consolidation mnésique anti-oubli : une notion ratée revient à 1j, puis 3j, 7j jusqu\'à maîtrise réflexe.',
-          descEn: 'Anti-forgetting memory consolidation: failed concepts return at 1d, 3d, 7d until reflex fluency.',
-          icon: RotateCcw,
-          badge: 'Anti-Oubli',
-        },
-        {
-          id: 'item-glossary',
-          tab: 'glossary' as NavigationTab,
-          labelFr: 'Glossaire SQL complet (8 Catégories)',
-          labelEn: 'Complete SQL Glossary (8 Categories)',
-          descFr: 'Référentiel structuré des concepts clés, contraintes, dialectes et snippets pour débutants, devs et analystes.',
-          descEn: 'Structured reference of key concepts, constraints, dialect notes, and code snippets.',
-          icon: BookMarked,
-          badge: '8 Catégories',
-        },
-        {
-          id: 'item-syllabus',
-          tab: 'syllabus' as NavigationTab,
-          labelFr: 'Fiches de révision & Compétences',
-          labelEn: 'Study Sheets & Skills Matrix',
-          descFr: 'Syllabus officiel, clauses indispensables et règles de syntaxe.',
-          descEn: 'Official syllabus, key clauses, and syntax rules.',
-          icon: BookOpen,
-          badge: isFr ? 'Référentiel' : 'Curriculum',
-        },
-      ],
-    },
-    {
-      id: 'cat-practice',
-      titleFr: 'Pratique & Laboratoire SQL',
-      titleEn: 'Practice & SQL Laboratory',
-      color: '#f59e0b',
-      items: [
-        {
-          id: 'item-sandbox',
-          tab: 'sandbox' as NavigationTab,
-          labelFr: 'Lab SQL interactif & Bac à sable',
-          labelEn: 'Interactive SQL Lab & Sandbox',
-          descFr: 'Console d\'exécution SQL en direct sur les dialectes Oracle, Azure SQL, Postgres.',
-          descEn: 'Live SQL console running Oracle, Azure SQL, Postgres dialects.',
-          icon: Terminal,
-          badge: isFr ? 'Console Active' : 'Active Console',
-        },
-      ],
-    },
-    {
-      id: 'cat-analytics',
-      titleFr: 'Analyses & Progression',
-      titleEn: 'Analytics & Mastery',
+      id: 'space-progress',
+      titleFr: '5. Ma progression',
+      titleEn: '5. My Progress',
       color: '#a855f7',
       items: [
         {
-          id: 'item-activity',
-          tab: 'activity' as NavigationTab,
-          labelFr: 'Mon activité — Cette semaine (Historique personnel)',
-          labelEn: 'My Activity — This Week (Personal History)',
-          descFr: 'Questions (127), Réussite (81 %), Temps moyen (32 s), Série (6 jours) et progression Lun–Ven (+12 % sur SQL).',
-          descEn: 'Questions (127), Accuracy (81%), Avg Time (32s), Streak (6 days), and Mon–Fri progression (+12% on SQL).',
-          icon: Activity,
-          badge: '+12 % SQL',
+          id: 'item-skills',
+          tab: 'skills' as NavigationTab,
+          labelFr: 'Carte de compétences',
+          labelEn: 'Skill Map',
+          descFr: 'Arborescence 4D de vos compétences SQL.',
+          descEn: '4D competency tree of your SQL skills.',
+          icon: Network,
         },
         {
           id: 'item-analytics',
           tab: 'analytics' as NavigationTab,
-          labelFr: 'Statistiques avancées & Badges',
-          labelEn: 'Advanced Stats & Badges',
-          descFr: 'Taux de réussite par domaine, temps moyen par question et badges acquis.',
-          descEn: 'Success rate per domain, average response time, and unlocked badges.',
+          labelFr: 'Statistiques & badges',
+          labelEn: 'Stats & Badges',
+          descFr: 'Taux de réussite réel, temps de réponse et distinctions.',
+          descEn: 'Real accuracy metrics, response times, and earned badges.',
           icon: BarChart3,
-          badge: isFr ? 'Scores' : 'Scores',
+        },
+        {
+          id: 'item-activity',
+          tab: 'activity' as NavigationTab,
+          labelFr: 'Historique d\'activité',
+          labelEn: 'Personal Activity Log',
+          descFr: 'Journal détaillé de vos tentatives et sessions.',
+          descEn: 'Detailed log of your recent attempts and sessions.',
+          icon: Activity,
         },
       ],
     },
   ];
 
-  const certOptions: { id: CertificationTrackId; label: string; icon: string }[] = [
-    { id: 'oracle-1z0-071', label: 'Oracle Database SQL (1Z0-071)', icon: '🔴' },
-    { id: 'azure-dp-900', label: 'Azure Data Fundamentals (DP-900)', icon: '🔷' },
-    { id: 'azure-dp-800', label: 'Azure Database Admin (DP-300 / DP-800)', icon: '🟢' },
-    { id: 'postgres-edb', label: 'PostgreSQL EDB Certified Associate', icon: '🐘' },
-    { id: 'mysql-80-dba', label: 'MySQL 8.0 Database Administrator', icon: '🐬' },
+  const certOptions: { id: CertificationTrackId; label: string }[] = [
+    { id: 'oracle-1z0-071', label: 'Oracle Database SQL (1Z0-071)' },
+    { id: 'azure-dp-900', label: 'Azure Data Fundamentals (DP-900)' },
+    { id: 'azure-dp-800', label: 'Azure Database Admin (DP-800)' },
+    { id: 'postgres-edb', label: 'PostgreSQL EDB Certified Associate' },
+    { id: 'mysql-80-dba', label: 'MySQL 8.0 Database Administrator' },
   ];
 
   return (
-    <div 
+    <div
       id="hamburger-menu-overlay"
-      className="fixed inset-0 z-50 flex bg-black/60 backdrop-blur-md transition-opacity duration-300 animate-fadeIn"
+      className="fixed inset-0 z-50 flex bg-black/60 backdrop-blur-md transition-opacity duration-300"
       onClick={onClose}
     >
-      {/* Sliding Drawer from Left */}
-      <div 
+      <div
         id="hamburger-drawer-panel"
-        className="w-full max-w-md md:max-w-lg h-full bg-[#031427] border-r border-[#1b2b3f] shadow-2xl flex flex-col justify-between overflow-hidden animate-slideInLeft"
+        role="dialog"
+        aria-modal="true"
+        aria-label={isFr ? 'Menu de navigation complet' : 'Full navigation menu'}
+        className="w-full max-w-md md:max-w-lg h-full bg-[#031427] border-r border-[#1b2b3f] shadow-2xl flex flex-col justify-between overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Drawer Header */}
         <div className="p-4 sm:p-5 border-b border-[#1b2b3f] bg-[#000f21]/95 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#006398] to-[#3198dc] flex items-center justify-center text-white shadow-lg shadow-[#006398]/30">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#006398] to-[#3198dc] flex items-center justify-center text-white">
               <Database className="w-5 h-5 text-[#93ccff]" />
             </div>
             <div>
@@ -271,32 +263,28 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                 </span>
               </h2>
               <p className="text-xs text-[#89929b] font-mono">
-                {isFr ? 'Menu de navigation & Fonctionnalités' : 'Navigation Menu & Features'}
+                {isFr ? '5 espaces d\'apprentissage' : '5 Learning Spaces'}
               </p>
             </div>
           </div>
 
           <button
             id="hamburger-close-btn"
+            type="button"
             onClick={onClose}
             aria-label={isFr ? 'Fermer le menu' : 'Close menu'}
-            className="p-2 rounded-lg bg-[#102034] text-[#89929b] hover:text-[#d3e4fe] hover:bg-[#1b2b3f] border border-[#1b2b3f] transition-colors"
+            className="p-2 rounded-lg bg-[#102034] text-[#89929b] hover:text-[#d3e4fe] hover:bg-[#1b2b3f] border border-[#1b2b3f] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Scrollable Body: Categorized Features */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-6">
-          {/* Quick Active Certification Switcher */}
           <div className="p-3 bg-[#0b1c30] rounded-xl border border-[#1b2b3f] space-y-2">
             <div className="flex items-center justify-between text-xs text-[#89929b] font-mono">
               <span className="flex items-center gap-1.5 font-semibold text-[#89ceff]">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 {isFr ? 'Filière de certification active' : 'Active certification track'}
-              </span>
-              <span className="text-[10px] text-[#4edea3]">
-                {isFr ? 'Changer en 1 clic' : 'Switch anytime'}
               </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
@@ -306,14 +294,14 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   <button
                     key={c.id}
                     id={`quick-cert-btn-${c.id}`}
+                    type="button"
                     onClick={() => onCertChange(c.id)}
-                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-left transition-all font-medium border ${
+                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-left transition-all font-medium border cursor-pointer ${
                       isSelected
                         ? 'bg-[#3198dc]/20 text-[#89ceff] border-[#3198dc]/40 font-semibold'
                         : 'bg-[#102034]/60 text-[#bfc7d2] border-transparent hover:bg-[#1b2b3f] hover:text-[#d3e4fe]'
                     }`}
                   >
-                    <span className="text-sm shrink-0">{c.icon}</span>
                     <span className="truncate text-[11px]">{c.label}</span>
                     {isSelected && <CheckCircle2 className="w-3 h-3 text-[#4edea3] ml-auto shrink-0" />}
                   </button>
@@ -322,13 +310,12 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
             </div>
           </div>
 
-          {/* Categories Grid */}
           <div className="space-y-5">
             {categories.map((cat) => (
               <div key={cat.id} className="space-y-2">
                 <div className="flex items-center gap-2 px-1">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }}></div>
-                  <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-[#89929b]">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                  <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-[#9fb0c4]">
                     {isFr ? cat.titleFr : cat.titleEn}
                   </h3>
                 </div>
@@ -341,36 +328,36 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                       <button
                         key={item.id}
                         id={item.id}
+                        type="button"
                         onClick={() => handleNavigate(item.tab)}
-                        className={`w-full flex items-start gap-3 p-3 rounded-xl transition-all text-left border group ${
+                        className={`w-full flex items-start gap-3 p-3 rounded-xl transition-all text-left border group cursor-pointer ${
                           isActive
                             ? 'bg-[#102034] border-[#3198dc]/40 shadow-sm'
                             : 'bg-[#0b1c30]/70 border-[#1b2b3f]/80 hover:bg-[#102034] hover:border-[#26364a]'
                         }`}
                       >
-                        <div 
+                        <div
                           className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                            isActive ? 'bg-[#3198dc] text-[#002c47]' : 'bg-[#1b2b3f] text-[#89ceff] group-hover:bg-[#3198dc]/20'
+                            isActive ? 'bg-[#3198dc] text-[#002c47]' : 'bg-[#1b2b3f] text-[#89ceff]'
                           }`}
                         >
-                          <Icon className="w-5 h-5" />
+                          <Icon className="w-4 h-4" />
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className={`text-xs font-semibold truncate ${isActive ? 'text-[#89ceff]' : 'text-[#d3e4fe] group-hover:text-white'}`}>
-                              {isFr ? item.labelFr : item.labelEn}
-                            </span>
-                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#1b2b3f] text-[#bfc7d2] shrink-0 border border-[#26364a]">
-                              {item.badge}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-[#89929b] line-clamp-1 mt-0.5">
+                          <span
+                            className={`text-xs font-semibold block truncate ${
+                              isActive ? 'text-[#89ceff]' : 'text-[#d3e4fe] group-hover:text-white'
+                            }`}
+                          >
+                            {isFr ? item.labelFr : item.labelEn}
+                          </span>
+                          <p className="text-[11px] text-[#9fb0c4] line-clamp-1 mt-0.5">
                             {isFr ? item.descFr : item.descEn}
                           </p>
                         </div>
 
-                        <ChevronRight className={`w-4 h-4 shrink-0 mt-2 text-[#89929b] transition-transform group-hover:translate-x-0.5 ${isActive ? 'text-[#89ceff]' : ''}`} />
+                        <ChevronRight className="w-4 h-4 shrink-0 mt-2 text-[#89929b]" />
                       </button>
                     );
                   })}
@@ -379,49 +366,35 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
             ))}
           </div>
 
-          {/* Paramètres & Mise à jour CTA Card */}
-          <div className="p-4 bg-gradient-to-br from-[#102034] to-[#0b1c30] rounded-2xl border border-[#3198dc]/30 space-y-3 shadow-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-[#3198dc]/20 flex items-center justify-center text-[#89ceff]">
-                  <Settings className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-[#d3e4fe]">
-                    {isFr ? 'Paramètres Système & Mises à jour' : 'System Settings & Updates'}
-                  </h4>
-                  <p className="text-[10px] text-[#89929b] font-mono">
-                    {systemInfo.currentVersion} • {isFr ? 'Version officielle' : 'Official Build'}
-                  </p>
-                </div>
-              </div>
-              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#00a572]/20 border border-[#4edea3]/30 text-[10px] font-mono font-semibold text-[#4edea3]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse"></span>
-                {systemInfo.autoUpdateEnabled ? (isFr ? 'Auto-update actif' : 'Auto-update on') : (isFr ? 'Manuel' : 'Manual')}
-              </span>
-            </div>
-
-            <p className="text-[11px] text-[#bfc7d2] leading-relaxed">
-              {isFr 
-                ? 'Consultez la version, gérez les mises à jour et réinitialisez vos statistiques d\'apprentissage et badges.' 
-                : 'Check version, manage automatic updates, and reset your learning statistics and badges.'}
-            </p>
+          <div className="p-4 bg-[#0b1c30] rounded-2xl border border-[#1b2b3f] space-y-2.5">
+            {isAdmin && (
+              <button
+                id="hamburger-open-access-control-btn"
+                type="button"
+                onClick={() => handleNavigate('access_control')}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#00a572]/15 hover:bg-[#00a572]/25 text-[#4edea3] border border-[#4edea3]/30 font-bold text-xs cursor-pointer"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>{isFr ? 'Administration & Contrôle d\'accès' : 'Admin & Access Control'}</span>
+              </button>
+            )}
 
             <button
               id="hamburger-open-system-settings-btn"
+              type="button"
               onClick={() => {
                 onClose();
                 onOpenSystemSettings();
               }}
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#3198dc] hover:bg-[#2084c7] text-[#002c47] font-bold text-xs shadow-md transition-all active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#3198dc] hover:bg-[#2084c7] text-[#002c47] font-bold text-xs shadow-sm transition-all cursor-pointer"
             >
               <Settings className="w-3.5 h-3.5" />
-              <span>{isFr ? 'Ouvrir les Paramètres Système' : 'Open System Settings'}</span>
-              <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+              <span>{isFr ? 'Paramètres système' : 'System Settings'}</span>
             </button>
 
             <button
               id="hamburger-open-legal-btn"
+              type="button"
               onClick={() => {
                 onClose();
                 if (onOpenLegalMentions) {
@@ -433,30 +406,28 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
               className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] text-[#89ceff] hover:text-[#d3e4fe] border border-[#1b2b3f] text-xs font-mono transition-all cursor-pointer"
             >
               <Scale className="w-3.5 h-3.5 text-[#38bdf8]" />
-              <span>{isFr ? 'Mentions Légales & Marques' : 'Legal Notices & Trademarks'}</span>
-              <span className="text-[10px] text-[#4edea3] font-bold ml-auto">{isFr ? 'Indépendant' : 'Independent'}</span>
+              <span>{isFr ? 'Mentions légales' : 'Legal Notices'}</span>
             </button>
           </div>
         </div>
 
-        {/* Bottom Drawer Footer: Theme, Lang, Status */}
         <div className="p-4 border-t border-[#1b2b3f] bg-[#000f21]/90 flex items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
-            {/* Lang toggle */}
             <button
               id="hamburger-lang-toggle"
+              type="button"
               onClick={onLangToggle}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] text-[#d3e4fe] border border-[#1b2b3f] font-mono text-[11px] font-medium"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] text-[#d3e4fe] border border-[#1b2b3f] font-mono text-[11px] font-medium cursor-pointer"
             >
               <Globe className="w-3.5 h-3.5 text-[#89ceff]" />
               <span>{lang.toUpperCase()}</span>
             </button>
 
-            {/* Theme toggle */}
             <button
               id="hamburger-theme-toggle"
+              type="button"
               onClick={onThemeToggle}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] text-[#d3e4fe] border border-[#1b2b3f] font-mono text-[11px] font-medium"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] text-[#d3e4fe] border border-[#1b2b3f] font-mono text-[11px] font-medium cursor-pointer"
             >
               {theme === 'light' ? (
                 <>
@@ -472,10 +443,9 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
             </button>
           </div>
 
-          <div className="text-[10px] font-mono text-[#89929b] text-right">
-            <span>{isFr ? 'Moteur SQL Connecté' : 'Engine Connected'}</span>
-            <span className="block text-[#4edea3]">● {isFr ? 'Prêt' : 'Ready'}</span>
-          </div>
+          <span className="text-[10px] font-mono text-[#9fb0c4]">
+            {systemInfo.currentVersion}
+          </span>
         </div>
       </div>
     </div>

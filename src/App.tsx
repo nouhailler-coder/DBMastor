@@ -25,8 +25,14 @@ import { SpacedRepetitionView } from './components/SpacedRepetitionView';
 import { SpacedRepetitionRunnerModal } from './components/SpacedRepetitionRunnerModal';
 import { ContextualHelpDrawer } from './components/ContextualHelpDrawer';
 import { AccessControlView, AccessGatekeeperOverlay } from './components/AccessControlView';
+import { MobileBottomNav } from './components/MobileBottomNav';
 import { LandingPage } from './pages/LandingPage';
 import { resolveLandingDestination } from './navigation/landingDestinations';
+import {
+  loadUserPreferences,
+  recordLastLearningActivity,
+  saveUserPreferences,
+} from './services/userPreferencesService';
 import {
    NavigationTab,
   CertificationTrackId,
@@ -110,7 +116,9 @@ export default function App() {
     return 'dashboard';
   });
 
-  const [selectedCert, setSelectedCert] = useState<CertificationTrackId>('oracle-1z0-071');
+  const [selectedCert, setSelectedCert] = useState<CertificationTrackId>(() => {
+    return loadUserPreferences().targetCert || 'oracle-1z0-071';
+  });
   const [lang, setLang] = useState<'fr' | 'en'>('fr');
   const [searchQuery, setSearchQuery] = useState('');
   const [examModalScore, setExamModalScore] = useState<number | null>(null);
@@ -119,10 +127,34 @@ export default function App() {
     return (saved === 'dark' || saved === 'light') ? saved : 'light';
   });
 
-  // Synchroniser la balise <html lang="..."> avec la langue courante
+  // Synchroniser la balise <html lang="..."> et la classe .dark avec la langue et le thème courants
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
+
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('dbmastery_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('dbmastery_sidebar_collapsed', String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
 
   // États pour le Menu Hamburger et les Paramètres Système
   const [isHamburgerOpen, setIsHamburgerOpen] = useState(false);
@@ -182,31 +214,25 @@ export default function App() {
     notes: string;
   } | null>(null);
 
-  // Détection des liens d'approbation et raccourcis depuis les notifications Email
+  // Détection de l'onglet Contrôle d'Accès depuis un lien (aucune auto-approbation non authentifiée via URL)
   useEffect(() => {
     try {
       const searchParams = new URLSearchParams(window.location.search);
       const tabParam = searchParams.get('tab');
-      const approvedEmail = searchParams.get('approved_email');
-      const approvedName = searchParams.get('approved_name') || approvedEmail;
 
       if (tabParam === 'access_control') {
         setCurrentTab('access_control');
       }
 
-      if (approvedEmail) {
-        const clean = approvedEmail.trim().toLowerCase();
-        upsertLocalEmailRecord({
-          email: clean,
-          displayName: approvedName || clean.split('@')[0],
-          role: 'student',
-          status: 'approved',
-          accessReason: 'Validé en 1 clic depuis le lien de l\'email de notification',
-        });
-        setLocalEmailRecords(loadLocalEmailRecords());
-        setCurrentTab('access_control');
-        // Nettoyer l'URL sans recharger
-        window.history.replaceState({}, document.title, window.location.pathname + '?tab=access_control');
+      if (searchParams.has('approved_email') || searchParams.has('approved_name')) {
+        searchParams.delete('approved_email');
+        searchParams.delete('approved_name');
+        const nextQuery = searchParams.toString();
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname + (nextQuery ? `?${nextQuery}` : '')
+        );
       }
     } catch {
       // ignore
@@ -798,6 +824,7 @@ export default function App() {
 
     const resolved = resolveLandingDestination(targetTab);
     setCurrentTab(resolved.tab);
+    recordLastLearningActivity(resolved.tab);
     if (resolved.shortSessionMode) {
       setShortSessionMode(resolved.shortSessionMode);
     }
@@ -830,6 +857,28 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const isAdmin =
+    (isUserBootstrappedAdmin(currentUser) && ownAccessRecord?.status !== 'revoked') ||
+    (ownAccessRecord?.role === 'admin' && ownAccessRecord?.status === 'approved');
+
+  const navigateToTab = (targetTab: NavigationTab) => {
+    setIsLabFocusMode(false);
+    setCurrentTab(targetTab);
+    recordLastLearningActivity(targetTab);
+    if (viewMode === 'app') {
+      try {
+        const nextUrl = new URL(window.location.href);
+        if (nextUrl.searchParams.get('tab') !== targetTab || nextUrl.searchParams.get('view') !== 'app') {
+          nextUrl.searchParams.set('view', 'app');
+          nextUrl.searchParams.set('tab', targetTab);
+          window.history.pushState({}, '', nextUrl.toString());
+        }
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   // Synchronisation avec l'historique du navigateur (Prise en charge des boutons Précédent / Suivant)
   useEffect(() => {
     const handlePopState = () => {
@@ -848,6 +897,8 @@ export default function App() {
             if (resolved.shortSessionMode) {
               setShortSessionMode(resolved.shortSessionMode);
             }
+          } else {
+            setCurrentTab('dashboard');
           }
         }
       } catch {
@@ -859,12 +910,12 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Synchronisation continue de l'URL avec l'onglet actif en mode application
+  // Assurer l'URL canonique au chargement initial en mode application
   useEffect(() => {
     if (viewMode === 'app') {
       try {
         const currentUrl = new URL(window.location.href);
-        if (currentUrl.searchParams.get('tab') !== currentTab) {
+        if (currentUrl.searchParams.get('tab') !== currentTab || currentUrl.searchParams.get('view') !== 'app') {
           currentUrl.searchParams.set('tab', currentTab);
           currentUrl.searchParams.set('view', 'app');
           window.history.replaceState({}, '', currentUrl.toString());
@@ -889,20 +940,20 @@ export default function App() {
   const isLight = theme === 'light';
 
   return (
-    <div className={`min-h-screen flex font-sans transition-colors duration-200 ${
+    <div className={`min-h-screen flex font-sans transition-colors duration-200 overflow-x-clip ${
       isLight 
         ? 'theme-light bg-[#f8fafc] text-[#0f172a] selection:bg-[#0284c7]/20 selection:text-[#0284c7]' 
         : 'theme-dark bg-[#031427] text-[#d3e4fe] selection:bg-[#3198dc]/30 selection:text-[#93ccff]'
     }`}>
-      {/* Fixed Sidebar with Hamburger and System Settings entrypoints (masquée en mode Focus) */}
+      {/* Fixed Desktop Sidebar (5 spaces, collapsible, masquée sur mobile & en mode Focus) */}
       {!isLabFocusMode && (
         <Sidebar 
           currentTab={currentTab} 
-          onTabChange={(tab) => {
-            setIsLabFocusMode(false);
-            setCurrentTab(tab);
-          }} 
+          onTabChange={navigateToTab} 
           lang={lang}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={handleToggleSidebarCollapse}
+          isAdmin={isAdmin}
           onOpenHamburger={() => setIsHamburgerOpen(true)}
           onOpenSystemSettings={() => setIsSystemSettingsOpen(true)}
           onOpenOnboarding={() => setIsOnboardingOpen(true)}
@@ -916,11 +967,15 @@ export default function App() {
         />
       )}
 
-      {/* Main Content Area (pleine largeur quand isLabFocusMode est actif) */}
+      {/* Main Content Area (responsive padding pour sidebar desktop & pleine largeur sur mobile / Focus) */}
       <div className={`flex-1 flex flex-col min-w-0 transition-all duration-200 ${
-        isLabFocusMode ? 'pl-0' : 'pl-64'
+        isLabFocusMode
+          ? 'pl-0'
+          : isSidebarCollapsed
+          ? 'pl-0 md:pl-20'
+          : 'pl-0 md:pl-64'
       }`}>
-        {/* Fixed Header with Hamburger Button and System Settings (masqué en mode Focus) */}
+        {/* Fixed Header (masqué en mode Focus) */}
         {!isLabFocusMode && (
           <Header
             selectedCert={selectedCert}
@@ -930,6 +985,8 @@ export default function App() {
             onSearchQuery={setSearchQuery}
             theme={theme}
             onThemeToggle={handleThemeToggle}
+            isSidebarCollapsed={isSidebarCollapsed}
+            isAdmin={isAdmin}
             onOpenHamburger={() => setIsHamburgerOpen(true)}
             onOpenSystemSettings={() => setIsSystemSettingsOpen(true)}
             onOpenOnboarding={() => setIsOnboardingOpen(true)}
@@ -940,22 +997,23 @@ export default function App() {
             isAuthReady={isAuthReady}
             cloudSyncedCount={cloudSyncedCount}
             accessStatus={ownAccessRecord?.status || null}
-            onOpenAccessControl={() => setCurrentTab('access_control')}
+            onOpenAccessControl={() => navigateToTab('access_control')}
             onOpenLanding={handleOpenLanding}
             onGoogleSignIn={handleGoogleSignIn}
             onSignOut={handleSignOut}
           />
         )}
 
-        {/* View Switcher Container with Top Margin for Fixed Header (sans marge en mode Focus) */}
+        {/* View Switcher Container with Top Margin for Fixed Header & Bottom Padding for Mobile Bottom Bar */}
         <main className={`flex-1 overflow-y-auto transition-all duration-200 ${
-          isLabFocusMode ? 'mt-0 pb-6' : 'mt-16 pb-16'
+          isLabFocusMode ? 'mt-0 pb-6' : 'mt-16 pb-24 md:pb-12'
         }`}>
           {currentTab === 'dashboard' && (
             <DashboardView
-              onNavigate={(tab) => setCurrentTab(tab)}
+              onNavigate={navigateToTab}
               onSelectTrack={(id) => {
                 setSelectedCert(id);
+                saveUserPreferences({ targetCert: id });
               }}
               selectedCert={selectedCert}
               lang={lang}
@@ -966,6 +1024,7 @@ export default function App() {
                 setTargetSpacedItemId(undefined);
                 setIsSpacedRunnerOpen(true);
               }}
+              onOpenOnboarding={() => setIsOnboardingOpen(true)}
               currentUser={currentUser}
               cloudSyncedCount={cloudSyncedCount}
               onGoogleSignIn={handleGoogleSignIn}
@@ -976,7 +1035,7 @@ export default function App() {
           {currentTab === 'activity' && (
             <PersonalActivityView
               lang={lang}
-              onNavigate={(tab) => setCurrentTab(tab)}
+              onNavigate={navigateToTab}
               onOpenTargetedSession={() => setIsTargetedSessionOpen(true)}
               onStartShortSession={(mode) => setShortSessionMode(mode)}
               currentUser={currentUser}
@@ -988,7 +1047,7 @@ export default function App() {
             <CertificationExamView
               lang={lang}
               theme={theme}
-              onNavigateToTab={(tab) => setCurrentTab(tab as NavigationTab)}
+              onNavigateToTab={(tab) => navigateToTab(tab as NavigationTab)}
               onFinishExamCallback={(score) => setExamModalScore(score)}
             />
           )}
@@ -997,7 +1056,7 @@ export default function App() {
             <SkillMapView
               lang={lang}
               theme={theme}
-              onNavigateToTab={(tab) => setCurrentTab(tab)}
+              onNavigateToTab={navigateToTab}
               onOpenTargetedSession={() => setIsTargetedSessionOpen(true)}
             />
           )}
@@ -1007,7 +1066,7 @@ export default function App() {
               lang={lang}
               theme={theme}
               onFinishExam={handleFinishExam}
-              onNavigateToTab={(tab) => setCurrentTab(tab as NavigationTab)}
+              onNavigateToTab={(tab) => navigateToTab(tab as NavigationTab)}
               onStartShortSession={(mode) => setShortSessionMode(mode)}
             />
           )}
@@ -1025,14 +1084,14 @@ export default function App() {
             <StudySheetsView
               selectedCert={selectedCert}
               onCertChange={setSelectedCert}
-              onNavigate={(tab) => setCurrentTab(tab)}
+              onNavigate={navigateToTab}
               lang={lang}
             />
           )}
 
           {currentTab === 'flashcards' && (
             <FlashcardsView
-              onNavigate={(tab) => setCurrentTab(tab)}
+              onNavigate={navigateToTab}
               selectedCert={selectedCert}
               onCertChange={setSelectedCert}
               lang={lang}
@@ -1045,7 +1104,7 @@ export default function App() {
               lang={lang}
               theme={theme}
               initialSearchQuery={searchQuery}
-              onNavigateToTab={(tab) => setCurrentTab(tab as NavigationTab)}
+              onNavigateToTab={(tab) => navigateToTab(tab as NavigationTab)}
             />
           )}
 
@@ -1097,9 +1156,10 @@ export default function App() {
         isOpen={isHamburgerOpen}
         onClose={() => setIsHamburgerOpen(false)}
         currentTab={currentTab}
-        onTabChange={(tab) => setCurrentTab(tab)}
+        onTabChange={navigateToTab}
         selectedCert={selectedCert}
         onCertChange={setSelectedCert}
+        isAdmin={isAdmin}
         onOpenSystemSettings={() => setIsSystemSettingsOpen(true)}
         onOpenLegalMentions={() => setIsLegalMentionsOpen(true)}
         systemInfo={systemInfo}
@@ -1108,6 +1168,29 @@ export default function App() {
         theme={theme}
         onThemeToggle={handleThemeToggle}
       />
+
+      {/* Mobile Bottom Navigation Bar (<768px) */}
+      {!isLabFocusMode && (
+        <MobileBottomNav
+          currentTab={currentTab}
+          onTabChange={navigateToTab}
+          lang={lang}
+          onLangToggle={handleLangToggle}
+          theme={theme}
+          onThemeToggle={handleThemeToggle}
+          selectedCert={selectedCert}
+          onCertChange={setSelectedCert}
+          isAdmin={isAdmin}
+          currentUser={currentUser}
+          onGoogleSignIn={handleGoogleSignIn}
+          onSignOut={handleSignOut}
+          onOpenSystemSettings={() => setIsSystemSettingsOpen(true)}
+          onOpenOnboarding={() => setIsOnboardingOpen(true)}
+          onOpenContextualHelp={() => setIsContextualHelpOpen(true)}
+          onOpenLegalMentions={() => setIsLegalMentionsOpen(true)}
+          onOpenLanding={handleOpenLanding}
+        />
+      )}
 
       {/* System Settings & Updates Modal */}
       <SystemSettingsModal
@@ -1126,7 +1209,7 @@ export default function App() {
       {bgUpdateToast && (
         <div 
           id="bg-update-toast"
-          className="fixed bottom-6 right-6 z-50 max-w-sm p-4 rounded-2xl bg-[#031427]/95 border border-[#3198dc]/50 shadow-2xl backdrop-blur-xl animate-slideInRight flex items-start gap-3 text-[#d3e4fe]"
+          className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 max-w-sm p-4 rounded-2xl bg-[#031427]/95 border border-[#3198dc]/50 shadow-2xl backdrop-blur-xl animate-slideInRight flex items-start gap-3 text-[#d3e4fe]"
         >
           <div className="p-2 rounded-xl bg-[#00a572]/20 text-[#4edea3] shrink-0 mt-0.5 border border-[#4edea3]/30">
             <Zap className="w-5 h-5 text-[#4edea3]" />
@@ -1208,7 +1291,7 @@ export default function App() {
         onNavigateToTab={(tab) => setCurrentTab(tab as NavigationTab)}
       />
 
-      {/* Guide d'Onboarding Interactif (6 étapes) */}
+      {/* Guide d'Onboarding Interactif V2 (7 étapes optionnelles) */}
       <OnboardingModal
         isOpen={isOnboardingOpen && (typeof window === 'undefined' || new URLSearchParams(window.location.search).get('no_onboarding') !== 'true')}
         onClose={() => setIsOnboardingOpen(false)}
@@ -1216,7 +1299,7 @@ export default function App() {
         selectedCert={selectedCert}
         onSelectCert={setSelectedCert}
         onStartShortSession={(mode) => setShortSessionMode(mode)}
-        onNavigateToTab={(tab) => setCurrentTab(tab)}
+        onNavigateToTab={navigateToTab}
         onOpenContextualHelp={() => setIsContextualHelpOpen(true)}
         onOpenLegalMentions={() => setIsLegalMentionsOpen(true)}
       />

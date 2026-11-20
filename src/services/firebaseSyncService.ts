@@ -36,8 +36,7 @@ import {
 import {
   loadUserStats,
   saveUserStats,
-  normalizeSqlTopic,
-  initialTopicResponseStats
+  normalizeSqlTopic
 } from './statsService';
 
 export const BOOTSTRAPPED_ADMIN_EMAIL = 'nouhailler@gmail.com';
@@ -429,9 +428,9 @@ export async function ensureUserProfileInFirestore(
     100,
     'Apprenant DBA'
   );
-  const overallAccuracy = clampNumber(Math.round(localStats.overallAccuracy || 82), 0, 100);
-  const questionsAnswered = clampNumber(Math.round(localStats.questionsAnswered || 842), 0, 1000000);
-  const streakDays = clampNumber(Math.round(localStats.streakDays || 5), 0, 10000);
+  const overallAccuracy = clampNumber(Math.round(localStats.overallAccuracy || 0), 0, 100);
+  const questionsAnswered = clampNumber(Math.round(localStats.questionsAnswered || 0), 0, 1000000);
+  const streakDays = clampNumber(Math.round(localStats.streakDays || 0), 0, 10000);
 
   if (!existsSnap) {
     try {
@@ -490,9 +489,9 @@ export async function testFirestoreProtectedWrite(
     100,
     'Apprenant DBA'
   );
-  const overallAccuracy = clampNumber(Math.round(localStats.overallAccuracy || 82), 0, 100);
-  const questionsAnswered = clampNumber(Math.round(localStats.questionsAnswered || 842), 0, 1000000);
-  const streakDays = clampNumber(Math.round(localStats.streakDays || 5), 0, 10000);
+  const overallAccuracy = clampNumber(Math.round(localStats.overallAccuracy || 0), 0, 100);
+  const questionsAnswered = clampNumber(Math.round(localStats.questionsAnswered || 0), 0, 1000000);
+  const streakDays = clampNumber(Math.round(localStats.streakDays || 0), 0, 10000);
 
   try {
     const snap = await getDoc(userRef);
@@ -694,7 +693,7 @@ export function subscribeToUserFirestoreData(
       saveUserStats({
         ...currentStats,
         attemptTelemetryLogs: mergedLogs,
-        topicResponseStats: currentStats.topicResponseStats || initialTopicResponseStats,
+        topicResponseStats: currentStats.topicResponseStats || [],
       });
 
       if (onSyncUpdate) {

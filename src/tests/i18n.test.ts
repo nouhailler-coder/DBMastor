@@ -49,4 +49,23 @@ describe('Internationalization (i18n) Completeness Tests', () => {
     expect(fr.certifications.tracks.postgres.name).toContain('PostgreSQL');
     expect(en.certifications.tracks.postgres.name).toContain('PostgreSQL');
   });
+
+  it('verifies complete FR/EN parity across the 5 primary navigation spaces and sub-tabs', async () => {
+    const { PRIMARY_SPACES } = await import('../navigation/spaces');
+    expect(PRIMARY_SPACES).toHaveLength(5);
+
+    for (const space of PRIMARY_SPACES) {
+      expect(space.labelFr.trim().length).toBeGreaterThan(0);
+      expect(space.labelEn.trim().length).toBeGreaterThan(0);
+      expect(space.mobileLabelFr.trim().length).toBeGreaterThan(0);
+      expect(space.mobileLabelEn.trim().length).toBeGreaterThan(0);
+
+      for (const item of space.tabs) {
+        expect(item.labelFr.trim().length).toBeGreaterThan(0);
+        expect(item.labelEn.trim().length).toBeGreaterThan(0);
+        expect(item.descFr.trim().length).toBeGreaterThan(0);
+        expect(item.descEn.trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
 });

@@ -329,6 +329,83 @@ export const initialWeeklyActivity: WeeklyActivitySummary = {
   ],
 };
 
+export const initialEmptyWeeklyActivity: WeeklyActivitySummary = {
+  questionsThisWeek: 0,
+  accuracyThisWeek: 0,
+  avgTimeSecondsThisWeek: 0,
+  currentStreakDays: 0,
+  deltaSqlPercent: 0,
+  deltaBannerFr: 'Aucune session enregistrée cette semaine',
+  deltaBannerEn: 'No study sessions recorded this week',
+  dailyProgression: [
+    {
+      dayId: 'lun',
+      dayLabelFr: 'Lun',
+      dayLabelEn: 'Mon',
+      fullDayFr: 'Lundi',
+      fullDayEn: 'Monday',
+      blocksCount: 0,
+      questions: 0,
+      accuracy: 0,
+      avgTimeSeconds: 0,
+      focusTopicFr: 'Aucune session',
+      focusTopicEn: 'No session',
+    },
+    {
+      dayId: 'mar',
+      dayLabelFr: 'Mar',
+      dayLabelEn: 'Tue',
+      fullDayFr: 'Mardi',
+      fullDayEn: 'Tuesday',
+      blocksCount: 0,
+      questions: 0,
+      accuracy: 0,
+      avgTimeSeconds: 0,
+      focusTopicFr: 'Aucune session',
+      focusTopicEn: 'No session',
+    },
+    {
+      dayId: 'mer',
+      dayLabelFr: 'Mer',
+      dayLabelEn: 'Wed',
+      fullDayFr: 'Mercredi',
+      fullDayEn: 'Wednesday',
+      blocksCount: 0,
+      questions: 0,
+      accuracy: 0,
+      avgTimeSeconds: 0,
+      focusTopicFr: 'Aucune session',
+      focusTopicEn: 'No session',
+    },
+    {
+      dayId: 'jeu',
+      dayLabelFr: 'Jeu',
+      dayLabelEn: 'Thu',
+      fullDayFr: 'Jeudi',
+      fullDayEn: 'Thursday',
+      blocksCount: 0,
+      questions: 0,
+      accuracy: 0,
+      avgTimeSeconds: 0,
+      focusTopicFr: 'Aucune session',
+      focusTopicEn: 'No session',
+    },
+    {
+      dayId: 'ven',
+      dayLabelFr: 'Ven',
+      dayLabelEn: 'Fri',
+      fullDayFr: 'Vendredi',
+      fullDayEn: 'Friday',
+      blocksCount: 0,
+      questions: 0,
+      accuracy: 0,
+      avgTimeSeconds: 0,
+      focusTopicFr: 'Aucune session',
+      focusTopicEn: 'No session',
+    },
+  ],
+};
+
 export const initialDefaultStats: UserStatsData = {
   overallAccuracy: 81.0,
   accuracyDelta: '+12%',
@@ -413,7 +490,7 @@ export const initialDefaultStats: UserStatsData = {
 
 export const initialEmptyStats: UserStatsData = {
   overallAccuracy: 0,
-  accuracyDelta: '0.0%',
+  accuracyDelta: '0%',
   avgVelocity: '--',
   questionsAnswered: 0,
   streakDays: 0,
@@ -487,17 +564,25 @@ export const initialEmptyStats: UserStatsData = {
     { id: 'd4', title: 'Transactions, MVCC & Isolation', percent: 0, accentColor: '#f59e0b' },
     { id: 'd5', title: 'Indexation & Plans d\'Exécution', percent: 0, accentColor: '#ef4444' },
   ],
-  lastResetDate: new Date().toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }),
-  topicResponseStats: initialTopicResponseStats,
-  attemptTelemetryLogs: initialAttemptTelemetryLogs,
-  weeklyActivity: initialWeeklyActivity,
+  lastResetDate: null,
+  topicResponseStats: [],
+  attemptTelemetryLogs: [],
+  weeklyActivity: initialEmptyWeeklyActivity,
 };
+
+function createFreshEmptyStats(): UserStatsData {
+  return {
+    ...initialEmptyStats,
+    badges: initialEmptyStats.badges.map((b) => ({ ...b })),
+    domainBreakdown: initialEmptyStats.domainBreakdown.map((d) => ({ ...d })),
+    topicResponseStats: [],
+    attemptTelemetryLogs: [],
+    weeklyActivity: {
+      ...initialEmptyWeeklyActivity,
+      dailyProgression: initialEmptyWeeklyActivity.dailyProgression.map((d) => ({ ...d })),
+    },
+  };
+}
 
 // Listeners for reactivity
 type StatsListener = (stats: UserStatsData) => void;
@@ -518,27 +603,32 @@ function notifyListeners(stats: UserStatsData) {
       console.error('Error in stats listener:', e);
     }
   });
-  window.dispatchEvent(new CustomEvent('dbmastery:telemetry_updated', { detail: stats }));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('dbmastery:telemetry_updated', { detail: stats }));
+  }
 }
 
 export function loadUserStats(): UserStatsData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return initialDefaultStats;
+    if (!raw) return createFreshEmptyStats();
     const parsed = JSON.parse(raw) as UserStatsData;
-    if (!parsed.topicResponseStats || parsed.topicResponseStats.length === 0) {
-      parsed.topicResponseStats = initialTopicResponseStats;
-    }
-    if (!parsed.attemptTelemetryLogs || parsed.attemptTelemetryLogs.length === 0) {
-      parsed.attemptTelemetryLogs = initialAttemptTelemetryLogs;
-    }
-    if (!parsed.weeklyActivity || !parsed.weeklyActivity.dailyProgression) {
-      parsed.weeklyActivity = initialWeeklyActivity;
-    }
-    return parsed;
+    return {
+      ...createFreshEmptyStats(),
+      ...parsed,
+      topicResponseStats: Array.isArray(parsed.topicResponseStats) ? parsed.topicResponseStats : [],
+      attemptTelemetryLogs: Array.isArray(parsed.attemptTelemetryLogs) ? parsed.attemptTelemetryLogs : [],
+      weeklyActivity:
+        parsed.weeklyActivity && Array.isArray(parsed.weeklyActivity.dailyProgression)
+          ? parsed.weeklyActivity
+          : {
+              ...initialEmptyWeeklyActivity,
+              dailyProgression: initialEmptyWeeklyActivity.dailyProgression.map((d) => ({ ...d })),
+            },
+    };
   } catch (e) {
     console.warn('Failed to load stats from localStorage:', e);
-    return initialDefaultStats;
+    return createFreshEmptyStats();
   }
 }
 
@@ -553,7 +643,7 @@ export function saveUserStats(stats: UserStatsData): void {
 
 export function resetUserStats(): UserStatsData {
   const resetStats: UserStatsData = {
-    ...initialEmptyStats,
+    ...createFreshEmptyStats(),
     lastResetDate: new Date().toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'short',
@@ -591,6 +681,20 @@ export function classifyPedagogicalSpeedProfile(
   return 'hesitant_analytic';
 }
 
+function getTodayDayId(): WeeklyDayActivity['dayId'] {
+  const jsDay = new Date().getDay(); // 0=Sun..6=Sat
+  const map: Record<number, WeeklyDayActivity['dayId']> = {
+    1: 'lun',
+    2: 'mar',
+    3: 'mer',
+    4: 'jeu',
+    5: 'ven',
+    6: 'ven',
+    0: 'ven',
+  };
+  return map[jsDay] || 'ven';
+}
+
 /**
  * Enregistre une tentative de question avec la structure exacte demandée :
  * questionId, attemptId, answer, isCorrect, timeSpent, difficulty, topic, timestamp
@@ -621,10 +725,10 @@ export function recordQuestionAttemptTelemetry(input: {
     hintRequested: !!input.hintRequested,
   };
 
-  const currentLogs = stats.attemptTelemetryLogs || initialAttemptTelemetryLogs;
+  const currentLogs = stats.attemptTelemetryLogs || [];
   const updatedLogs = [newAttempt, ...currentLogs].slice(0, 50);
 
-  const currentTopics = [...(stats.topicResponseStats || initialTopicResponseStats)];
+  const currentTopics = [...(stats.topicResponseStats || [])];
   const existingIdx = currentTopics.findIndex(
     (t) => t.topic.toUpperCase() === normalizedTopic.toUpperCase()
   );
@@ -677,7 +781,7 @@ export function recordQuestionAttemptTelemetry(input: {
     });
   }
 
-  const prevWeekly = stats.weeklyActivity || initialWeeklyActivity;
+  const prevWeekly = stats.weeklyActivity || initialEmptyWeeklyActivity;
   const newWeeklyQuestions = prevWeekly.questionsThisWeek + 1;
   const prevCorrectCount = Math.round((prevWeekly.accuracyThisWeek / 100) * prevWeekly.questionsThisWeek);
   const newWeeklyAccuracy = Math.round(
@@ -687,8 +791,9 @@ export function recordQuestionAttemptTelemetry(input: {
     (prevWeekly.avgTimeSecondsThisWeek * prevWeekly.questionsThisWeek + clampedTime) /
       newWeeklyQuestions
   );
-  const updatedDaily = prevWeekly.dailyProgression.map((day, idx) => {
-    if (idx === prevWeekly.dailyProgression.length - 1) {
+  const targetDayId = getTodayDayId();
+  const updatedDaily = prevWeekly.dailyProgression.map((day) => {
+    if (day.dayId === targetDayId) {
       const nextQ = day.questions + 1;
       const prevDayCorrect = Math.round((day.accuracy / 100) * day.questions);
       const nextAcc = Math.round(((prevDayCorrect + (input.isCorrect ? 1 : 0)) / nextQ) * 100);
@@ -698,15 +803,28 @@ export function recordQuestionAttemptTelemetry(input: {
         questions: nextQ,
         accuracy: nextAcc,
         avgTimeSeconds: nextTime,
-        blocksCount: Math.min(16, Math.max(day.blocksCount, Math.round(nextQ / 3))),
+        blocksCount: Math.min(16, Math.max(1, Math.round(nextQ / 2))),
+        focusTopicFr: normalizedTopic,
+        focusTopicEn: normalizedTopic,
       };
     }
     return day;
   });
 
+  const prevTotalAnswered = stats.questionsAnswered || 0;
+  const nextTotalAnswered = prevTotalAnswered + 1;
+  const prevTotalCorrect = Math.round(((stats.overallAccuracy || 0) / 100) * prevTotalAnswered);
+  const nextOverallAccuracy = Math.round(
+    ((prevTotalCorrect + (input.isCorrect ? 1 : 0)) / nextTotalAnswered) * 100
+  );
+  const nextStreak = Math.max(1, stats.streakDays || 0);
+
   saveUserStats({
     ...stats,
-    questionsAnswered: (stats.questionsAnswered || 842) + 1,
+    overallAccuracy: nextOverallAccuracy,
+    avgVelocity: `${newWeeklyAvgTime}s`,
+    questionsAnswered: nextTotalAnswered,
+    streakDays: nextStreak,
     topicResponseStats: currentTopics,
     attemptTelemetryLogs: updatedLogs,
     weeklyActivity: {
@@ -714,6 +832,9 @@ export function recordQuestionAttemptTelemetry(input: {
       questionsThisWeek: newWeeklyQuestions,
       accuracyThisWeek: newWeeklyAccuracy,
       avgTimeSecondsThisWeek: newWeeklyAvgTime,
+      currentStreakDays: Math.max(1, prevWeekly.currentStreakDays || 0),
+      deltaBannerFr: `${newWeeklyQuestions} questions résolues cette semaine (${newWeeklyAccuracy}% de réussite)`,
+      deltaBannerEn: `${newWeeklyQuestions} questions solved this week (${newWeeklyAccuracy}% accuracy)`,
       dailyProgression: updatedDaily,
     },
   });
@@ -731,7 +852,9 @@ export function recordQuestionAttemptTelemetry(input: {
     console.error('Error updating mastery tree:', e);
   }
 
-  window.dispatchEvent(new CustomEvent('dbmastery:attempt_recorded', { detail: newAttempt }));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('dbmastery:attempt_recorded', { detail: newAttempt }));
+  }
 
   return newAttempt;
 }
