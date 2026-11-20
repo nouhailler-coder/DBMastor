@@ -129,6 +129,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const topicStats = stats.topicResponseStats || [];
   const hasRealSessions = stats.questionsAnswered > 0 || recentLogs.length > 0;
 
+  // Temps d'apprentissage réel cumulé à partir des journaux de tentatives enregistrés
+  const realLearningTimeLabel = useMemo(() => {
+    const totalSeconds = recentLogs.reduce((acc, log) => acc + Math.max(0, Number(log.timeSpent) || 0), 0);
+    if (totalSeconds <= 0) return isFr ? '0 min mesurée' : '0 min recorded';
+    if (totalSeconds < 60) return `${totalSeconds} s`;
+    const mins = Math.round(totalSeconds / 60);
+    return `${mins} min`;
+  }, [isFr, recentLogs]);
+
   // Compétences réellement maîtrisées (issues de l'activité réelle ou du diagnostic effectué)
   const masteredMetrics = useMemo(() => {
     if (topicStats.length > 0) {
@@ -174,6 +183,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     [isFreeSqlMode, lang, prefs.targetExamDate]
   );
 
+  const userLevelLabel = useMemo(() => {
+    switch (prefs.level) {
+      case 'beginner':
+        return isFr ? 'Débutant' : 'Beginner';
+      case 'intermediate':
+        return isFr ? 'Intermédiaire' : 'Intermediate';
+      case 'advanced':
+        return isFr ? 'Avancé / DBA' : 'Advanced / DBA';
+      case 'unsure':
+        return isFr ? 'Calibration' : 'Calibrating';
+      default:
+        return isFr ? 'Adaptatif' : 'Adaptive';
+    }
+  }, [isFr, prefs.level]);
+
   // Bloc B — Action dominante unique
   const continueAction = useMemo(() => {
     if (prefs.lastActivity) {
@@ -203,11 +227,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     };
   }, [activeTrack.code, isFr, isFreeSqlMode, prefs.lastActivity]);
 
-  // Bloc C — Une seule recommandation pilotée par les données
+  // Bloc C — Une seule recommandation pilotée par les données (thème, durée, niveau, raison)
   const recommendation = useMemo(() => {
     if (weakestRealTopic) {
       return {
         badge: isFr ? 'Priorité ciblée' : 'Targeted Priority',
+        theme: weakestRealTopic.label,
+        duration: isFr ? '10 min' : '10 min',
+        level: userLevelLabel,
         title: isFr
           ? `Consolider ${weakestRealTopic.label} (${weakestRealTopic.score}%)`
           : `Strengthen ${weakestRealTopic.label} (${weakestRealTopic.score}%)`,
@@ -228,9 +255,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     if (hasRealSessions && spacedStats.dueTodayCount > 0) {
       return {
         badge: isFr ? 'Répétition espacée SM-2' : 'SM-2 Spaced Repetition',
+        theme: isFr ? 'Notions planifiées SM-2' : 'Scheduled SM-2 Concepts',
+        duration: isFr ? '5 min' : '5 min',
+        level: userLevelLabel,
         title: isFr
-          ? `${spacedStats.dueTodayCount} notion${spacedStats.dueTodayCount > 1 ? 's' : ''} à réviser aujourd'hui`
-          : `${spacedStats.dueTodayCount} concept${spacedStats.dueTodayCount > 1 ? 's' : ''} due for review`,
+          ? `${spacedStats.dueTodayCount} notion${spacedStats.dueTodayCount > 1 ? 's' : ''} à réviser — 5 minutes`
+          : `${spacedStats.dueTodayCount} concept${spacedStats.dueTodayCount > 1 ? 's' : ''} due for review — 5 min`,
         reason: isFr
           ? 'Pourquoi ce choix : ces notions arrivent à échéance de mémorisation optimale.'
           : 'Why this choice: these concepts have reached their optimal retention review window.',
@@ -248,6 +278,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     if (!diagnosticResult && !hasRealSessions) {
       return {
         badge: isFr ? 'Calibration optionnelle' : 'Optional Calibration',
+        theme: isFr ? 'Fondamentaux & jointures SQL' : 'SQL Fundamentals & Joins',
+        duration: isFr ? '8 min' : '8 min',
+        level: userLevelLabel,
         title: isFr
           ? 'Évaluation initiale des compétences (20 questions)'
           : 'Initial Skill Assessment (20 questions)',
@@ -263,6 +296,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
     return {
       badge: isFr ? 'Entraînement du jour' : 'Daily Training',
+      theme: isFr ? 'Jointures & Requêtes SQL' : 'SQL Joins & Queries',
+      duration: isFr ? '12 min' : '12 min',
+      level: userLevelLabel,
       title: isFr
         ? 'Séance SQL progressive (15 questions)'
         : 'Progressive SQL Session (15 questions)',
@@ -287,6 +323,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     onOpenTargetedSession,
     onStartDailySession,
     spacedStats.dueTodayCount,
+    userLevelLabel,
     weakestRealTopic,
   ]);
 
@@ -409,13 +446,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="w-11 h-11 rounded-xl bg-[#102034] border border-[#26364a] flex items-center justify-center text-[#38bdf8] shrink-0">
             <Target className="w-5 h-5" />
           </div>
-          <div className="flex flex-col gap-1">
-            <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#38bdf8]">
-              {recommendation.badge}
-            </span>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#38bdf8]">
+                {recommendation.badge}
+              </span>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#102034] border border-[#1b2b3f] text-[#9fb0c4]">
+                {recommendation.duration} • {recommendation.level}
+              </span>
+            </div>
             <h3 className="text-base sm:text-lg font-bold text-[#d3e4fe]">
               {recommendation.title}
             </h3>
+            <p className="text-xs text-[#9fb0c4]">
+              {isFr ? 'Thème' : 'Topic'} : {recommendation.theme}
+            </p>
             <p className="text-xs sm:text-sm text-[#bfc7d2] leading-relaxed">
               {recommendation.reason}
             </p>
@@ -433,17 +478,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </button>
       </section>
 
-      {/* BLOC D — Progression réelle (4 indicateurs max) */}
+      {/* BLOC D — Indicateurs essentiels réels (4 max) */}
       <section
         id="dashboard-block-d-metrics"
         aria-label={isFr ? 'Indicateurs de progression' : 'Progress Indicators'}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
       >
-        {/* 1. Précision réelle */}
+        {/* 1. Progression globale */}
         <div className="bg-[#102034] p-4 rounded-xl border border-[#1b2b3f] flex flex-col justify-between gap-2">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[10px] text-[#89929b] uppercase font-semibold">
-              {isFr ? 'Précision globale' : 'Overall Accuracy'}
+              {isFr ? 'Progression globale' : 'Overall Accuracy'}
             </span>
             <TrendingUp className="w-4 h-4 text-[#4edea3]" />
           </div>
@@ -461,7 +506,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </span>
         </div>
 
-        {/* 2. Compétences maîtrisées */}
+        {/* 2. Temps d'apprentissage réel */}
+        <div className="bg-[#102034] p-4 rounded-xl border border-[#1b2b3f] flex flex-col justify-between gap-2">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[10px] text-[#89929b] uppercase font-semibold">
+              {isFr ? 'Temps d’apprentissage' : 'Study Time'}
+            </span>
+            <Clock className="w-4 h-4 text-[#38bdf8]" />
+          </div>
+          <div className="text-2xl sm:text-3xl font-extrabold text-[#d3e4fe] font-mono">
+            {realLearningTimeLabel}
+          </div>
+          <span className="text-xs text-[#bfc7d2]">
+            {stats.streakDays > 0
+              ? isFr
+                ? `Série active : ${stats.streakDays} j`
+                : `Active streak: ${stats.streakDays} d`
+              : isFr
+              ? 'Série en attente de 1re session'
+              : 'Streak starts on 1st session'}
+          </span>
+        </div>
+
+        {/* 3. Compétences maîtrisées */}
         <div className="bg-[#102034] p-4 rounded-xl border border-[#1b2b3f] flex flex-col justify-between gap-2">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[10px] text-[#89929b] uppercase font-semibold">
@@ -485,83 +552,107 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </span>
         </div>
 
-        {/* 3. Révisions SM-2 dues */}
-        <button
-          type="button"
-          onClick={() => onNavigate('spaced_repetition')}
-          className="text-left bg-[#102034] hover:bg-[#12253c] p-4 rounded-xl border border-[#1b2b3f] flex flex-col justify-between gap-2 transition-colors cursor-pointer"
-        >
-          <div className="flex items-center justify-between w-full">
-            <span className="font-mono text-[10px] text-[#89929b] uppercase font-semibold">
-              {isFr ? 'Révisions SM-2 dues' : 'SM-2 Due Reviews'}
-            </span>
-            <RefreshCw className="w-4 h-4 text-[#38bdf8]" />
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-[#d3e4fe] font-mono">
-            {spacedStats.dueTodayCount}
-          </div>
-          <span className="text-xs text-[#89ceff]">
-            {isFr ? 'Ouvrir les révisions →' : 'Open reviews →'}
-          </span>
-        </button>
-
-        {/* 4. Objectif / Échéance réelle */}
+        {/* 4. Objectif actif & révisions SM-2 */}
         <div className="bg-[#102034] p-4 rounded-xl border border-[#1b2b3f] flex flex-col justify-between gap-2">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[10px] text-[#89929b] uppercase font-semibold">
               {isFreeSqlMode
                 ? isFr
-                  ? 'Mode actif'
-                  : 'Active Mode'
+                  ? 'Mode & SM-2'
+                  : 'Mode & SM-2'
                 : isFr
-                ? 'Échéance examen'
-                : 'Exam Target'}
+                ? 'Objectif & SM-2'
+                : 'Goal & SM-2'}
             </span>
             {isFreeSqlMode ? (
               <BookOpen className="w-4 h-4 text-[#4edea3]" />
-            ) : (
+            ) : examCountdown ? (
               <Calendar className="w-4 h-4 text-[#f59e0b]" />
+            ) : (
+              <Award className="w-4 h-4 text-[#93ccff]" />
             )}
           </div>
 
           {isFreeSqlMode ? (
-            <>
-              <div className="text-xl font-extrabold text-[#d3e4fe]">
-                {isFr ? 'SQL Libre' : 'Free SQL'}
-              </div>
-              <span className="text-xs text-[#bfc7d2]">
-                {isFr ? 'Apprentissage sans certification' : 'Learning without certification'}
-              </span>
-            </>
+            <div className="text-xl sm:text-2xl font-extrabold text-[#d3e4fe]">
+              {isFr ? 'SQL Libre' : 'Free SQL'}
+            </div>
           ) : examCountdown ? (
-            <>
-              <div className="text-xl font-extrabold text-[#d3e4fe] font-mono">
-                {isFr ? `J-${examCountdown.daysRemaining}` : `D-${examCountdown.daysRemaining}`}
-              </div>
-              <span className="text-xs text-[#bfc7d2]">
+            <div className="text-2xl sm:text-3xl font-extrabold text-[#d3e4fe] font-mono">
+              {isFr ? `J-${examCountdown.daysRemaining}` : `D-${examCountdown.daysRemaining}`}
+              <span className="block text-[11px] font-normal text-[#bfc7d2] mt-0.5">
                 {examCountdown.formattedDate} • {activeTrack.code}
               </span>
-            </>
+            </div>
           ) : (
-            <>
-              <div className="text-xl font-extrabold text-[#d3e4fe] flex items-center gap-1.5">
-                <Award className="w-4 h-4 text-[#93ccff]" />
-                <span>{activeTrack.code}</span>
-              </div>
-              <span className="text-xs text-[#bfc7d2]">
-                {isFr ? 'Aucune échéance planifiée' : 'No exam date set'}
-              </span>
-            </>
+            <div className="text-xl sm:text-2xl font-extrabold text-[#d3e4fe] flex items-center gap-1.5">
+              <span>{activeTrack.code}</span>
+            </div>
           )}
+
+          <button
+            id="dashboard-open-sm2-btn"
+            type="button"
+            onClick={() => onNavigate('spaced_repetition')}
+            className="text-left text-xs text-[#89ceff] hover:underline inline-flex items-center gap-1.5 cursor-pointer"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-[#38bdf8] shrink-0" />
+            <span>
+              {isFr
+                ? `${spacedStats.dueTodayCount} révision${spacedStats.dueTodayCount > 1 ? 's' : ''} SM-2 due${spacedStats.dueTodayCount > 1 ? 's' : ''} →`
+                : `${spacedStats.dueTodayCount} SM-2 review${spacedStats.dueTodayCount > 1 ? 's' : ''} due →`}
+            </span>
+          </button>
         </div>
       </section>
 
-      {/* BLOC E — Activité récente (compacte) */}
+      {/* BLOC E — Accès secondaires discrets & activité récente */}
       <section
         id="dashboard-block-e-activity"
-        aria-label={isFr ? 'Activité récente' : 'Recent Activity'}
-        className="rounded-2xl bg-[#0b1c30] border border-[#1b2b3f] p-5 sm:p-6 shadow-md flex flex-col gap-4"
+        aria-label={isFr ? 'Accès secondaires et activité récente' : 'Secondary shortcuts and recent activity'}
+        className="rounded-2xl bg-[#0b1c30] border border-[#1b2b3f] p-5 sm:p-6 shadow-md flex flex-col gap-5"
       >
+        {/* 4 Accès secondaires discrets */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+          {[
+            {
+              id: 'dashboard-shortcut-quiz',
+              tab: 'exams' as NavigationTab,
+              labelFr: 'Reprendre un quiz',
+              labelEn: 'Resume a quiz',
+            },
+            {
+              id: 'dashboard-shortcut-mock',
+              tab: 'cert_exam' as NavigationTab,
+              labelFr: 'Lancer un examen blanc',
+              labelEn: 'Start mock exam',
+            },
+            {
+              id: 'dashboard-shortcut-sqllab',
+              tab: 'sandbox' as NavigationTab,
+              labelFr: 'Ouvrir le SQL Lab',
+              labelEn: 'Open SQL Lab',
+            },
+            {
+              id: 'dashboard-shortcut-flashcards',
+              tab: 'flashcards' as NavigationTab,
+              labelFr: 'Réviser les flashcards',
+              labelEn: 'Review flashcards',
+            },
+          ].map((shortcut) => (
+            <button
+              key={shortcut.id}
+              id={shortcut.id}
+              type="button"
+              onClick={() => onNavigate(shortcut.tab)}
+              className="px-3.5 py-2.5 rounded-xl bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] text-xs font-medium text-[#bfc7d2] hover:text-[#d3e4fe] flex items-center justify-between gap-2 transition-colors text-left cursor-pointer"
+            >
+              <span className="truncate">{isFr ? shortcut.labelFr : shortcut.labelEn}</span>
+              <ChevronRight className="w-3.5 h-3.5 text-[#89929b] shrink-0" />
+            </button>
+          ))}
+        </div>
+
         <div className="flex items-center justify-between gap-3 border-b border-[#1b2b3f] pb-3">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-[#38bdf8]" />

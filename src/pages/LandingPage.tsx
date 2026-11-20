@@ -16,14 +16,16 @@ import { FinalCTASection } from '../components/landing/FinalCTASection';
 import { LandingFooter } from '../components/landing/LandingFooter';
 import { ScreenshotLightbox, LightboxImage } from '../components/landing/ScreenshotLightbox';
 
+import type { User } from '../services/firebaseSyncService';
 import heroDashboardImg from '../assets/images/dbmastery_studio_screenshot_1790453723903.jpg';
 import onboardingImg from '../assets/images/dbmastery_onboarding_screenshot_1790662834983.jpg';
 
 interface LandingPageProps {
   onOpenApp: (tab?: string) => void;
+  currentUser?: User | null;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onOpenApp }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onOpenApp, currentUser }) => {
   const [lang, setLang] = useState<LandingLanguage>(() => {
     const saved = localStorage.getItem('dbmastery_landing_lang');
     if (saved === 'fr' || saved === 'en') return saved;
@@ -90,6 +92,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenApp }) => {
         lang={lang}
         onLangToggle={handleToggleLang}
         onOpenApp={onOpenApp}
+        currentUser={currentUser}
       />
 
       {/* 2. Hero */}

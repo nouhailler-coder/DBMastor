@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { resolveLandingDestination, LANDING_DESTINATION_MAP } from '../navigation/landingDestinations';
 import { PRIMARY_SPACES, getSpaceForTab, getSpaceConfig } from '../navigation/spaces';
+import { getHamburgerSections } from '../navigation/hamburgerItems';
 import { NavigationTab } from '../types';
 
 describe('5-Space Navigation & Legacy URL Compatibility', () => {
@@ -85,6 +86,43 @@ describe('5-Space Navigation & Legacy URL Compatibility', () => {
     for (const mapping of Object.values(LANDING_DESTINATION_MAP)) {
       expect(typeof mapping.tab).toBe('string');
       expect(mapping.tab.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('exposes mandatory Landing Page entry and role-gated Administration in Hamburger Menu', () => {
+    const studentSections = getHamburgerSections(false);
+    expect(studentSections.map((s) => s.id)).toEqual(['presentation', 'learn', 'tools']);
+    expect(studentSections.find((s) => s.id === 'administration')).toBeUndefined();
+
+    const adminSections = getHamburgerSections(true);
+    expect(adminSections.map((s) => s.id)).toEqual([
+      'presentation',
+      'learn',
+      'tools',
+      'administration',
+    ]);
+
+    const presentation = adminSections.find((s) => s.id === 'presentation')!;
+    const landingItem = presentation.items.find((item) => item.action === 'landing');
+    expect(landingItem).toBeDefined();
+    expect(landingItem?.labelFr).toBe('Présentation de DBMastor');
+    expect(landingItem?.labelEn).toBe('About DBMastor');
+    expect(landingItem?.icon).toBe('home');
+
+    const adminSection = adminSections.find((s) => s.id === 'administration')!;
+    expect(adminSection.items.map((i) => i.labelFr)).toEqual([
+      "Contrôle d'accès",
+      'Configuration des notifications',
+    ]);
+
+    const mappedTabs = new Set(Object.values(LANDING_DESTINATION_MAP).map((m) => m.tab));
+    for (const section of adminSections) {
+      for (const item of section.items) {
+        if (item.action === 'tab') {
+          expect(item.tab).toBeDefined();
+          expect(mappedTabs.has(item.tab!)).toBe(true);
+        }
+      }
     }
   });
 });

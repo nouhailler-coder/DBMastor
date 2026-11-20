@@ -17,7 +17,8 @@ import {
 
 async function withTestServer(
   authOptions: AdminAuthMiddlewareOptions,
-  fn: (baseUrl: string) => Promise<void>
+  fn: (baseUrl: string) => Promise<void>,
+  extraOptions?: { rateLimitMax?: number; rateLimitWindowMs?: number }
 ) {
   const app = express();
   app.use(express.json());
@@ -25,6 +26,7 @@ async function withTestServer(
     createNotificationAndAuthRouter({
       authOptions,
       transporterFactory: () => null,
+      ...extraOptions,
     })
   );
 
@@ -423,5 +425,128 @@ describe('Server Admin API RBAC & Authentication Matrix', () => {
         expect(location).toContain('tab=access_control');
       }
     );
+  });
+
+  it('11. Enforces rate limiting (HTTP 429) on sensitive auth & notification endpoints', async () => {
+    await withTestServer(
+      {
+        verifyIdToken: async () => ({
+          uid: 'admin_rate_uid',
+          email: 'nouhailler@gmail.com',
+          emailVerified: true,
+          claims: {},
+        }),
+        lookupAccessRecord: async () => ({
+          exists: true,
+          uid: 'admin_rate_uid',
+          role: 'admin',
+          status: 'approved',
+        }),
+      },
+      async (baseUrl) => {
+        const r1 = await fetch(`${baseUrl}/api/auth/verify-site-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: 'test' }),
+        });
+        expect([200, 401]).toContain(r1.status);
+
+        const r2 = await fetch(`${baseUrl}/api/auth/verify-site-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: 'test' }),
+        });
+        expect([200, 401]).toContain(r2.status);
+
+        const r3 = await fetch(`${baseUrl}/api/auth/verify-site-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: 'test' }),
+        });
+        expect(r3.status).toBe(429);
+        expect((await r3.json()).code).toBe('RATE_LIMIT_EXCEEDED');
+
+        const a1 = await fetch(`${baseUrl}/api/notifications/config`, {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer valid.admin.jwt',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ host: 'smtp.example.com', port: 587 }),
+        });
+        expect(a1.status).toBe(200);
+
+        const a2 = await fetch(`${baseUrl}/api/notifications/config`, {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer valid.admin.jwt',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ host: 'smtp.example.com', port: 587 }),
+        });
+        expect(a2.status).toBe(200);
+
+        const a3 = await fetch(`${baseUrl}/api/notifications/config`, {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer valid.admin.jwt',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ host: 'smtp.example.com', port: 587 }),
+        });
+        expect(a3.status).toBe(429);
+      },
+      { rateLimitMax: 2, rateLimitWindowMs: 60_000 }
+    );
+  });
+
+  it('12. Writes structured admin audit logs without exposing SMTP secrets', async () => {
+    const logged: string[] = [];
+    const origInfo = console.info;
+    console.info = (...args: unknown[]) => {
+      logged.push(args.map((a) => String(a)).join(' '));
+    };
+
+    try {
+      await withTestServer(
+        {
+          verifyIdToken: async () => ({
+            uid: 'admin_audit_uid',
+            email: 'nouhailler@gmail.com',
+            emailVerified: true,
+            claims: {},
+          }),
+          lookupAccessRecord: async () => ({
+            exists: true,
+            uid: 'admin_audit_uid',
+            role: 'admin',
+            status: 'approved',
+          }),
+        },
+        async (baseUrl) => {
+          const res = await fetch(`${baseUrl}/api/notifications/config`, {
+            method: 'POST',
+            headers: {
+              Authorization: 'Bearer valid.admin.jwt',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              host: 'smtp.example.com',
+              port: 465,
+              pass: 'SUPER_SECRET_SMTP_PASS_DO_NOT_LOG',
+            }),
+          });
+          expect(res.status).toBe(200);
+        }
+      );
+
+      const auditEntry = logged.find((line) => line.includes('"audit":"admin_action"'));
+      expect(auditEntry).toBeDefined();
+      expect(auditEntry).toContain('"action":"update_smtp_config"');
+      expect(auditEntry).toContain('"uid":"admin_audit_uid"');
+      expect(auditEntry).not.toContain('SUPER_SECRET_SMTP_PASS_DO_NOT_LOG');
+    } finally {
+      console.info = origInfo;
+    }
   });
 });

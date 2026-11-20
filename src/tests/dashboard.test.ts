@@ -147,4 +147,19 @@ describe('Onboarding V2 Preferences & Exam Countdown', () => {
     expect(updated!.lastActivity?.labelFr).toBe('Lab SQL interactif');
     expect(updated!.lastActivity?.labelEn).toBe('Interactive SQL Lab');
   });
+
+  it('supports "unsure" initial SkillLevel without inventing baseline exam dates', () => {
+    const saved = saveUserPreferences({
+      onboardingCompleted: true,
+      objective: 'improve_dba',
+      targetCert: null,
+      level: 'unsure',
+      targetExamDate: null,
+    });
+
+    expect(saved.level).toBe('unsure');
+    const reloaded = loadUserPreferences();
+    expect(reloaded.level).toBe('unsure');
+    expect(reloaded.targetExamDate).toBeNull();
+  });
 });

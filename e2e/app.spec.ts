@@ -2,7 +2,7 @@ import { test, expect } from 'playwright/test';
 
 const BASE_URL = 'http://127.0.0.1:3000';
 
-test.describe('DBMastor V2 — Security, Navigation, Onboarding, Dashboard, SQL Lab & Responsive E2E', () => {
+test.describe('DBMastor V2 — Security, Navigation, Hamburger/Landing, Onboarding, Dashboard, SQL Lab & Responsive E2E', () => {
   test('1. Security API: Admin endpoints reject unauthenticated, forged, and spoofed-origin calls with 401', async ({ request }) => {
     const endpoints: Array<{ method: 'GET' | 'POST'; path: string; data?: Record<string, unknown> }> = [
       { method: 'GET', path: '/api/notifications/status' },
@@ -59,7 +59,76 @@ test.describe('DBMastor V2 — Security, Navigation, Onboarding, Dashboard, SQL 
     await expect(page.locator('#onboarding-modal')).toBeVisible();
   });
 
-  test('3. Onboarding V2: Supports "Apprendre SQL sans certification" and never reopens on reload', async ({ page }) => {
+  test('3. Hamburger Menu & Mandatory Landing Page Access (Desktop + Mobile, FR/EN, Role Gating, Session Preserved)', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(`${BASE_URL}/?view=app&no_onboarding=true`);
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('dbmastery_onboarding_completed_v1', 'true');
+      localStorage.setItem(
+        'dbmastery_user_preferences_v2',
+        JSON.stringify({
+          onboardingCompleted: true,
+          objective: 'learn_sql',
+          targetCert: null,
+          level: 'intermediate',
+          targetExamDate: null,
+          lastActivity: null,
+          updatedAt: '2026-11-20T00:00:00.000Z',
+        })
+      );
+    });
+    await page.reload();
+
+    // Open hamburger menu on desktop
+    await expect(page.locator('#header-hamburger-btn')).toBeVisible();
+    await page.locator('#header-hamburger-btn').click();
+    await expect(page.locator('#hamburger-drawer-panel')).toBeVisible();
+
+    // Verify 3 non-admin sections visible, Administration hidden for non-admin
+    await expect(page.locator('#hamburger-section-presentation')).toBeVisible();
+    await expect(page.locator('#hamburger-section-learn')).toBeVisible();
+    await expect(page.locator('#hamburger-section-tools')).toBeVisible();
+    await expect(page.locator('#hamburger-section-administration')).toHaveCount(0);
+
+    // Mandatory "Présentation de DBMastor" entry in FR
+    await expect(page.locator('#hamburger-item-landing')).toContainText('Présentation de DBMastor');
+
+    // Switch EN via hamburger drawer -> "About DBMastor"
+    await page.locator('#hamburger-lang-toggle').click();
+    await expect(page.locator('#hamburger-item-landing')).toContainText('About DBMastor');
+    await page.locator('#hamburger-lang-toggle').click();
+    await expect(page.locator('#hamburger-item-landing')).toContainText('Présentation de DBMastor');
+
+    // Click "Présentation de DBMastor" -> navigates to Landing Page & closes drawer without clearing prefs
+    await page.locator('#hamburger-item-landing').click();
+    await expect(page.locator('#hamburger-drawer-panel')).toHaveCount(0);
+    await expect(page).toHaveURL(/view=landing/);
+    await expect(page.locator('#landing-nav-open-app-btn')).toBeVisible();
+
+    // Verify preferences/session preserved in localStorage
+    const preservedOnboarding = await page.evaluate(() =>
+      localStorage.getItem('dbmastery_onboarding_completed_v1')
+    );
+    expect(preservedOnboarding).toBe('true');
+
+    // Return to app from Landing -> onboarding stays completed
+    await page.locator('#landing-nav-open-app-btn').click();
+    await expect(page.locator('#dashboard-view-container')).toBeVisible();
+    await expect(page.locator('#onboarding-modal')).toHaveCount(0);
+
+    // Also test Hamburger -> Landing on Mobile viewport (390px)
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator('#header-hamburger-btn')).toBeVisible();
+    await page.locator('#header-hamburger-btn').click();
+    await expect(page.locator('#hamburger-drawer-panel')).toBeVisible();
+    await expect(page.locator('#hamburger-item-landing')).toContainText('Présentation de DBMastor');
+    await page.locator('#hamburger-item-landing').click();
+    await expect(page.locator('#hamburger-drawer-panel')).toHaveCount(0);
+    await expect(page).toHaveURL(/view=landing/);
+  });
+
+  test('4. Onboarding V2: Supports "Apprendre SQL sans certification" and never reopens on reload', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(`${BASE_URL}/?view=app`);
     await page.evaluate(() => localStorage.clear());
@@ -98,7 +167,7 @@ test.describe('DBMastor V2 — Security, Navigation, Onboarding, Dashboard, SQL 
     await expect(page.locator('#onboarding-modal')).toHaveCount(0);
   });
 
-  test('4. Dashboard V2: Clean zero-fake baseline & single dominant Continue CTA', async ({ page }) => {
+  test('5. Dashboard V2: Strict 4 metrics max, zero fake baseline, recommendation & 4 secondary shortcuts', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(`${BASE_URL}/?view=app&no_onboarding=true`);
     await page.evaluate(() => {
@@ -112,6 +181,17 @@ test.describe('DBMastor V2 — Security, Navigation, Onboarding, Dashboard, SQL 
     await expect(page.locator('#dashboard-block-c-recommendation')).toBeVisible();
     await expect(page.locator('#dashboard-block-d-metrics')).toBeVisible();
     await expect(page.locator('#dashboard-block-e-activity')).toBeVisible();
+
+    // Strictly max 4 metric cards in Block D
+    const metricCardCount = await page.locator('#dashboard-block-d-metrics > div').count();
+    expect(metricCardCount).toBeLessThanOrEqual(4);
+    expect(metricCardCount).toBeGreaterThanOrEqual(3);
+
+    // 4 discreet secondary shortcuts in Block E
+    await expect(page.locator('#dashboard-shortcut-quiz')).toBeVisible();
+    await expect(page.locator('#dashboard-shortcut-mock')).toBeVisible();
+    await expect(page.locator('#dashboard-shortcut-sqllab')).toBeVisible();
+    await expect(page.locator('#dashboard-shortcut-flashcards')).toBeVisible();
 
     const bodyText = await page.locator('#dashboard-view-container').innerText();
     expect(bodyText).not.toContain('15 Mars 2025');
@@ -127,7 +207,7 @@ test.describe('DBMastor V2 — Security, Navigation, Onboarding, Dashboard, SQL 
     expect(page.url()).toContain('tab=');
   });
 
-  test('5. Navigation 5 Spaces (Desktop collapse + Mobile Bottom Bar + Legacy URLs + Back/Forward)', async ({ page }) => {
+  test('6. Navigation 5 Spaces (Desktop collapse + Mobile Bottom Bar + Legacy URLs + Back/Forward)', async ({ page }) => {
     // Desktop 5 spaces + collapse + popstate
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(`${BASE_URL}/?view=app&tab=sql_lab&no_onboarding=true`);
@@ -154,7 +234,7 @@ test.describe('DBMastor V2 — Security, Navigation, Onboarding, Dashboard, SQL 
     await expect(page).toHaveURL(/tab=cert_exam/);
 
     // Mobile Bottom Bar (< md) + More drawer
-    await page.setViewportSize({ width: 375, height: 812 });
+    await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.locator('#mobile-bottom-nav')).toBeVisible();
     await expect(page.locator('#main-sidebar')).toBeHidden();
 
@@ -164,11 +244,12 @@ test.describe('DBMastor V2 — Security, Navigation, Onboarding, Dashboard, SQL 
 
     await page.locator('#mobile-nav-more').click();
     await expect(page.locator('[role="dialog"]')).toBeVisible();
+    await expect(page.locator('#mobile-more-open-landing-btn')).toContainText('Présentation de DBMastor');
     await page.keyboard.press('Escape');
     await expect(page.locator('#mobile-more-backdrop')).toHaveCount(0);
   });
 
-  test('6. Interactive SQL Lab Execution (Valid Query & SQL Error), FR/EN Toggle, Dark/Light & Cert Exam', async ({ page }) => {
+  test('7. Interactive SQL Lab Execution (Valid Query & SQL Error), FR/EN Toggle, Dark/Light & Cert Exam', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(`${BASE_URL}/?view=app&tab=sandbox&no_onboarding=true`);
 
@@ -202,13 +283,14 @@ test.describe('DBMastor V2 — Security, Navigation, Onboarding, Dashboard, SQL 
     await expect(page.locator('text=/18\\s*\\/\\s*60/')).toBeVisible();
   });
 
-  test('7. Responsive Multi-Viewport Audit (320px to 1920px): Zero horizontal overflow', async ({ page }) => {
+  test('8. Responsive Multi-Viewport Audit (320px, 360px, 390px, 430px, 768px, 1024px, 1440px, 1920px): Zero horizontal overflow', async ({ page }) => {
     const viewports = [
       { width: 320, height: 568 },
-      { width: 375, height: 812 },
+      { width: 360, height: 800 },
+      { width: 390, height: 844 },
       { width: 430, height: 932 },
       { width: 768, height: 1024 },
-      { width: 1280, height: 800 },
+      { width: 1024, height: 768 },
       { width: 1440, height: 900 },
       { width: 1920, height: 1080 },
     ];

@@ -1,0 +1,913 @@
+# CODEX MASTER V2 — DBMASTOR / DBMASTERY STUDIO
+## Correctifs UX/UI, navigation, sécurité et finalisation de la refonte
+
+**Dépôt :** https://github.com/nouhailler-coder/DBMastor  
+**Application :** https://dbmastor.pages.dev/  
+**Branche de travail :** `fix/ux-redesign-v2`
+
+---
+
+# 1. MISSION ET OBJECTIF
+
+Tu interviens sur le projet existant DBMastor / DBMastery Studio.
+
+Une première phase de refonte UX/UI et plusieurs corrections ont déjà été réalisées. Un audit du dépôt a toutefois identifié des éléments manquants, des incohérences fonctionnelles et un problème critique de sécurité.
+
+**Ta mission consiste exclusivement à corriger les éléments incomplets, manquants ou incorrects.**
+
+Tu ne dois surtout pas :
+- Recommencer la refonte depuis zéro.
+- Remplacer inutilement l'architecture actuelle.
+- Supprimer des fonctionnalités existantes.
+- Réécrire les composants qui fonctionnent correctement sans justification.
+- Modifier les modèles Firestore ou IndexedDB sans nécessité démontrée.
+- Supprimer des données, parcours pédagogiques, exercices ou certifications.
+- Remplacer les fonctionnalités existantes par des versions simplifiées.
+
+Tu dois commencer par examiner l'état réel de la branche `main`, et non te fier uniquement à ce cahier des charges ou aux anciens constats d'audit.
+
+Les constats de l'audit constituent des points de contrôle à vérifier. Si un problème a déjà été corrigé depuis cet audit, ne le corrige pas une seconde fois.
+
+## Résultat attendu
+
+À la fin de cette intervention :
+1. La sécurité des fonctions administratives est réellement assurée côté serveur.
+2. La navigation est organisée autour de cinq espaces principaux.
+3. La Landing Page est accessible depuis le menu hamburger.
+4. Le tableau de bord est recentré sur l'action principale d'apprentissage.
+5. La navigation mobile est réellement adaptée aux petits écrans.
+6. L'onboarding est cohérent avec les objectifs de l'utilisateur.
+7. Le design system est plus homogène.
+8. Les données affichées sont fiables et non fictives.
+9. Les tests vérifient les parcours essentiels.
+10. Les fonctionnalités pédagogiques existantes sont conservées.
+
+---
+
+# 2. PHASE 0 — AUDIT OBLIGATOIRE AVANT MODIFICATION
+
+Avant toute intervention :
+
+1. Examiner la branche `main` et les derniers commits.
+2. Examiner `package.json`, l'arborescence, les composants et les services.
+3. Vérifier les fichiers suivants, s'ils existent :
+   - `src/App.tsx`
+   - `src/components/Sidebar.tsx`
+   - `src/components/DashboardView.tsx`
+   - `src/index.css`
+   - `src/navigation/landingDestinations.ts`
+   - `src/tests/navigation.test.ts`
+   - `src/tests/i18n.test.ts`
+   - `src/tests/security.test.ts`
+   - `server.ts`
+   - `src/services/notificationService.ts`
+   - `index.html`
+4. Vérifier les routes, les paramètres URL et les mécanismes de navigation.
+5. Identifier les modifications déjà intégrées depuis le précédent audit.
+6. Vérifier les tests disponibles et leur configuration réelle.
+
+Créer une branche :
+
+`fix/ux-redesign-v2`
+
+Produire un état des lieux dans :
+
+`docs/UX_REDESIGN_V2_AUDIT.md`
+
+Ce document doit préciser :
+- Les problèmes encore présents.
+- Les problèmes déjà corrigés.
+- Les fichiers concernés.
+- Les fonctionnalités existantes à préserver.
+- Les modifications prévues.
+
+Ne pas commencer les modifications avant cette vérification.
+
+---
+
+# 3. PRIORITÉ CRITIQUE — SÉCURISATION DES ENDPOINTS ADMINISTRATIFS
+
+## 3.1 Problème à vérifier
+
+L'audit précédent a identifié dans `server.ts` une logique de ce type :
+
+```ts
+if (token && (token === 'admin-local' || token.length > 20)) {
+  isAuthorized = true;
+}
+```
+
+Cette logique est dangereuse : n'importe quelle chaîne suffisamment longue peut être acceptée comme preuve d'authentification.
+
+L'utilisation de l'en-tête `Origin` ou `Referer` comme mécanisme d'autorisation est également insuffisante.
+
+Vérifier si ces failles existent encore dans la version actuelle.
+
+## 3.2 Authentification serveur Firebase
+
+Mettre en place une authentification réelle avec Firebase Admin SDK.
+
+Le serveur doit :
+
+1. Recevoir un Firebase ID token dans l'en-tête `Authorization: Bearer`.
+2. Vérifier le token avec `verifyIdToken()`.
+3. Récupérer l'identité Firebase de l'utilisateur.
+4. Vérifier son rôle administratif côté serveur.
+5. Vérifier si nécessaire son statut d'accès dans Firestore.
+6. Refuser toute requête non authentifiée ou non autorisée.
+
+L'autorisation doit être indépendante des informations transmises par le navigateur.
+
+Ne jamais considérer :
+- La longueur du token comme une preuve.
+- Un nom de rôle transmis par le client comme une preuve.
+- Une adresse email non vérifiée comme une preuve suffisante.
+- L'en-tête Origin comme une preuve d'identité.
+
+## 3.3 Règles d'accès
+
+Respecter le système existant :
+
+- `admin`
+- `student`
+- `auditor`
+
+Et les statuts :
+
+- `pending`
+- `approved`
+- `revoked`
+
+Seul un administrateur réellement autorisé peut modifier les paramètres administratifs de notification.
+
+Les règles doivent être vérifiées côté serveur, y compris lorsque le frontend masque les fonctionnalités interdites.
+
+## 3.4 Endpoints à examiner
+
+Inspecter tous les endpoints administratifs, notamment :
+
+- `POST /api/notifications/config`
+- Les endpoints de consultation de configuration.
+- Les endpoints de test d'envoi.
+- Les endpoints de modification des paramètres SMTP.
+- Tout endpoint permettant de modifier des paramètres sensibles.
+
+Appliquer une protection cohérente à tous les endpoints concernés.
+
+## 3.5 Service frontend
+
+Dans `src/services/notificationService.ts`, vérifier les appels vers les endpoints administratifs.
+
+Le service doit récupérer un ID token Firebase valide et transmettre :
+
+```http
+Authorization: Bearer <firebase-id-token>
+```
+
+Gérer proprement :
+- Token absent.
+- Session expirée.
+- Utilisateur non administrateur.
+- Erreur réseau.
+- Réponse HTTP 401.
+- Réponse HTTP 403.
+
+Ne jamais envoyer de secrets SMTP au navigateur si cela peut être évité.
+
+## 3.6 Protection complémentaire
+
+Prévoir :
+- Validation stricte des données reçues.
+- Limitation du nombre de requêtes sur les endpoints sensibles.
+- Journalisation des actions administratives importantes.
+- Messages d'erreur qui ne révèlent pas d'informations sensibles.
+- Gestion sécurisée des variables d'environnement.
+- Aucun secret dans le dépôt Git.
+
+Les restrictions CORS et les vérifications d'origine peuvent être conservées comme protections complémentaires, mais jamais comme mécanisme d'autorisation.
+
+## 3.7 Tests de sécurité obligatoires
+
+Créer des tests serveur vérifiant :
+
+| Situation | Résultat attendu |
+|---|---|
+| Aucun token | HTTP 401 |
+| Token arbitraire de plus de 20 caractères | HTTP 401 |
+| Ancien token `admin-local` | HTTP 401 |
+| Token Firebase invalide | HTTP 401 |
+| Token Firebase expiré | HTTP 401 |
+| Utilisateur student | HTTP 403 |
+| Utilisateur auditor | HTTP 403 |
+| Utilisateur admin révoqué | HTTP 403 |
+| Administrateur approuvé | Accès autorisé |
+
+Utiliser des mocks Firebase Admin correctement isolés pour les tests.
+
+Ne jamais introduire de compte administrateur fictif ou de bypass en production pour faciliter les tests.
+
+---
+
+# 4. NAVIGATION — CINQ ESPACES PRINCIPAUX
+
+## 4.1 Organisation cible
+
+La navigation principale doit être organisée autour de cinq espaces :
+
+1. Accueil
+2. Mon parcours
+3. Entraînement
+4. Certifications
+5. Ma progression
+
+L'objectif est de rendre l'application plus facile à comprendre sans supprimer les outils existants.
+
+## 4.2 Correspondance avec les fonctionnalités actuelles
+
+| Espace | Fonctionnalités |
+|---|---|
+| Accueil | Tableau de bord, reprise de l'apprentissage, recommandations |
+| Mon parcours | Apprentissage, cours, quiz, fiches et compétences, glossaire |
+| Entraînement | Exercices, examens blancs, SQL Lab, flashcards, répétition espacée |
+| Certifications | Oracle, PostgreSQL EDB, MySQL, Azure et parcours associés |
+| Ma progression | Skill Map, statistiques, badges, activité et historique |
+
+Les fonctionnalités de contrôle d'accès restent réservées aux administrateurs.
+
+## 4.3 Sidebar desktop
+
+Réorganiser `Sidebar.tsx` sans perdre les destinations existantes.
+
+La sidebar doit :
+- Afficher les cinq espaces principaux.
+- Permettre d'identifier facilement l'espace actif.
+- Être compacte et éventuellement repliable.
+- Regrouper les fonctionnalités secondaires dans les espaces appropriés.
+- Afficher les outils administratifs uniquement aux utilisateurs autorisés.
+- Conserver les traductions françaises et anglaises.
+
+Éviter d'afficher une douzaine de rubriques de même importance.
+
+## 4.4 Menu hamburger — AJOUT OBLIGATOIRE DE LA LANDING PAGE
+
+**La Landing Page doit être accessible depuis le menu hamburger.**
+
+C'est une exigence fonctionnelle explicite.
+
+L'audit a constaté que la Landing Page existe, mais qu'elle n'est pas facilement accessible depuis le menu de navigation.
+
+Ajouter une entrée visible et identifiable :
+
+**« Présentation de DBMastor »**
+
+Cette entrée doit :
+- Être présente dans le menu hamburger.
+- Être présente en français et en anglais.
+- Utiliser une icône cohérente, par exemple `house` ou `layout-dashboard`.
+- Permettre de revenir à la Landing Page depuis l'application.
+- Fonctionner aussi bien sur desktop que sur mobile.
+- Être accessible au clavier.
+- Fermer le menu après sélection sur mobile.
+
+Libellés :
+
+Français : `Présentation de DBMastor`
+
+Anglais : `About DBMastor`
+
+### Comportement attendu
+
+La navigation doit distinguer clairement :
+
+- La Landing Page publique : présentation du produit, fonctionnalités, objectifs, informations générales et accès à l'application.
+- L'application : espace personnel d'apprentissage après connexion.
+
+Si l'utilisateur est connecté et se trouve dans l'application, sélectionner « Présentation de DBMastor » doit lui permettre de revenir à la Landing Page sans perdre sa session.
+
+Ne pas déconnecter l'utilisateur lors de cette navigation.
+
+Si l'utilisateur est sur la Landing Page, le menu doit permettre de revenir à l'application.
+
+Le lien vers l'application doit conserver le mécanisme d'authentification existant.
+
+### Navigation proposée
+
+Dans le menu hamburger :
+
+**Présentation**
+- Présentation de DBMastor
+- Accueil de l'application
+
+**Apprendre**
+- Mon parcours
+- Entraînement
+- Certifications
+- Ma progression
+
+**Outils**
+- SQL Lab
+- Glossaire
+- Flashcards
+- Répétition espacée
+
+**Administration**
+- Contrôle d'accès
+- Configuration des notifications
+
+La section Administration ne doit être visible que pour les utilisateurs administrateurs autorisés.
+
+Ne pas créer une deuxième implémentation de la navigation : réutiliser les routes et destinations existantes.
+
+## 4.5 Conservation des URL
+
+Préserver la compatibilité avec :
+- `?view=app`
+- `?tab=...`
+- Les anciennes destinations encore utilisées dans les liens externes.
+
+Maintenir le bon fonctionnement de :
+- `popstate`
+- L'historique du navigateur.
+- Les liens profonds.
+- Le rechargement direct d'une page.
+
+Mettre en place des redirections ou correspondances si les anciennes valeurs changent.
+
+---
+
+# 5. NAVIGATION MOBILE
+
+L'audit précédent n'avait pas confirmé la présence d'une véritable navigation mobile.
+
+Vérifier l'implémentation actuelle.
+
+Sur mobile, prévoir :
+
+- Une navigation basse avec cinq entrées principales.
+- Un menu hamburger pour les fonctionnalités secondaires.
+- Un accès à la Landing Page depuis le menu hamburger.
+- Une fermeture du menu après sélection.
+- Un affichage sans chevauchement avec les contenus.
+- Une prise en charge des zones de sécurité des smartphones.
+
+La barre basse doit afficher :
+
+1. Accueil
+2. Parcours
+3. Entraînement
+4. Certifications
+5. Progression
+
+Le menu hamburger conserve l'accès aux outils secondaires et à la présentation publique.
+
+Ne pas afficher simultanément une barre de navigation trop dense et une sidebar desktop.
+
+Tester les largeurs :
+- 320 px
+- 360 px
+- 390 px
+- 430 px
+- 768 px
+- 1024 px
+- 1440 px
+
+---
+
+# 6. TABLEAU DE BORD — SIMPLIFICATION
+
+## 6.1 Problème constaté
+
+Le tableau de bord actuel présente trop de panneaux, raccourcis, indicateurs et bandeaux.
+
+Il faut recentrer l'expérience sur la prochaine action utile.
+
+## 6.2 Structure cible
+
+Réorganiser `DashboardView.tsx` autour de :
+
+### A. Message d'accueil
+
+Afficher un message contextualisé :
+
+- Bonjour.
+- Bienvenue.
+- Bon retour.
+
+Afficher le niveau ou la certification active lorsque ces informations sont réellement disponibles.
+
+### B. Action principale
+
+Une zone visuellement dominante :
+
+**Continuer mon apprentissage**
+
+Elle doit reprendre la dernière activité pertinente.
+
+Le bouton doit conduire directement au contenu concerné.
+
+### C. Prochaine session recommandée
+
+Afficher :
+- Le thème conseillé.
+- La durée estimée.
+- Le niveau.
+- La raison de la recommandation.
+
+Exemple :
+
+« Réviser les jointures SQL — 5 minutes »
+
+Les recommandations doivent exploiter les données existantes lorsqu'elles sont disponibles.
+
+### D. Indicateurs essentiels
+
+Limiter les indicateurs visibles à trois ou quatre maximum :
+
+- Progression globale.
+- Temps d'apprentissage.
+- Compétences maîtrisées.
+- Série ou régularité.
+
+Ne pas inventer des valeurs.
+
+### E. Accès secondaires
+
+Présenter les raccourcis vers :
+- Reprendre un quiz.
+- Lancer un examen blanc.
+- Ouvrir le SQL Lab.
+- Réviser les flashcards.
+
+Ces éléments doivent être visuellement secondaires.
+
+## 6.3 Suppression des données fictives
+
+L'audit a identifié des valeurs codées en dur :
+
+- 127 questions.
+- 81 %.
+- +12 %.
+- 15 Mars 2025.
+- D-22.
+
+Rechercher ces valeurs dans le code.
+
+Remplacer les données fictives par :
+- Des données réelles provenant du profil utilisateur.
+- Des statistiques calculées à partir de l'historique.
+- Des valeurs clairement identifiées comme exemples dans un mode démonstration.
+
+Supprimer les dates d'examen périmées.
+
+Ne jamais afficher un compte à rebours sans date d'examen valide.
+
+Prévoir des états vides compréhensibles lorsque l'utilisateur débute.
+
+---
+
+# 7. ONBOARDING
+
+Vérifier le parcours actuel avant modification.
+
+L'objectif est d'éviter que les nouveaux utilisateurs soient confrontés immédiatement à trop de fonctionnalités.
+
+Le parcours cible :
+
+1. Bienvenue.
+2. Objectif d'apprentissage.
+3. Certification souhaitée, si applicable.
+4. Niveau actuel.
+5. Diagnostic facultatif.
+6. Proposition d'un parcours personnalisé.
+7. Première session.
+
+Le diagnostic doit rester facultatif.
+
+L'utilisateur doit pouvoir :
+- Passer une étape.
+- Revenir en arrière.
+- Modifier ses choix ultérieurement.
+- Commencer immédiatement un apprentissage.
+
+Pour les utilisateurs existants :
+- Ne pas relancer automatiquement l'onboarding.
+- Ne pas écraser leurs préférences.
+- Ne pas perdre leur progression.
+- Ne pas réinitialiser leur parcours.
+
+Les choix doivent être sauvegardés en utilisant le système de persistance déjà en place.
+
+Ne pas créer un nouveau système de stockage sans justification.
+
+---
+
+# 8. DESIGN SYSTEM ET COHÉRENCE VISUELLE
+
+## 8.1 Objectif
+
+L'audit a constaté que les variables de thème existent, mais que plusieurs composants utilisent encore des couleurs et styles codés directement.
+
+Il faut homogénéiser progressivement l'interface.
+
+## 8.2 Principes
+
+Conserver une identité visuelle professionnelle et sobre.
+
+Prévoir :
+- Bleu comme couleur principale.
+- Turquoise comme accent.
+- Fond clair par défaut.
+- Mode sombre fonctionnel.
+- Contrastes lisibles.
+- Espacements cohérents.
+- Typographie homogène.
+- États interactifs cohérents.
+
+## 8.3 Composants à harmoniser
+
+Examiner notamment :
+- Boutons.
+- Cartes.
+- Badges.
+- Champs de formulaire.
+- Menus.
+- Modales.
+- Alertes.
+- Barres de progression.
+- Onglets.
+- Indicateurs statistiques.
+
+Éviter :
+- Les gradients décoratifs excessifs.
+- Les ombres trop fortes.
+- Les bordures systématiques.
+- Les cartes imbriquées.
+- Les couleurs arbitraires.
+
+Utiliser les variables CSS existantes lorsque possible.
+
+Ne pas imposer une refonte graphique complète si les composants actuels sont déjà cohérents.
+
+## 8.4 Accessibilité
+
+Respecter WCAG 2.2 AA autant que possible :
+
+- Contraste suffisant.
+- Navigation clavier.
+- Focus visible.
+- Libellés accessibles.
+- Attributs ARIA pertinents.
+- Zones cliquables adaptées au tactile.
+- Gestion du focus dans les menus et modales.
+- Respect de `prefers-reduced-motion`.
+
+---
+
+# 9. LANDING PAGE — INTÉGRATION ET COHÉRENCE
+
+La Landing Page existe déjà. Ne pas la reconstruire.
+
+Vérifier :
+- Son accès depuis le menu hamburger.
+- Son accès depuis le logo si ce comportement est cohérent.
+- Son lien vers l'application.
+- Sa compatibilité FR/EN.
+- Son comportement lorsque l'utilisateur est connecté.
+- Ses liens et CTA.
+- Son affichage mobile.
+
+La Landing Page doit présenter clairement DBMastor comme un produit indépendant.
+
+Ne pas laisser entendre que DBMastor est un produit officiel d'un organisme de certification, d'un éditeur de base de données ou d'un fournisseur technologique.
+
+Vérifier les mentions et formulations concernant :
+- Oracle.
+- PostgreSQL.
+- MySQL.
+- Microsoft Azure.
+- Les certifications associées.
+
+Les marques et certifications peuvent être citées pour décrire les objectifs de préparation, sans suggérer une affiliation officielle non existante.
+
+## SEO
+
+Examiner `index.html`.
+
+L'audit précédent avait identifié des URL canoniques et Open Graph potentiellement anciennes, notamment un domaine Cloud Run.
+
+Vérifier l'URL publique réelle avant modification.
+
+Si le domaine public canonique est toujours `https://dbmastor.pages.dev/`, harmoniser :
+- Canonical URL.
+- Open Graph URL.
+- Open Graph title.
+- Open Graph description.
+- Twitter metadata.
+
+Ne pas remplacer aveuglément les URLs si un domaine officiel différent est désormais utilisé.
+
+---
+
+# 10. TESTS AUTOMATISÉS ET VALIDATION
+
+## 10.1 Tests unitaires
+
+Compléter les tests existants :
+
+- `navigation.test.ts`
+- `i18n.test.ts`
+- `security.test.ts`
+
+Tester notamment :
+- Correspondance entre les cinq espaces et leurs destinations.
+- Présence de la Landing Page dans le menu hamburger.
+- Navigation Landing Page vers application.
+- Navigation application vers Landing Page.
+- Conservation de la session Firebase.
+- Gestion des anciens paramètres URL.
+- Affichage des rubriques selon le rôle.
+- Traductions FR/EN.
+- Gestion des données absentes.
+- Absence de statistiques fictives.
+
+## 10.2 Tests end-to-end Playwright
+
+Vérifier si Playwright est réellement configuré.
+
+Si nécessaire, compléter :
+- `playwright.config.ts`
+- Les scripts npm.
+- Les fixtures.
+- Les tests E2E.
+
+Créer des tests couvrant :
+
+1. Chargement de la Landing Page.
+2. Navigation vers l'application.
+3. Connexion (avec mocks ou environnement de test sécurisé).
+4. Affichage du menu hamburger.
+5. Accès à « Présentation de DBMastor » depuis l'application.
+6. Retour vers l'application.
+7. Conservation de la session.
+8. Navigation dans les cinq espaces.
+9. Navigation mobile.
+10. Onboarding.
+11. Reprise d'une activité.
+12. SQL Lab.
+13. Examen blanc.
+14. Contrôle des accès administratifs.
+
+Ne pas dépendre d'un vrai compte personnel pour les tests automatisés.
+
+Ne jamais exposer les secrets Firebase ou SMTP dans les fixtures.
+
+## 10.3 Tests responsive
+
+Tester au minimum :
+- 320 px.
+- 360 px.
+- 390 px.
+- 768 px.
+- 1024 px.
+- 1440 px.
+
+Vérifier :
+- Absence de débordement horizontal.
+- Menu utilisable.
+- CTA accessibles.
+- Barre basse non superposée au contenu.
+- Modales adaptées.
+- Navigation clavier.
+
+---
+
+# 11. PRÉSERVATION DES FONCTIONNALITÉS EXISTANTES
+
+Les fonctionnalités suivantes doivent impérativement continuer à fonctionner :
+
+- Authentification Firebase Google.
+- Gestion des rôles et des statuts d'accès.
+- Synchronisation Firestore.
+- Onboarding existant et préférences utilisateur.
+- Sessions courtes de 5 et 30 minutes.
+- Aide contextuelle « Explique-moi ».
+- Apprentissage progressif.
+- Exercices SQL.
+- Quiz adaptatifs.
+- Flashcards.
+- Répétition espacée.
+- Glossaire.
+- SQL Lab basé sur AlaSQL.
+- Skill Map à quatre dimensions :
+  - Connaissances.
+  - Précision.
+  - Vitesse.
+  - Régularité.
+- Statistiques.
+- Badges.
+- Examens blancs.
+- Parcours Oracle SQL 1Z0-071.
+- PostgreSQL EDB.
+- MySQL 8.0 DBA.
+- Parcours Azure DP-900 et DP-800, sous réserve de vérifier les dénominations actuelles.
+- Internationalisation française et anglaise.
+- Mode clair et mode sombre.
+- Landing Page et ses sections existantes.
+
+Si une fonctionnalité doit être modifiée pour corriger un problème, documenter la raison et vérifier qu'elle reste accessible.
+
+---
+
+# 12. DOCUMENTATION
+
+Créer :
+
+`docs/UX_REDESIGN_V2.md`
+
+Le document doit contenir :
+
+1. Résumé des corrections.
+2. Problèmes déjà résolus avant intervention.
+3. Problèmes corrigés pendant cette intervention.
+4. Architecture de navigation finale.
+5. Fonctionnement du menu hamburger.
+6. Accès à la Landing Page.
+7. Fonctionnement de la navigation mobile.
+8. Sécurisation Firebase Admin.
+9. Endpoints protégés.
+10. Tests ajoutés.
+11. Limites et points restant à traiter.
+
+Mettre également à jour la documentation technique si nécessaire.
+
+---
+
+# 13. ORDRE D'EXÉCUTION
+
+Respecter cet ordre :
+
+**Étape 1 — Audit**
+- Examiner la branche actuelle.
+- Identifier les éléments déjà corrigés.
+- Créer la branche dédiée.
+- Documenter les écarts.
+
+**Étape 2 — Sécurité**
+- Corriger l'authentification serveur.
+- Sécuriser les endpoints.
+- Corriger le service frontend.
+- Ajouter les tests de sécurité.
+
+**Étape 3 — Navigation**
+- Mettre en place les cinq espaces.
+- Réorganiser la sidebar.
+- Ajouter la Landing Page au menu hamburger.
+- Vérifier les anciennes URL.
+
+**Étape 4 — Mobile**
+- Ajouter ou corriger la navigation basse.
+- Adapter le menu hamburger.
+- Tester les différentes résolutions.
+
+**Étape 5 — Tableau de bord**
+- Simplifier la hiérarchie visuelle.
+- Mettre en avant l'action principale.
+- Supprimer les valeurs fictives.
+
+**Étape 6 — Onboarding**
+- Compléter le parcours.
+- Préserver les utilisateurs existants.
+
+**Étape 7 — Design system**
+- Harmoniser les composants.
+- Vérifier les thèmes et l'accessibilité.
+
+**Étape 8 — Landing Page et SEO**
+- Contrôler les liens.
+- Corriger les métadonnées si nécessaire.
+
+**Étape 9 — Tests**
+- Tests unitaires.
+- Tests de sécurité.
+- Tests E2E.
+- Tests responsive.
+- Build de production.
+
+**Étape 10 — Documentation et livraison**
+- Mettre à jour les documents.
+- Préparer le résumé des changements.
+- Vérifier le diff Git.
+
+---
+
+# 14. CRITÈRES D'ACCEPTATION FINAUX
+
+La mission ne peut être considérée comme terminée que si les points suivants sont vérifiés.
+
+## Sécurité
+- [ ] Aucun token arbitraire accepté.
+- [ ] Aucun bypass `admin-local` en production.
+- [ ] Aucun contrôle d'accès fondé sur Origin ou Referer.
+- [ ] Firebase Admin vérifie les ID tokens.
+- [ ] Le rôle administrateur est vérifié côté serveur.
+- [ ] Les endpoints administratifs sont protégés.
+- [ ] Les tests 401/403/200 sont présents.
+
+## Navigation
+- [ ] Les cinq espaces sont présents.
+- [ ] Les fonctionnalités existantes restent accessibles.
+- [ ] La sidebar est simplifiée.
+- [ ] Les anciens liens restent compatibles.
+- [ ] Le menu hamburger est fonctionnel.
+
+## Landing Page
+- [ ] La Landing Page est accessible depuis le menu hamburger.
+- [ ] L'entrée « Présentation de DBMastor » est visible.
+- [ ] La version anglaise « About DBMastor » est disponible.
+- [ ] La navigation fonctionne depuis l'application.
+- [ ] La session utilisateur est conservée.
+- [ ] Le retour vers l'application fonctionne.
+
+## Mobile
+- [ ] Navigation basse à cinq entrées.
+- [ ] Menu secondaire accessible.
+- [ ] Aucun chevauchement.
+- [ ] Aucune barre horizontale indésirable.
+
+## Tableau de bord
+- [ ] Une action principale clairement identifiable.
+- [ ] Une recommandation contextualisée.
+- [ ] Maximum quatre indicateurs principaux.
+- [ ] Aucune donnée fictive présentée comme réelle.
+- [ ] Aucune date d'examen obsolète.
+
+## Onboarding
+- [ ] Parcours progressif.
+- [ ] Diagnostic facultatif.
+- [ ] Possibilité de passer les étapes.
+- [ ] Utilisateurs existants préservés.
+
+## Qualité
+- [ ] FR/EN cohérent.
+- [ ] Mode clair/sombre opérationnel.
+- [ ] Accessibilité vérifiée.
+- [ ] Tests unitaires exécutés.
+- [ ] Tests E2E exécutés ou limites documentées.
+- [ ] Build exécuté.
+- [ ] Documentation mise à jour.
+
+---
+
+# 15. RAPPORT FINAL OBLIGATOIRE
+
+À la fin, fournir un rapport précis avec :
+
+### A. Modifications réalisées
+Liste des fichiers modifiés et explication.
+
+### B. Sécurité
+Décrire précisément :
+- Les anciennes failles.
+- Les corrections.
+- Le mécanisme d'authentification final.
+- Les endpoints protégés.
+- Les tests réalisés.
+
+### C. Navigation
+Présenter la nouvelle organisation des cinq espaces et le fonctionnement du menu hamburger.
+
+Confirmer explicitement que la Landing Page est accessible depuis le menu hamburger et que la session reste active lors du changement de vue.
+
+### D. Fonctionnalités préservées
+Lister les fonctionnalités existantes vérifiées.
+
+### E. Tests
+Pour chaque test, préciser :
+- Commande exécutée.
+- Résultat.
+- Nombre de tests réussis et échoués.
+- Tests non exécutés et raison.
+
+### F. Points restant à traiter
+Ne pas masquer les limitations ou les difficultés.
+
+### G. Git
+Fournir :
+- Branche utilisée.
+- Liste des commits.
+- État du dépôt.
+- Confirmation du push uniquement s'il a réellement été effectué.
+
+**Ne jamais déclarer une fonctionnalité terminée sans l'avoir vérifiée. Ne jamais déclarer un test réussi sans l'avoir exécuté.**
+
+---
+
+# CONSIGNE FINALE
+
+Tu dois réaliser une intervention corrective et ciblée, pas une nouvelle refonte intégrale.
+
+La priorité absolue est la sécurité serveur, suivie de la navigation et de l'accessibilité de la Landing Page depuis le menu hamburger.
+
+Conserve les éléments déjà correctement réalisés, réutilise les composants existants lorsque c'est pertinent et privilégie les modifications minimales, robustes et testables.
+
+Le résultat doit être une application DBMastor cohérente, sécurisée, simple à utiliser sur ordinateur et mobile, et dont toutes les fonctionnalités pédagogiques restent opérationnelles.

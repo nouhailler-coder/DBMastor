@@ -436,15 +436,16 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
 
               {onOpenLanding && (
                 <button
+                  id="mobile-more-open-landing-btn"
                   type="button"
                   onClick={() => {
                     setIsMoreOpen(false);
                     onOpenLanding();
                   }}
-                  className="w-full min-h-[44px] px-3 rounded-xl bg-[#031427] border border-[#1b2b3f] text-xs font-semibold text-[#89ceff] flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full min-h-[44px] px-3 rounded-xl bg-[#031427] border border-[#38bdf8]/40 text-xs font-semibold text-[#89ceff] flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <Globe className="w-4 h-4" />
-                  <span>{isFr ? 'Revenir à la page de présentation' : 'Back to landing page'}</span>
+                  <Home className="w-4 h-4" />
+                  <span>{isFr ? 'Présentation de DBMastor' : 'About DBMastor'}</span>
                 </button>
               )}
 

@@ -15,7 +15,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({ t, onOpenApp }) =>
           {/* Brand Column */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <AppLogo size={36} className="rounded-lg" />
+              <AppLogo size="md" showText={false} className="rounded-lg" />
               <div>
                 <span className="text-base font-bold text-white tracking-tight">DBMastery</span>
                 <span className="text-base font-bold text-[#38bdf8]"> Studio</span>

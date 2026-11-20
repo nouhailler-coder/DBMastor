@@ -199,6 +199,12 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
 
   // Modal / Panneau de configuration SMTP avancée
   const [showSmtpConfig, setShowSmtpConfig] = useState(false);
+
+  React.useEffect(() => {
+    const handleOpenSmtp = () => setShowSmtpConfig(true);
+    window.addEventListener('dbmastery:open_smtp_config', handleOpenSmtp);
+    return () => window.removeEventListener('dbmastery:open_smtp_config', handleOpenSmtp);
+  }, []);
   const [smtpHostDraft, setSmtpHostDraft] = useState('smtp.gmail.com');
   const [smtpPortDraft, setSmtpPortDraft] = useState('465');
   const [smtpUserDraft, setSmtpUserDraft] = useState('nouhailler@gmail.com');

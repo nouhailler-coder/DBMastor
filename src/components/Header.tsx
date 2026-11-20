@@ -95,7 +95,7 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onOpenHamburger}
           title={isFr ? 'Menu complet des outils' : 'All tools menu'}
           aria-label={isFr ? 'Menu des fonctionnalités' : 'Features Menu'}
-          className="hidden sm:flex items-center justify-center p-2 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] text-[#89ceff] hover:text-white transition-colors shrink-0 cursor-pointer"
+          className="flex items-center justify-center p-2 rounded-lg bg-[#102034] hover:bg-[#1b2b3f] border border-[#1b2b3f] text-[#89ceff] hover:text-white transition-colors shrink-0 cursor-pointer"
         >
           <Menu className="w-4 h-4" />
         </button>

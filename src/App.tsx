@@ -934,7 +934,7 @@ export default function App() {
 
   // Mode Landing Page Vitrine
   if (viewMode === 'landing') {
-    return <LandingPage onOpenApp={handleLaunchApp} />;
+    return <LandingPage onOpenApp={handleLaunchApp} currentUser={currentUser} />;
   }
 
   const isLight = theme === 'light';
@@ -1157,6 +1157,7 @@ export default function App() {
         onClose={() => setIsHamburgerOpen(false)}
         currentTab={currentTab}
         onTabChange={navigateToTab}
+        onOpenLanding={handleOpenLanding}
         selectedCert={selectedCert}
         onCertChange={setSelectedCert}
         isAdmin={isAdmin}

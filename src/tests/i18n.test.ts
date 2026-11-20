@@ -68,4 +68,23 @@ describe('Internationalization (i18n) Completeness Tests', () => {
       }
     }
   });
+
+  it('verifies complete FR/EN parity across Hamburger Menu sections and items', async () => {
+    const { getHamburgerSections } = await import('../navigation/hamburgerItems');
+    const sections = getHamburgerSections(true);
+    expect(sections).toHaveLength(4);
+
+    for (const section of sections) {
+      expect(section.titleFr.trim().length).toBeGreaterThan(0);
+      expect(section.titleEn.trim().length).toBeGreaterThan(0);
+      expect(section.items.length).toBeGreaterThan(0);
+
+      for (const item of section.items) {
+        expect(item.labelFr.trim().length).toBeGreaterThan(0);
+        expect(item.labelEn.trim().length).toBeGreaterThan(0);
+        expect(item.descFr.trim().length).toBeGreaterThan(0);
+        expect(item.descEn.trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
 });

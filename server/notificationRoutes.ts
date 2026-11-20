@@ -23,6 +23,8 @@ export interface AccessNotificationRecord {
 export interface NotificationRouterOptions {
   authOptions?: AdminAuthMiddlewareOptions;
   transporterFactory?: (config: RuntimeSmtpConfig) => Transporter | null;
+  rateLimitMax?: number;
+  rateLimitWindowMs?: number;
 }
 
 export interface RuntimeSmtpConfig {
@@ -43,9 +45,66 @@ function escapeHtml(raw: string): string {
     .replace(/'/g, '&#39;');
 }
 
+function createInMemoryRateLimiter(maxRequests: number, windowMs: number) {
+  const buckets = new Map<string, { count: number; resetAt: number }>();
+
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const now = Date.now();
+    const ip =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      req.ip ||
+      req.socket?.remoteAddress ||
+      'unknown';
+    const key = `${ip}:${req.path}`;
+    const current = buckets.get(key);
+
+    if (!current || now >= current.resetAt) {
+      buckets.set(key, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+
+    if (current.count >= maxRequests) {
+      res.setHeader('Retry-After', String(Math.ceil((current.resetAt - now) / 1000)));
+      return res.status(429).json({
+        success: false,
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: 'Trop de requêtes. Veuillez patienter avant de réessayer.',
+      });
+    }
+
+    current.count += 1;
+    return next();
+  };
+}
+
+function logAdminAudit(
+  action: string,
+  req: express.Request,
+  details: Record<string, unknown> = {}
+) {
+  const authReq = req as { firebaseUser?: { uid?: string; email?: string } };
+  console.info(
+    JSON.stringify({
+      audit: 'admin_action',
+      action,
+      uid: authReq.firebaseUser?.uid || 'unknown',
+      actorEmail: authReq.firebaseUser?.email || 'unknown',
+      path: req.path,
+      timestamp: new Date().toISOString(),
+      ...details,
+    })
+  );
+}
+
 export function createNotificationAndAuthRouter(options: NotificationRouterOptions = {}) {
   const router = express.Router();
   const { authenticateFirebase, requireAdmin } = createAdminAuthMiddlewares(options.authOptions);
+
+  const publicLimitMax = options.rateLimitMax ?? 30;
+  const adminLimitMax = options.rateLimitMax ?? 120;
+  const windowMs = options.rateLimitWindowMs ?? 5 * 60 * 1000;
+  const publicRateLimiter = createInMemoryRateLimiter(publicLimitMax, windowMs);
+  const adminRateLimiter = createInMemoryRateLimiter(adminLimitMax, windowMs);
 
   const accessNotificationsHistory: AccessNotificationRecord[] = [];
 
@@ -237,7 +296,7 @@ export function createNotificationAndAuthRouter(options: NotificationRouterOptio
   };
 
   // Endpoint public (visiteur ou utilisateur authentifié qui soumet sa demande d'accès)
-  router.post('/api/notifications/access-request', async (req, res) => {
+  router.post('/api/notifications/access-request', publicRateLimiter, async (req, res) => {
     try {
       const { email, displayName, accessReason, method, validationCode, requestedAt } = req.body || {};
 
@@ -373,7 +432,7 @@ export function createNotificationAndAuthRouter(options: NotificationRouterOptio
   });
 
   // Vérification sécurisée du mot de passe global du site côté serveur
-  router.post('/api/auth/verify-site-password', (req, res) => {
+  router.post('/api/auth/verify-site-password', publicRateLimiter, (req, res) => {
     try {
       const { password } = req.body || {};
       if (typeof password !== 'string' || !password.trim()) {
@@ -404,7 +463,7 @@ export function createNotificationAndAuthRouter(options: NotificationRouterOptio
   // =========================================================================
 
   // Statut SMTP & configuration (Admin uniquement)
-  router.get('/api/notifications/status', authenticateFirebase, requireAdmin, (_req, res) => {
+  router.get('/api/notifications/status', adminRateLimiter, authenticateFirebase, requireAdmin, (_req, res) => {
     const adminEmail = getAdminEmail();
     const hasSmtp = Boolean(
       (runtimeSmtpConfig.host && runtimeSmtpConfig.pass) ||
@@ -429,7 +488,7 @@ export function createNotificationAndAuthRouter(options: NotificationRouterOptio
   });
 
   // Mise à jour configuration SMTP (Admin uniquement)
-  router.post('/api/notifications/config', authenticateFirebase, requireAdmin, (req, res) => {
+  router.post('/api/notifications/config', adminRateLimiter, authenticateFirebase, requireAdmin, (req, res) => {
     try {
       if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
         return res.status(400).json({
@@ -480,6 +539,13 @@ export function createNotificationAndAuthRouter(options: NotificationRouterOptio
         runtimeSmtpConfig.secure = secure;
       }
 
+      logAdminAudit('update_smtp_config', req, {
+        host: runtimeSmtpConfig.host,
+        port: runtimeSmtpConfig.port,
+        secure: runtimeSmtpConfig.secure,
+        passUpdated: typeof pass === 'string' && pass.trim().length > 0,
+      });
+
       return res.json({
         success: true,
         message: 'Configuration SMTP enregistrée avec succès !',
@@ -500,7 +566,8 @@ export function createNotificationAndAuthRouter(options: NotificationRouterOptio
   });
 
   // Historique des notifications d'accès (Admin uniquement)
-  router.get('/api/notifications/history', authenticateFirebase, requireAdmin, (_req, res) => {
+  router.get('/api/notifications/history', adminRateLimiter, authenticateFirebase, requireAdmin, (req, res) => {
+    logAdminAudit('view_notification_history', req, { count: accessNotificationsHistory.length });
     return res.json({
       recipient: getAdminEmail(),
       history: accessNotificationsHistory,
@@ -508,7 +575,7 @@ export function createNotificationAndAuthRouter(options: NotificationRouterOptio
   });
 
   // Envoi d'email de test (Admin uniquement)
-  router.post('/api/notifications/test-email', authenticateFirebase, requireAdmin, async (req, res) => {
+  router.post('/api/notifications/test-email', adminRateLimiter, authenticateFirebase, requireAdmin, async (req, res) => {
     try {
       const requestedTarget = typeof req.body?.email === 'string' ? req.body.email.trim() : '';
       if (requestedTarget && !requestedTarget.includes('@')) {
@@ -519,6 +586,7 @@ export function createNotificationAndAuthRouter(options: NotificationRouterOptio
       }
 
       const targetEmail = requestedTarget || getAdminEmail();
+      logAdminAudit('send_test_notification_email', req, { targetEmail });
       const appUrl = getAppBaseUrl(req);
       const transporter = createTransporter();
 

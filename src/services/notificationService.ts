@@ -222,8 +222,12 @@ export async function sendTestNotificationEmail(targetEmail?: string): Promise<{
         data.message ||
         (res.ok
           ? 'Email test envoyé !'
-          : res.status === 401 || res.status === 403
-          ? 'Accès refusé : compte administrateur requis.'
+          : res.status === 401
+          ? 'Session expirée ou non authentifiée. Veuillez vous reconnecter.'
+          : res.status === 403
+          ? 'Accès refusé : rôle administrateur approuvé requis.'
+          : res.status === 429
+          ? 'Trop de tentatives. Patientez quelques instants.'
           : 'Échec du test email.'),
       details: data,
     };
@@ -267,8 +271,12 @@ export async function updateNotificationConfig(config: {
         data.message ||
         (res.ok
           ? 'Configuration enregistrée !'
-          : res.status === 401 || res.status === 403
-          ? 'Accès refusé : rôle administrateur requis.'
+          : res.status === 401
+          ? 'Session expirée ou non authentifiée. Veuillez vous reconnecter.'
+          : res.status === 403
+          ? 'Accès refusé : rôle administrateur approuvé requis.'
+          : res.status === 429
+          ? 'Trop de tentatives. Patientez quelques instants.'
           : 'Erreur enregistrement.'),
     };
   } catch (err: any) {

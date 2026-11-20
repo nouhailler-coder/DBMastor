@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
 import {
   X,
+  Home,
   CreditCard,
   Terminal,
-  BookOpen,
+  Compass,
   LayoutDashboard,
-  BarChart3,
+  TrendingUp,
   Settings,
   ShieldCheck,
   Database,
@@ -16,18 +17,23 @@ import {
   ChevronRight,
   BookMarked,
   Brain,
-  Network,
-  Activity,
-  Scale,
   RotateCcw,
+  Scale,
+  Bell,
 } from 'lucide-react';
 import { NavigationTab, CertificationTrackId, SystemVersionInfo } from '../types';
+import {
+  getHamburgerSections,
+  HamburgerIconKey,
+  HamburgerMenuItem,
+} from '../navigation/hamburgerItems';
 
 interface HamburgerMenuProps {
   isOpen: boolean;
   onClose: () => void;
   currentTab: NavigationTab;
   onTabChange: (tab: NavigationTab) => void;
+  onOpenLanding?: () => void;
   selectedCert: CertificationTrackId;
   onCertChange: (cert: CertificationTrackId) => void;
   isAdmin?: boolean;
@@ -40,11 +46,26 @@ interface HamburgerMenuProps {
   onThemeToggle: () => void;
 }
 
+const ICON_COMPONENTS: Record<HamburgerIconKey, React.ElementType> = {
+  home: Home,
+  'layout-dashboard': LayoutDashboard,
+  compass: Compass,
+  brain: Brain,
+  'shield-check': ShieldCheck,
+  'trending-up': TrendingUp,
+  terminal: Terminal,
+  'book-marked': BookMarked,
+  'credit-card': CreditCard,
+  'rotate-ccw': RotateCcw,
+  bell: Bell,
+};
+
 export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   isOpen,
   onClose,
   currentTab,
   onTabChange,
+  onOpenLanding,
   selectedCert,
   onCertChange,
   isAdmin = false,
@@ -81,152 +102,29 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
   if (!isOpen) return null;
 
-  const handleNavigate = (tab: NavigationTab) => {
-    onTabChange(tab);
+  const handleSelectItem = (item: HamburgerMenuItem) => {
+    if (item.action === 'landing') {
+      onClose();
+      if (onOpenLanding) {
+        onOpenLanding();
+      } else {
+        window.dispatchEvent(new CustomEvent('dbmastery:open_landing'));
+      }
+      return;
+    }
+
+    if (item.tab) {
+      onTabChange(item.tab);
+      if (item.dispatchEvent) {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent(item.dispatchEvent!));
+        }, 50);
+      }
+    }
     onClose();
   };
 
-  const categories = [
-    {
-      id: 'space-home',
-      titleFr: '1. Accueil',
-      titleEn: '1. Home',
-      color: '#38bdf8',
-      items: [
-        {
-          id: 'item-dashboard',
-          tab: 'dashboard' as NavigationTab,
-          labelFr: 'Tableau de bord',
-          labelEn: 'Dashboard',
-          descFr: 'Reprendre votre apprentissage et suivre vos objectifs réels.',
-          descEn: 'Resume learning and track real progress.',
-          icon: LayoutDashboard,
-        },
-      ],
-    },
-    {
-      id: 'space-learning-path',
-      titleFr: '2. Mon parcours',
-      titleEn: '2. Learning Path',
-      color: '#4edea3',
-      items: [
-        {
-          id: 'item-syllabus',
-          tab: 'syllabus' as NavigationTab,
-          labelFr: 'Fiches & syllabus',
-          labelEn: 'Study Sheets & Syllabus',
-          descFr: 'Fiches synthétiques et programme détaillé.',
-          descEn: 'Focused study sheets and structured curriculum.',
-          icon: BookOpen,
-        },
-        {
-          id: 'item-glossary',
-          tab: 'glossary' as NavigationTab,
-          labelFr: 'Glossaire SQL',
-          labelEn: 'SQL Glossary',
-          descFr: 'Référentiel des clauses, contraintes et dialectes SQL.',
-          descEn: 'Structured index of SQL clauses, constraints, and dialects.',
-          icon: BookMarked,
-        },
-      ],
-    },
-    {
-      id: 'space-training',
-      titleFr: '3. Entraînement',
-      titleEn: '3. Training',
-      color: '#f59e0b',
-      items: [
-        {
-          id: 'item-exams',
-          tab: 'exams' as NavigationTab,
-          labelFr: 'Apprentissage adaptatif & quiz',
-          labelEn: 'Adaptive Learning & Quiz',
-          descFr: 'Questions progressives et explications pas à pas.',
-          descEn: 'Progressive practice questions with detailed explanations.',
-          icon: Brain,
-        },
-        {
-          id: 'item-sandbox',
-          tab: 'sandbox' as NavigationTab,
-          labelFr: 'Lab SQL interactif',
-          labelEn: 'Interactive SQL Lab',
-          descFr: 'Exécution SQL réelle dans le navigateur.',
-          descEn: 'Live SQL query execution in the browser.',
-          icon: Terminal,
-        },
-        {
-          id: 'item-flashcards',
-          tab: 'flashcards' as NavigationTab,
-          labelFr: 'Flashcards actives',
-          labelEn: 'Active Flashcards',
-          descFr: 'Cartes mémoire par thème et dialecte SQL.',
-          descEn: 'Memory cards by topic and SQL dialect.',
-          icon: CreditCard,
-        },
-        {
-          id: 'item-spaced-repetition',
-          tab: 'spaced_repetition' as NavigationTab,
-          labelFr: 'Répétition espacée (SM-2)',
-          labelEn: 'Spaced Repetition (SM-2)',
-          descFr: 'Révisions planifiées selon votre courbe de rétention.',
-          descEn: 'Scheduled reviews optimized for long-term retention.',
-          icon: RotateCcw,
-        },
-      ],
-    },
-    {
-      id: 'space-certifications',
-      titleFr: '4. Certifications',
-      titleEn: '4. Certifications',
-      color: '#3198dc',
-      items: [
-        {
-          id: 'item-cert-exam',
-          tab: 'cert_exam' as NavigationTab,
-          labelFr: 'Examen blanc (60Q — 90 min)',
-          labelEn: 'Official Practice Exam (60Q — 90 min)',
-          descFr: 'Simulation chronométrée et bilan détaillé par pilier.',
-          descEn: 'Timed simulation and pillar-by-pillar breakdown.',
-          icon: ShieldCheck,
-        },
-      ],
-    },
-    {
-      id: 'space-progress',
-      titleFr: '5. Ma progression',
-      titleEn: '5. My Progress',
-      color: '#a855f7',
-      items: [
-        {
-          id: 'item-skills',
-          tab: 'skills' as NavigationTab,
-          labelFr: 'Carte de compétences',
-          labelEn: 'Skill Map',
-          descFr: 'Arborescence 4D de vos compétences SQL.',
-          descEn: '4D competency tree of your SQL skills.',
-          icon: Network,
-        },
-        {
-          id: 'item-analytics',
-          tab: 'analytics' as NavigationTab,
-          labelFr: 'Statistiques & badges',
-          labelEn: 'Stats & Badges',
-          descFr: 'Taux de réussite réel, temps de réponse et distinctions.',
-          descEn: 'Real accuracy metrics, response times, and earned badges.',
-          icon: BarChart3,
-        },
-        {
-          id: 'item-activity',
-          tab: 'activity' as NavigationTab,
-          labelFr: 'Historique d\'activité',
-          labelEn: 'Personal Activity Log',
-          descFr: 'Journal détaillé de vos tentatives et sessions.',
-          descEn: 'Detailed log of your recent attempts and sessions.',
-          icon: Activity,
-        },
-      ],
-    },
-  ];
+  const sections = getHamburgerSections(isAdmin);
 
   const certOptions: { id: CertificationTrackId; label: string }[] = [
     { id: 'oracle-1z0-071', label: 'Oracle Database SQL (1Z0-071)' },
@@ -263,7 +161,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                 </span>
               </h2>
               <p className="text-xs text-[#89929b] font-mono">
-                {isFr ? '5 espaces d\'apprentissage' : '5 Learning Spaces'}
+                {isFr ? 'Navigation & outils DBMastor' : 'DBMastor Navigation & Tools'}
               </p>
             </div>
           </div>
@@ -280,59 +178,37 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-6">
-          <div className="p-3 bg-[#0b1c30] rounded-xl border border-[#1b2b3f] space-y-2">
-            <div className="flex items-center justify-between text-xs text-[#89929b] font-mono">
-              <span className="flex items-center gap-1.5 font-semibold text-[#89ceff]">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                {isFr ? 'Filière de certification active' : 'Active certification track'}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-              {certOptions.map((c) => {
-                const isSelected = selectedCert === c.id;
-                return (
-                  <button
-                    key={c.id}
-                    id={`quick-cert-btn-${c.id}`}
-                    type="button"
-                    onClick={() => onCertChange(c.id)}
-                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-left transition-all font-medium border cursor-pointer ${
-                      isSelected
-                        ? 'bg-[#3198dc]/20 text-[#89ceff] border-[#3198dc]/40 font-semibold'
-                        : 'bg-[#102034]/60 text-[#bfc7d2] border-transparent hover:bg-[#1b2b3f] hover:text-[#d3e4fe]'
-                    }`}
-                  >
-                    <span className="truncate text-[11px]">{c.label}</span>
-                    {isSelected && <CheckCircle2 className="w-3 h-3 text-[#4edea3] ml-auto shrink-0" />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           <div className="space-y-5">
-            {categories.map((cat) => (
-              <div key={cat.id} className="space-y-2">
+            {sections.map((section) => (
+              <div key={section.id} id={`hamburger-section-${section.id}`} className="space-y-2">
                 <div className="flex items-center gap-2 px-1">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                  <div
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: section.accentColor }}
+                  />
                   <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-[#9fb0c4]">
-                    {isFr ? cat.titleFr : cat.titleEn}
+                    {isFr ? section.titleFr : section.titleEn}
                   </h3>
                 </div>
 
                 <div className="space-y-1.5">
-                  {cat.items.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = currentTab === item.tab;
+                  {section.items.map((item) => {
+                    const Icon = ICON_COMPONENTS[item.icon];
+                    const isActive =
+                      item.action === 'tab' &&
+                      item.tab === currentTab &&
+                      !item.dispatchEvent;
                     return (
                       <button
                         key={item.id}
                         id={item.id}
                         type="button"
-                        onClick={() => handleNavigate(item.tab)}
+                        onClick={() => handleSelectItem(item)}
                         className={`w-full flex items-start gap-3 p-3 rounded-xl transition-all text-left border group cursor-pointer ${
                           isActive
                             ? 'bg-[#102034] border-[#3198dc]/40 shadow-sm'
+                            : item.action === 'landing'
+                            ? 'bg-[#0b1c30] border-[#38bdf8]/30 hover:bg-[#102034] hover:border-[#38bdf8]/60'
                             : 'bg-[#0b1c30]/70 border-[#1b2b3f]/80 hover:bg-[#102034] hover:border-[#26364a]'
                         }`}
                       >
@@ -366,19 +242,37 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
             ))}
           </div>
 
-          <div className="p-4 bg-[#0b1c30] rounded-2xl border border-[#1b2b3f] space-y-2.5">
-            {isAdmin && (
-              <button
-                id="hamburger-open-access-control-btn"
-                type="button"
-                onClick={() => handleNavigate('access_control')}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#00a572]/15 hover:bg-[#00a572]/25 text-[#4edea3] border border-[#4edea3]/30 font-bold text-xs cursor-pointer"
-              >
+          <div className="p-3 bg-[#0b1c30] rounded-xl border border-[#1b2b3f] space-y-2">
+            <div className="flex items-center justify-between text-xs text-[#89929b] font-mono">
+              <span className="flex items-center gap-1.5 font-semibold text-[#89ceff]">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>{isFr ? 'Administration & Contrôle d\'accès' : 'Admin & Access Control'}</span>
-              </button>
-            )}
+                {isFr ? 'Filière de certification active' : 'Active certification track'}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {certOptions.map((c) => {
+                const isSelected = selectedCert === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    id={`quick-cert-btn-${c.id}`}
+                    type="button"
+                    onClick={() => onCertChange(c.id)}
+                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-left transition-all font-medium border cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#3198dc]/20 text-[#89ceff] border-[#3198dc]/40 font-semibold'
+                        : 'bg-[#102034]/60 text-[#bfc7d2] border-transparent hover:bg-[#1b2b3f] hover:text-[#d3e4fe]'
+                    }`}
+                  >
+                    <span className="truncate text-[11px]">{c.label}</span>
+                    {isSelected && <CheckCircle2 className="w-3 h-3 text-[#4edea3] ml-auto shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
+          <div className="p-4 bg-[#0b1c30] rounded-2xl border border-[#1b2b3f] space-y-2.5">
             <button
               id="hamburger-open-system-settings-btn"
               type="button"

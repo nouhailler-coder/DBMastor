@@ -3,11 +3,14 @@ import { AppLogo } from '../AppLogo';
 import { LandingTranslations } from '../../i18n/landingTranslations';
 import { Globe, ArrowRight, Menu, X, Sparkles, Terminal } from 'lucide-react';
 
+import type { User } from '../../services/firebaseSyncService';
+
 interface LandingNavbarProps {
   t: LandingTranslations['nav'];
   lang: 'fr' | 'en';
   onLangToggle: () => void;
   onOpenApp: (tab?: string) => void;
+  currentUser?: User | null;
 }
 
 export const LandingNavbar: React.FC<LandingNavbarProps> = ({
@@ -15,6 +18,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
   lang,
   onLangToggle,
   onOpenApp,
+  currentUser,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -80,20 +84,25 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
 
           {/* Secondary CTA: Open Application */}
           <button
+            id="landing-nav-open-app-btn"
             type="button"
             onClick={() => onOpenApp('dashboard')}
             className="hidden sm:inline-flex h-9 px-3.5 rounded-xl bg-[#102034] hover:bg-[#1b2b3f] text-[#d3e4fe] border border-[#1b2b3f] text-xs font-mono font-semibold items-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38bdf8]"
           >
-            <span>{t.openApp}</span>
+            {currentUser && (
+              <span className="w-2 h-2 rounded-full bg-[#4edea3] shrink-0" title={currentUser.email || 'Session active'} />
+            )}
+            <span>{currentUser ? (lang === 'fr' ? 'Reprendre la session' : 'Resume Session') : t.openApp}</span>
           </button>
 
           {/* Primary CTA: Start Learning */}
           <button
+            id="landing-nav-start-btn"
             type="button"
             onClick={() => onOpenApp('dashboard')}
             className="h-9 px-4 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-mono font-bold inline-flex items-center gap-2 shadow-md shadow-[#0284c7]/30 transition-all cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38bdf8]"
           >
-            <span>{t.startLearning}</span>
+            <span>{currentUser ? (lang === 'fr' ? 'Ouvrir mon espace' : 'Open Workspace') : t.startLearning}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
 
